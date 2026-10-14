@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+/* Cores do Pienel (mesmas do protótipo). Modo claro aqui, modo escuro logo abaixo. */
+:root {
+  --app: #f3f6f4;
+  --surface: #ffffff;
+  --surface-2: #edf2ef;
+  --ink: #10201a;
+  --ink-2: #3f5148;
+  --ink-3: #5b6b63;
+  --line: #d6dfda;
+  --brand: #1c5a42;
+  --brand-ink: #ffffff;
+  --brand-soft: #dceee4;
+  --deep: #123b2c;
+  --on-deep: #ffffff;
+  --on-deep-2: #c9e4d6;
+  --lime: #c8f06a;
+  --lime-ink: #1b2a08;
+  --ok: #1a7247;
+  --ok-soft: #dcf2e5;
+  --bad: #b1261b;
+  --gold: #7a5400;
+  --gold-soft: #f7ebc8;
+  --silver: #56626e;
+  --silver-soft: #e6ebf0;
+  --bronze: #8e4e2a;
+  --bronze-soft: #f4e2d6;
+  --star: #e8a317;
+  --av1: #1c5a42;
+  --av2: #7a4e9c;
+  --av3: #b0532e;
+  --av4: #2b5e9e;
+  --av5: #8c6a12;
+  --av6: #a23a62;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --app: #0d1512;
+    --surface: #141e1a;
+    --surface-2: #1a2621;
+    --ink: #e7efea;
+    --ink-2: #b6c5bd;
+    --ink-3: #93a49b;
+    --line: #26352e;
+    --brand: #6fd09f;
+    --brand-ink: #06120c;
+    --brand-soft: #173a2c;
+    --deep: #0f2d21;
+    --on-deep: #f1f8f4;
+    --on-deep-2: #a9d3be;
+    --ok: #7ddaa9;
+    --ok-soft: #113425;
+    --bad: #f38b7f;
+    --gold: #e7be55;
+    --gold-soft: #33280a;
+    --silver: #b9c5d1;
+    --silver-soft: #1f2730;
+    --bronze: #e09a70;
+    --bronze-soft: #33190c;
+    color-scheme: dark;
+  }
+}
+
+/* Torna as cores acima utilizáveis como classes do Tailwind (ex.: bg-brand, text-ink-3). */
+@theme inline {
+  --color-app: var(--app);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-deep: var(--deep);
+  --color-on-deep: var(--on-deep);
+  --color-on-deep-2: var(--on-deep-2);
+  --color-lime: var(--lime);
+  --color-lime-ink: var(--lime-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-bad: var(--bad);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-silver: var(--silver);
+  --color-silver-soft: var(--silver-soft);
+  --color-bronze: var(--bronze);
+  --color-bronze-soft: var(--bronze-soft);
+  --color-star: var(--star);
+  --color-av1: var(--av1);
+  --color-av2: var(--av2);
+  --color-av3: var(--av3);
+  --color-av4: var(--av4);
+  --color-av5: var(--av5);
+  --color-av6: var(--av6);
+  --font-sans: var(--font-figtree);
+  --font-display: var(--font-bricolage);
+}
+
+body {
+  background: var(--app);
+  color: var(--ink);
+  font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
