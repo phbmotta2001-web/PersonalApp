@@ -27,6 +27,5 @@ export default function PaginaPerfilAluno() {
 async function Conteudo() {
   const conta = await lerContaAtual();
   if (!conta) redirect("/entrar?voltar=/perfil");
-  // A "chave" recria o formulário quando a autorização de saúde muda.
-  return <FormPerfilAluno key={String(conta.consentimentoSaude)} conta={conta} />;
+  return <FormPerfilAluno conta={conta} />;
 }

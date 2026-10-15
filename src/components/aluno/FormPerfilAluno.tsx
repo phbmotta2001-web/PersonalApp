@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   darConsentimentoSaude,
@@ -16,6 +15,7 @@ import {
   NIVEIS_ALUNO,
   problemasDaSaude,
   problemasDoPerfil,
+  SAUDE_VAZIA,
   type ContaAluno,
   type DadosSaude,
   type PerfilEditavel,
@@ -74,14 +74,16 @@ const editavel = (c: ContaAluno): PerfilEditavel => ({
 const dataBr = (iso: string) => iso.split("-").reverse().join("/");
 
 export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
-  const router = useRouter();
   const [perfil, setPerfil] = useState(() => editavel(conta));
   const [perfilSalvo, setPerfilSalvo] = useState(() => editavel(conta));
   const [saude, setSaude] = useState(() => paraDigitada(conta.saude));
   const [saudeSalva, setSaudeSalva] = useState(() => paraDigitada(conta.saude));
   const [aviso, setAviso] = useState<{ tipo: "erro" | "ok"; texto: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
-  const { perfil: p, consentimentoSaude } = conta;
+  // Guardado aqui (e não relido do servidor) para abrir/fechar os campos de saúde na
+  // hora, sem perder o que já foi digitado no resto do perfil.
+  const [consentimentoSaude, setConsentimentoSaude] = useState(conta.consentimentoSaude);
+  const { perfil: p } = conta;
 
   const mudouPerfil = JSON.stringify(perfil) !== JSON.stringify(perfilSalvo);
   const mudouSaude = consentimentoSaude && JSON.stringify(saude) !== JSON.stringify(saudeSalva);
@@ -331,10 +333,18 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
                 />
               </Campo>
               <EmBreve titulo="Exames e laudos" texto="Ficam privados. Você escolhe compartilhar com o personal depois do aceite." />
-              <RetirarConsentimento aoRetirar={() => router.refresh()} />
+              <RetirarConsentimento
+                aoRetirar={() => {
+                  // O banco já apagou os dados de saúde; a tela acompanha.
+                  const vazia = paraDigitada(SAUDE_VAZIA);
+                  setSaude(vazia);
+                  setSaudeSalva(vazia);
+                  setConsentimentoSaude(false);
+                }}
+              />
             </>
           ) : (
-            <DarConsentimento aoDar={() => router.refresh()} />
+            <DarConsentimento aoDar={() => setConsentimentoSaude(true)} />
           )}
         </section>
 
@@ -449,26 +459,22 @@ function TrocarEmail({ emailAtual }: { emailAtual: string }) {
   );
 }
 
+/** Sem autorização, os campos de saúde ficam fechados. Clicar em "Li e autorizo" é o ato de autorizar. */
 function DarConsentimento({ aoDar }: { aoDar: () => void }) {
-  const [marcado, setMarcado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5">
-        <input
-          type="checkbox"
-          checked={marcado}
-          onChange={(e) => setMarcado(e.target.checked)}
-          className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
-        />
-        <span className="text-[13px] text-ink-2">{TEXTO_CONSENTIMENTO_SAUDE}</span>
-      </label>
+      <div className="rounded-2xl border border-line bg-surface p-3.5 text-[13px] text-ink-2">
+        <p className="font-bold text-ink">Para preencher estes dados, é preciso sua autorização.</p>
+        <p className="mt-1">Depois de autorizar, você pode preencher: restrições e limitações, peso, altura e outras medidas.</p>
+        <p className="mt-2 border-t border-line pt-2">{TEXTO_CONSENTIMENTO_SAUDE}</p>
+      </div>
       <Aviso>{erro}</Aviso>
       <button
         type="button"
-        disabled={!marcado || ocupado}
+        disabled={ocupado}
         onClick={() =>
           iniciar(async () => {
             const r = await darConsentimentoSaude();
@@ -478,7 +484,7 @@ function DarConsentimento({ aoDar }: { aoDar: () => void }) {
         }
         className={ESTILO_BOTAO_SECUNDARIO + " disabled:opacity-60"}
       >
-        {ocupado ? "Registrando…" : "Autorizar e preencher dados de saúde"}
+        {ocupado ? "Registrando…" : "Li e autorizo"}
       </button>
     </div>
   );
