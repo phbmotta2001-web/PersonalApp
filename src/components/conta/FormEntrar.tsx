@@ -23,7 +23,8 @@ export function FormEntrar() {
       try {
         const r = await entrar(email, senha);
         if (!r.ok) return setErro(r.erro);
-        router.replace(voltar);
+        // Sem página de volta pedida, cada tipo de conta vai para a sua área.
+        router.replace(parametros.get("voltar") ? voltar : r.tipo === "personal" ? "/agenda" : "/perfil");
         router.refresh();
       } catch {
         setErro("Não foi possível entrar agora. Confira sua internet e tente de novo.");
@@ -74,10 +75,11 @@ export function FormEntrar() {
       </button>
 
       <p className="text-center text-[13px] text-ink-3">
-        Ainda não tem conta?{" "}
-        <Link href={`/cadastro?voltar=${encodeURIComponent(voltar)}`} className="font-semibold text-brand">
-          Criar conta
+        É personal e ainda não tem conta?{" "}
+        <Link href="/cadastro" className="font-semibold text-brand">
+          Criar conta de personal
         </Link>
+        <span className="mt-1 block">Aluno: sua conta é criada pelo link de convite do seu personal.</span>
       </p>
     </form>
   );

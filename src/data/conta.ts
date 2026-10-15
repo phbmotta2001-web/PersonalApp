@@ -6,9 +6,10 @@
 
 import { redirect } from "next/navigation";
 import { problemasDoCadastro, type DadosCadastro } from "@/lib/aluno";
-import { VERSAO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import { VERSAO_CONSENTIMENTO_SAUDE, VERSAO_TERMO_CONFIDENCIALIDADE } from "@/lib/consentimento";
 import { destinoSeguro } from "@/lib/destino";
 import { frase } from "@/lib/formato";
+import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } from "@/lib/personal";
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
 
 export type Resposta = { ok: true } | { ok: false; erro: string };
@@ -54,12 +55,53 @@ export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<
   return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
 }
 
-export async function entrar(email: string, senha: string): Promise<Resposta> {
+/** Cadastro de PERSONAL (Fase 1). O banco cria a linha em "personais" (situação: em análise). */
+export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<Resposta> {
+  const problemas = problemasDoCadastroPersonal(dados);
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
+
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.auth.signUp({
+    email: dados.email.trim(),
+    password: dados.senha,
+    options: {
+      emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=/agenda`,
+      data: {
+        tipo_conta: "personal",
+        nome_completo: dados.nomeCompleto.trim(),
+        whatsapp: soDigitos(dados.whatsapp),
+        cref: dados.cref.trim().toUpperCase(),
+        cref_uf: dados.crefUf.trim().toUpperCase(),
+        termo_confidencialidade: VERSAO_TERMO_CONFIDENCIALIDADE,
+      },
+    },
+  });
+
+  // Por segurança, o Supabase não conta se o e-mail já tinha conta: a resposta é a mesma.
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
+export type TipoConta = "personal" | "aluno";
+
+/** Que tipo de conta está logada (ou null). Usado para levar cada um para a sua área. */
+export async function tipoDaConta(): Promise<TipoConta | null> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return null;
+  const { data } = await supabase.rpc("tipo_da_conta");
+  return data === "personal" || data === "aluno" ? data : null;
+}
+
+export async function entrar(
+  email: string,
+  senha: string,
+): Promise<{ ok: true; tipo: TipoConta | null } | { ok: false; erro: string }> {
   if (typeof email !== "string" || typeof senha !== "string" || !email.trim() || !senha)
     return { ok: false, erro: "Preencha e-mail e senha." };
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
-  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+  if (error) return { ok: false, erro: traduzirErro(error.message) };
+  const { data } = await supabase.rpc("tipo_da_conta");
+  return { ok: true, tipo: data === "personal" || data === "aluno" ? data : null };
 }
 
 export async function sair(): Promise<void> {

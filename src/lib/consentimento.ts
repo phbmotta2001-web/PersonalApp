@@ -10,6 +10,16 @@
 
 export const VERSAO_CONSENTIMENTO_SAUDE = "saude-v1-rascunho";
 
+// ─── Personal ─────────────────────────────────────────────────────────────
+// Aceito no cadastro do personal; a versão fica guardada na tabela "personais".
+export const VERSAO_TERMO_CONFIDENCIALIDADE = "confidencialidade-v1-rascunho";
+
+export const TEXTO_TERMO_CONFIDENCIALIDADE =
+  "Comprometo-me a usar os dados dos meus alunos, inclusive os de saúde (restrições, " +
+  "limitações, medidas), apenas para planejar e acompanhar os treinos deles, a não " +
+  "compartilhá-los com terceiros e a mantê-los em sigilo, também depois do fim do vínculo. " +
+  "Declaro que meu registro no CREF está ativo.";
+
 export const TEXTO_CONSENTIMENTO_SAUDE =
   "Autorizo o Pienel a guardar meus dados de saúde (restrições, limitações, peso, altura, " +
   "medidas e, no futuro, exames) para que personais avaliem meus pedidos e montem treinos " +

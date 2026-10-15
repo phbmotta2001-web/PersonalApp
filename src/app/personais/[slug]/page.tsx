@@ -11,6 +11,7 @@ import { SeloNivel } from "@/components/SeloNivel";
 import { buscarPersonal, listarPersonais, type Local } from "@/data/personais";
 import { DIAS_SEMANA, faixaDaAula, NOME_DIA } from "@/lib/agenda";
 import { formatarNota, formatarReais } from "@/lib/formato";
+import { MARKETPLACE_ATIVO } from "@/lib/recursos";
 
 const ICONE_DO_LOCAL: Record<Local, NomeIcone> = {
   casa: "casa",
@@ -20,6 +21,10 @@ const ICONE_DO_LOCAL: Record<Local, NomeIcone> = {
 };
 
 // Gera de antemão a página de perfil de cada personal.
+// Marketplace (Fase 2) desligado: a página responde "não encontrada", então o
+// pré-teste de navegação instantânea do Next.js não se aplica a ela.
+export const instant = false;
+
 export async function generateStaticParams() {
   const personais = await listarPersonais();
   return personais.map((p) => ({ slug: p.slug }));
@@ -34,6 +39,9 @@ export async function generateMetadata({
 }
 
 export default function PaginaPerfil({ params }: PageProps<"/personais/[slug]">) {
+  // Marketplace (Fase 2): desligado na Fase 1. Ver src/lib/recursos.ts.
+  if (!MARKETPLACE_ATIVO) notFound();
+
   // O endereço (slug) é lido dentro do bloco de carregamento, para a navegação não travar.
   return (
     <Suspense fallback={<Carregando />}>

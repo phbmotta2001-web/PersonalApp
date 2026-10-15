@@ -7,6 +7,7 @@ import { Cabecalho, Carregando } from "@/components/Formulario";
 import { buscarPersonal } from "@/data/personais";
 import { ordenarHorarios } from "@/lib/agenda";
 import { rotuloGenero, rotuloNivel, type Genero, type NivelAluno } from "@/lib/aluno";
+import { MARKETPLACE_ATIVO } from "@/lib/recursos";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 
 // PÁGINA DE TESTE — só existe enquanto o site roda com `npm run dev`.
@@ -14,10 +15,15 @@ import { usuarioAtual } from "@/lib/supabase/servidor";
 // (função perfil_para_personal do banco). Serve para conferir as regras de
 // privacidade enquanto as telas do personal não existem.
 
+// Marketplace (Fase 2) desligado: a página responde "não encontrada", então o
+// pré-teste de navegação instantânea do Next.js não se aplica a ela.
+export const instant = false;
+
 export const metadata: Metadata = { title: "Teste: o que o personal vê" };
 
 export default function PaginaVisaoPersonal() {
-  if (process.env.NODE_ENV !== "development") notFound();
+  // Só em desenvolvimento e com o marketplace (Fase 2) ligado. Ver src/lib/recursos.ts.
+  if (process.env.NODE_ENV !== "development" || !MARKETPLACE_ATIVO) notFound();
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">

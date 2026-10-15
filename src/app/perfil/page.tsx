@@ -5,6 +5,7 @@ import { FormPerfilAluno } from "@/components/aluno/FormPerfilAluno";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { lerContaAtual } from "@/data/alunos";
+import { tipoDaConta } from "@/data/conta";
 
 export const metadata: Metadata = {
   title: "Meu perfil",
@@ -26,6 +27,10 @@ export default function PaginaPerfilAluno() {
 
 async function Conteudo() {
   const conta = await lerContaAtual();
-  if (!conta) redirect("/entrar?voltar=/perfil");
+  if (!conta) {
+    // Personal logado vai para a área dele; ninguém logado vai para Entrar.
+    if ((await tipoDaConta()) === "personal") redirect("/agenda");
+    redirect("/entrar?voltar=/perfil");
+  }
   return <FormPerfilAluno conta={conta} />;
 }
