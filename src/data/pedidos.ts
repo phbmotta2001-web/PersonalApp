@@ -2,14 +2,15 @@
 
 // Pedidos feitos no botão "Tenho interesse". Roda só no servidor.
 // O pedido é gravado no Supabase pela função enviar_pedido do banco, que copia as
-// restrições do PERFIL guardado (nunca do navegador) e só se o aluno autorizar.
+// restrições declaradas do PERFIL guardado (nunca do navegador). Desde 14/10/2026
+// as restrições vão em todo pedido, e o aluno precisa confirmar que estão atualizadas.
 //
 // Ainda não existe o lado do personal nem o aviso por WhatsApp/e-mail: o pedido
 // fica guardado e pode ser visto em /dev/visao-personal (só no computador de quem
 // desenvolve). Quando existir, o WhatsApp leva só "Você recebeu um novo pedido,
 // abra o app" — nunca dados de saúde.
 
-import { perfilProntoParaPedido } from "@/lib/aluno";
+import { perfilProntoParaPedido, restricoesDeclaradas } from "@/lib/aluno";
 import { personalAtendeAluno } from "@/lib/filtros";
 import { juntarComE, maiuscula, tratamento } from "@/lib/formato";
 import { oQueFalta, type Pedido } from "@/lib/pedido";
@@ -22,7 +23,8 @@ export type SituacaoPedido =
   | { estado: "entrar" }
   | { estado: "completar-perfil" }
   | { estado: "nao-atende"; mensagem: string }
-  | { estado: "pronto"; consentimentoSaude: boolean; temRestricoes: boolean };
+  | { estado: "declarar-restricoes" }
+  | { estado: "pronto"; restricoes: string; declaradasEm: string };
 
 function avisoNaoAtende(personal: Personal): string {
   const t = tratamento(personal);
@@ -40,10 +42,12 @@ export async function situacaoParaPedido(slug: string): Promise<SituacaoPedido> 
   if (personal && !personalAtendeAluno(personal.publico, conta.perfil.genero))
     return { estado: "nao-atende", mensagem: avisoNaoAtende(personal) };
 
+  if (!restricoesDeclaradas(conta)) return { estado: "declarar-restricoes" };
+
   return {
     estado: "pronto",
-    consentimentoSaude: conta.consentimentoSaude,
-    temRestricoes: conta.consentimentoSaude && conta.saude.restricoes.trim().length > 0,
+    restricoes: conta.saude.restricoes.trim(),
+    declaradasEm: conta.saude.restricoesDeclaradasEm ?? "",
   };
 }
 
@@ -53,6 +57,8 @@ export async function enviarPedido(pedido: Pedido): Promise<Resposta> {
   if (!conta) return { ok: false, erro: "Entre na sua conta para enviar o pedido." };
   if (!perfilProntoParaPedido(conta.perfil))
     return { ok: false, erro: "Preencha seu objetivo e seu nível no perfil antes de enviar." };
+  if (!restricoesDeclaradas(conta))
+    return { ok: false, erro: "Declare suas restrições no perfil antes de enviar." };
 
   const personal = await buscarPersonal(pedido?.slug);
   if (!personal) return { ok: false, erro: "Este personal não foi encontrado." };
@@ -60,7 +66,7 @@ export async function enviarPedido(pedido: Pedido): Promise<Resposta> {
     return { ok: false, erro: avisoNaoAtende(personal) };
 
   const falta = oQueFalta(pedido, personal);
-  if (falta.length > 0) return { ok: false, erro: `Para enviar, escolha ${juntarComE(falta)}.` };
+  if (falta.length > 0) return { ok: false, erro: `Para enviar, falta: ${juntarComE(falta)}.` };
 
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.rpc("enviar_pedido", {
@@ -70,7 +76,7 @@ export async function enviarPedido(pedido: Pedido): Promise<Resposta> {
     p_periodos: pedido.periodos,
     p_locais: pedido.locais,
     p_mensagem: pedido.mensagem,
-    p_autorizar_restricoes: pedido.autorizarRestricoes,
+    p_confirmo_restricoes: pedido.confirmoRestricoes,
   });
 
   return error ? { ok: false, erro: "Não foi possível enviar o pedido. Tente de novo." } : { ok: true };

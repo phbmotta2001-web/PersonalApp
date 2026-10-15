@@ -11,11 +11,11 @@ import { Icone } from "../Icone";
 export function PedidoEnviado({
   personal,
   hora,
-  autorizouRestricoes,
+  semRestricoes,
 }: {
   personal: Personal;
   hora: string;
-  autorizouRestricoes: boolean;
+  semRestricoes: boolean;
 }) {
   const titulo = useRef<HTMLHeadingElement>(null);
   const t = tratamento(personal);
@@ -98,9 +98,9 @@ export function PedidoEnviado({
             </span>
             <div className="flex flex-col gap-1.5">
               <p>
-                {autorizouRestricoes
-                  ? `Você autorizou ${quem} a ver suas restrições para decidir este pedido.`
-                  : `Suas restrições não foram compartilhadas: ${quem} vê que você preferiu mostrá-las só depois do aceite.`}{" "}
+                {semRestricoes
+                  ? "Sua declaração de que não tem restrições vai junto com o pedido."
+                  : "Suas restrições e limitações vão junto com o pedido."}{" "}
                 Peso, altura, medidas, endereço e exames só aparecem se {t.pronome} aceitar.
               </p>
               <p>{AVISO_APAGAR_30_DIAS}</p>

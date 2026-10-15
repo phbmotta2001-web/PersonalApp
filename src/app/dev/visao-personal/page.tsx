@@ -41,8 +41,12 @@ type Visao = {
   nivel: NivelAluno | null;
   bairro: string | null;
   mensagem: string | null;
-  autorizou_restricoes: boolean;
   restricoes: string | null;
+  sem_restricoes: boolean | null;
+  restricoes_confirmadas_em: string | null;
+  dados_saude_apagados: boolean;
+  /** Só em pedidos do formato antigo (antes de 14/10/2026). */
+  autorizou_restricoes: boolean;
   nome_completo?: string;
   idade?: number;
   genero?: Genero | null;
@@ -105,15 +109,7 @@ async function Pedidos() {
               <Linha nome="Nível" valor={rotuloNivel(v.nivel)} />
               <Linha nome="Bairro" valor={v.bairro} />
               <Linha nome="Mensagem" valor={v.mensagem} />
-              <Linha
-                nome="Restrições"
-                valor={
-                  v.restricoes ??
-                  (v.autorizou_restricoes
-                    ? "Não informou restrições no perfil"
-                    : "Preferiu não compartilhar antes do aceite")
-                }
-              />
+              <Linha nome="Restrições" valor={textoRestricoes(v)} />
               {v.status === "aceito" ? (
                 <>
                   <Linha nome="Nome completo" valor={v.nome_completo} />
@@ -140,6 +136,17 @@ async function Pedidos() {
       ))}
     </ul>
   );
+}
+
+function textoRestricoes(v: Visao): string {
+  const quando = v.restricoes_confirmadas_em
+    ? ` (confirmado em ${new Date(v.restricoes_confirmadas_em).toLocaleDateString("pt-BR")})`
+    : "";
+  if (v.restricoes) return v.restricoes + quando;
+  if (v.sem_restricoes) return "Declarou não ter restrições" + quando;
+  if (v.dados_saude_apagados) return "Apagadas (pedido recusado ou expirado)";
+  if (v.restricoes_confirmadas_em) return "Aluno retirou a autorização dos dados de saúde";
+  return "Pedido antigo, de antes das restrições obrigatórias";
 }
 
 function Linha({ nome, valor }: { nome: string; valor: string | null | undefined }) {

@@ -36,7 +36,7 @@ export async function lerContaAtual(): Promise<ContaAluno | null> {
       .maybeSingle(),
     supabase
       .from("alunos_saude")
-      .select("restricoes, peso_kg, altura_cm, outras_medidas")
+      .select("restricoes, peso_kg, altura_cm, outras_medidas, restricoes_declaradas_em")
       .eq("aluno_id", id)
       .maybeSingle(),
     supabase
@@ -68,10 +68,12 @@ export async function lerContaAtual(): Promise<ContaAluno | null> {
     consentimentoSaude: !!consentimento.data,
     saude: s
       ? {
+          temRestricoes: s.restricoes_declaradas_em ? texto(s.restricoes).trim() !== "" : null,
           restricoes: texto(s.restricoes),
           pesoKg: numero(s.peso_kg),
           alturaCm: numero(s.altura_cm),
           outrasMedidas: texto(s.outras_medidas),
+          restricoesDeclaradasEm: s.restricoes_declaradas_em ? texto(s.restricoes_declaradas_em) : null,
         }
       : SAUDE_VAZIA,
   };
@@ -103,18 +105,37 @@ export async function salvarPerfil(dados: PerfilEditavel): Promise<Resposta> {
   return error ? { ok: false, erro: "Não foi possível salvar o perfil. Tente de novo." } : { ok: true };
 }
 
-export async function salvarSaude(dados: DadosSaude): Promise<Resposta> {
+export async function salvarSaude(
+  dados: DadosSaude,
+): Promise<{ ok: true; declaradasEm: string | null } | { ok: false; erro: string }> {
   const problemas = problemasDaSaude(dados);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
   const { supabase, id } = await usuarioAtual();
   if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
 
+  // A data da declaração só muda quando a resposta ou o texto das restrições mudam
+  // (mexer só no peso não conta como "atualizei minhas restrições").
+  const { data: atual } = await supabase
+    .from("alunos_saude")
+    .select("restricoes, restricoes_declaradas_em")
+    .eq("aluno_id", id)
+    .maybeSingle();
+  const restricoes = dados.temRestricoes ? dados.restricoes.trim() : "";
+  const declarouAntes = !!atual?.restricoes_declaradas_em;
+  const declaradasEm =
+    dados.temRestricoes === null
+      ? (atual?.restricoes_declaradas_em ?? null)
+      : !declarouAntes || atual?.restricoes !== restricoes
+        ? new Date().toISOString()
+        : atual.restricoes_declaradas_em;
+
   // Sem consentimento ativo, o próprio banco recusa a gravação.
   const { error } = await supabase.from("alunos_saude").upsert(
     {
       aluno_id: id,
-      restricoes: dados.restricoes.trim(),
+      restricoes,
+      restricoes_declaradas_em: declaradasEm,
       peso_kg: dados.pesoKg,
       altura_cm: dados.alturaCm,
       outras_medidas: dados.outrasMedidas.trim(),
@@ -124,7 +145,7 @@ export async function salvarSaude(dados: DadosSaude): Promise<Resposta> {
 
   return error
     ? { ok: false, erro: "Não foi possível salvar os dados de saúde. Confira se a autorização está ativa." }
-    : { ok: true };
+    : { ok: true, declaradasEm };
 }
 
 export async function darConsentimentoSaude(): Promise<Resposta> {

@@ -21,8 +21,8 @@ export function BotaoInteresse({ personal }: { personal: Personal }) {
   const [verificando, iniciar] = useTransition();
   const [aberta, setAberta] = useState(false);
   const [aviso, setAviso] = useState<Aviso | null>(null);
-  const [saude, setSaude] = useState({ consentimentoSaude: false, temRestricoes: false });
-  const [enviado, setEnviado] = useState<{ hora: string; autorizouRestricoes: boolean } | null>(null);
+  const [declaracao, setDeclaracao] = useState({ restricoes: "", declaradasEm: "" });
+  const [horaEnvio, setHoraEnvio] = useState<string | null>(null);
 
   function clicar() {
     iniciar(async () => {
@@ -36,6 +36,13 @@ export function BotaoInteresse({ personal }: { personal: Personal }) {
             texto: "O personal precisa saber seu objetivo e seu nível antes de responder um pedido.",
             link: { href: "/perfil", rotulo: "Abrir meu perfil" },
           });
+        } else if (s.estado === "declarar-restricoes") {
+          setAviso({
+            titulo: "Declare suas restrições",
+            texto:
+              "Todo pedido leva suas restrições e limitações (ou a declaração de que não tem nenhuma), para o personal treinar você com segurança. Responda no seu perfil, em Dados de saúde.",
+            link: { href: "/perfil", rotulo: "Abrir meu perfil" },
+          });
         } else if (s.estado === "nao-atende") {
           setAviso({
             titulo: "Este personal não atende o seu perfil",
@@ -43,7 +50,7 @@ export function BotaoInteresse({ personal }: { personal: Personal }) {
             link: { href: "/buscar", rotulo: "Ver outros personais" },
           });
         } else {
-          setSaude({ consentimentoSaude: s.consentimentoSaude, temRestricoes: s.temRestricoes });
+          setDeclaracao({ restricoes: s.restricoes, declaradasEm: s.declaradasEm });
           setAberta(true);
         }
       } catch {
@@ -67,15 +74,12 @@ export function BotaoInteresse({ personal }: { personal: Personal }) {
         <GavetaPedido
           personal={personal}
           aberta={aberta}
-          consentimentoSaude={saude.consentimentoSaude}
-          temRestricoes={saude.temRestricoes}
+          restricoes={declaracao.restricoes}
+          declaradasEm={declaracao.declaradasEm}
           aoFechar={() => setAberta(false)}
-          aoEnviar={(autorizouRestricoes) => {
+          aoEnviar={() => {
             setAberta(false);
-            setEnviado({
-              hora: new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
-              autorizouRestricoes,
-            });
+            setHoraEnvio(new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }));
           }}
         />
       )}
@@ -95,9 +99,7 @@ export function BotaoInteresse({ personal }: { personal: Personal }) {
         <p className="text-ink-2">{aviso?.texto}</p>
       </Gaveta>
 
-      {enviado && (
-        <PedidoEnviado personal={personal} hora={enviado.hora} autorizouRestricoes={enviado.autorizouRestricoes} />
-      )}
+      {horaEnvio && <PedidoEnviado personal={personal} hora={horaEnvio} semRestricoes={declaracao.restricoes === ""} />}
     </>
   );
 }

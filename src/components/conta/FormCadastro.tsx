@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrar } from "@/data/conta";
 import { GENEROS, LIMITES, problemasDoCadastro, type DadosCadastro } from "@/lib/aluno";
-import { TEXTO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import { AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO, TEXTO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
 import { destinoSeguro } from "@/lib/destino";
 import { frase } from "@/lib/formato";
 import { Chip } from "../Chip";
@@ -156,11 +156,9 @@ export function FormCadastro() {
           className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
         />
         <span className="text-[13px] text-ink-2">
-          <b className="block text-ink">Dados de saúde (opcional)</b>
+          <b className="block text-ink">Dados de saúde</b>
           {TEXTO_CONSENTIMENTO_SAUDE}
-          <span className="mt-1 block text-ink-3">
-            Sem esta autorização você usa o Pienel normalmente, mas não guarda restrições nem medidas.
-          </span>
+          <span className="mt-1 block text-ink-3">{AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO}</span>
         </span>
       </label>
 

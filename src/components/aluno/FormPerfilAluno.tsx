@@ -20,7 +20,11 @@ import {
   type DadosSaude,
   type PerfilEditavel,
 } from "@/lib/aluno";
-import { AVISO_RETIRAR_CONSENTIMENTO, TEXTO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import {
+  AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO,
+  AVISO_RETIRAR_CONSENTIMENTO,
+  TEXTO_CONSENTIMENTO_SAUDE,
+} from "@/lib/consentimento";
 import { frase } from "@/lib/formato";
 import { Avatar } from "../Avatar";
 import { Chip } from "../Chip";
@@ -35,6 +39,7 @@ import { Icone } from "../Icone";
 
 // Peso e altura são digitados como texto ("68,5") e viram número na hora de conferir/salvar.
 interface SaudeDigitada {
+  temRestricoes: boolean | null;
   restricoes: string;
   peso: string;
   altura: string;
@@ -42,6 +47,7 @@ interface SaudeDigitada {
 }
 
 const paraDigitada = (s: DadosSaude): SaudeDigitada => ({
+  temRestricoes: s.temRestricoes,
   restricoes: s.restricoes,
   peso: s.pesoKg?.toLocaleString("pt-BR") ?? "",
   altura: s.alturaCm?.toLocaleString("pt-BR") ?? "",
@@ -55,10 +61,12 @@ function paraNumero(texto: string): number | null {
 }
 
 const paraSaude = (s: SaudeDigitada): DadosSaude => ({
-  restricoes: s.restricoes,
+  temRestricoes: s.temRestricoes,
+  restricoes: s.temRestricoes ? s.restricoes : "",
   pesoKg: paraNumero(s.peso),
   alturaCm: paraNumero(s.altura),
   outrasMedidas: s.outrasMedidas,
+  restricoesDeclaradasEm: null, // definida pelo servidor
 });
 
 const editavel = (c: ContaAluno): PerfilEditavel => ({
@@ -83,6 +91,7 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
   // Guardado aqui (e não relido do servidor) para abrir/fechar os campos de saúde na
   // hora, sem perder o que já foi digitado no resto do perfil.
   const [consentimentoSaude, setConsentimentoSaude] = useState(conta.consentimentoSaude);
+  const [declaradasEm, setDeclaradasEm] = useState(conta.saude.restricoesDeclaradasEm);
   const { perfil: p } = conta;
 
   const mudouPerfil = JSON.stringify(perfil) !== JSON.stringify(perfilSalvo);
@@ -114,6 +123,7 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
           const r = await salvarSaude(paraSaude(saude));
           if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
           setSaudeSalva(saude);
+          setDeclaradasEm(r.declaradasEm);
         }
         setAviso({ tipo: "ok", texto: "Perfil salvo." });
       } catch {
@@ -280,25 +290,69 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
             <div>
               <h2 className="text-[17px] font-semibold">Dados de saúde</h2>
               <p className="text-[12.5px] text-ink-3">
-                As restrições só aparecem antes do aceite se você autorizar em cada pedido. Peso,
-                altura e medidas, só depois do aceite.
+                Suas restrições vão junto com todo pedido, para o personal treinar você com
+                segurança. Peso, altura e medidas, só depois do aceite.
               </p>
             </div>
           </div>
 
           {consentimentoSaude ? (
             <>
-              <Campo id="pf-restricoes" rotulo="Restrições e limitações" opcional>
-                <textarea
-                  id="pf-restricoes"
-                  rows={3}
-                  maxLength={LIMITES.restricoes}
-                  value={saude.restricoes}
-                  onChange={(e) => mudarSaude({ restricoes: e.target.value })}
-                  placeholder="Ex.: Dor lombar leve, liberada pelo ortopedista."
-                  className={`${ESTILO_CAIXA} min-h-[84px] resize-none py-3`}
-                />
-              </Campo>
+              <fieldset className="flex flex-col gap-[7px]">
+                <legend className="mb-[7px] text-[13px] font-bold text-ink-2">
+                  Você tem alguma restrição ou limitação física ou de saúde?
+                </legend>
+                <div role="radiogroup" aria-label="Você tem alguma restrição?" className="grid grid-cols-2 gap-2">
+                  {[
+                    { valor: false, rotulo: "Não tenho" },
+                    { valor: true, rotulo: "Sim, tenho" },
+                  ].map((o) => {
+                    const ativo = saude.temRestricoes === o.valor;
+                    return (
+                      <button
+                        key={o.rotulo}
+                        type="button"
+                        role="radio"
+                        aria-checked={ativo}
+                        onClick={() =>
+                          mudarSaude({ temRestricoes: o.valor, restricoes: o.valor ? saude.restricoes : "" })
+                        }
+                        className={`flex min-h-12 items-center justify-center gap-2 rounded-[13px] border-[1.5px] bg-surface text-sm font-bold ${
+                          ativo ? "border-brand text-ink" : "border-line text-ink-2"
+                        }`}
+                      >
+                        <span
+                          className={`grid size-[18px] place-items-center rounded-full border-2 ${
+                            ativo ? "border-brand" : "border-line"
+                          }`}
+                        >
+                          {ativo && <span className="size-[9px] rounded-full bg-brand" />}
+                        </span>
+                        {o.rotulo}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-ink-3">
+                  {declaradasEm
+                    ? `Declaração atualizada em ${new Date(declaradasEm).toLocaleDateString("pt-BR")}.`
+                    : "Obrigatório para enviar pedidos."}
+                </p>
+              </fieldset>
+
+              {saude.temRestricoes && (
+                <Campo id="pf-restricoes" rotulo="Descreva suas restrições e limitações">
+                  <textarea
+                    id="pf-restricoes"
+                    rows={3}
+                    maxLength={LIMITES.restricoes}
+                    value={saude.restricoes}
+                    onChange={(e) => mudarSaude({ restricoes: e.target.value })}
+                    placeholder="Ex.: Dor lombar leve, liberada pelo ortopedista."
+                    className={`${ESTILO_CAIXA} min-h-[84px] resize-none py-3`}
+                  />
+                </Campo>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <Campo id="pf-peso" rotulo="Peso (kg)" opcional>
                   <input
@@ -340,6 +394,7 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
                   setSaude(vazia);
                   setSaudeSalva(vazia);
                   setConsentimentoSaude(false);
+                  setDeclaradasEm(null);
                 }}
               />
             </>
@@ -469,6 +524,7 @@ function DarConsentimento({ aoDar }: { aoDar: () => void }) {
       <div className="rounded-2xl border border-line bg-surface p-3.5 text-[13px] text-ink-2">
         <p className="font-bold text-ink">Para preencher estes dados, é preciso sua autorização.</p>
         <p className="mt-1">Depois de autorizar, você pode preencher: restrições e limitações, peso, altura e outras medidas.</p>
+        <p className="mt-1">{AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO}</p>
         <p className="mt-2 border-t border-line pt-2">{TEXTO_CONSENTIMENTO_SAUDE}</p>
       </div>
       <Aviso>{erro}</Aviso>

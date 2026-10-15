@@ -11,9 +11,10 @@ export const LIMITE_MENSAGEM = 200;
 
 /**
  * O que o aluno preenche ao clicar em "Tenho interesse".
- * Primeiro nome, objetivo, nível e bairro vêm do perfil guardado no banco. As
- * restrições só vão junto se o aluno marcar `autorizarRestricoes` (opcional), e a
- * cópia é feita pelo próprio banco, a partir do perfil (função enviar_pedido).
+ * Primeiro nome, objetivo, nível, bairro e as restrições declaradas vêm do perfil
+ * guardado no banco. As restrições vão em TODO pedido (obrigatório desde 14/10/2026);
+ * o aluno só confirma que estão atualizadas (`confirmoRestricoes`). A cópia é feita
+ * pelo próprio banco, a partir do perfil (função enviar_pedido).
  */
 export interface Pedido {
   slug: string;
@@ -22,7 +23,7 @@ export interface Pedido {
   periodos: Periodo[];
   locais: Local[];
   mensagem: string;
-  autorizarRestricoes: boolean;
+  confirmoRestricoes: boolean;
 }
 
 function listaValida<T>(valor: unknown, permitidos: readonly T[]): valor is T[] {
@@ -46,7 +47,7 @@ export function oQueFalta(pedido: Pedido, personal: Personal): string[] {
   if (!listaValida(pedido.locais, personal.locais)) falta.push("um local");
   if (typeof pedido.mensagem !== "string" || pedido.mensagem.length > LIMITE_MENSAGEM)
     falta.push(`uma mensagem com até ${LIMITE_MENSAGEM} caracteres`);
-  if (typeof pedido.autorizarRestricoes !== "boolean") falta.push("a opção de restrições");
+  if (pedido.confirmoRestricoes !== true) falta.push("a confirmação das suas restrições");
 
   return falta;
 }

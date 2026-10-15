@@ -64,10 +64,17 @@ export type PerfilEditavel = Pick<
 >;
 
 export interface DadosSaude {
+  /**
+   * Declaração obrigatória para enviar pedidos: true = tem restrições (descritas em
+   * `restricoes`), false = declarou não ter, null = ainda não declarou.
+   */
+  temRestricoes: boolean | null;
   restricoes: string;
   pesoKg: number | null;
   alturaCm: number | null;
   outrasMedidas: string;
+  /** Quando declarou ou atualizou as restrições (só leitura, vem do banco). */
+  restricoesDeclaradasEm: string | null;
 }
 
 export interface ContaAluno {
@@ -76,7 +83,19 @@ export interface ContaAluno {
   saude: DadosSaude;
 }
 
-export const SAUDE_VAZIA: DadosSaude = { restricoes: "", pesoKg: null, alturaCm: null, outrasMedidas: "" };
+export const SAUDE_VAZIA: DadosSaude = {
+  temRestricoes: null,
+  restricoes: "",
+  pesoKg: null,
+  alturaCm: null,
+  outrasMedidas: "",
+  restricoesDeclaradasEm: null,
+};
+
+/** Pode enviar pedidos: autorizou os dados de saúde e já declarou as restrições. */
+export function restricoesDeclaradas(conta: Pick<ContaAluno, "consentimentoSaude" | "saude">): boolean {
+  return conta.consentimentoSaude && conta.saude.restricoesDeclaradasEm !== null;
+}
 
 export function rotuloNivel(nivel: NivelAluno | null): string {
   return NIVEIS_ALUNO.find((n) => n.valor === nivel)?.rotulo ?? "Não informado";
@@ -168,6 +187,12 @@ const numeroOuVazio = (v: unknown, f: { min: number; max: number }) =>
 
 export function problemasDaSaude(d: Partial<DadosSaude> | null | undefined): string[] {
   const problemas: string[] = [];
+  if (d?.temRestricoes !== null && typeof d?.temRestricoes !== "boolean")
+    problemas.push("responda se você tem restrições");
+  else if (d?.temRestricoes === true && (texto(d.restricoes) ?? "").length < 3)
+    problemas.push("descreva suas restrições e limitações");
+  else if (d?.temRestricoes !== true && (texto(d?.restricoes) ?? "") !== "")
+    problemas.push("marque que tem restrições para descrevê-las");
   conferirTexto(problemas, d?.restricoes, LIMITES.restricoes, "as restrições");
   if (!numeroOuVazio(d?.pesoKg, LIMITES.peso))
     problemas.push(`informe um peso entre ${LIMITES.peso.min} e ${LIMITES.peso.max} kg`);
