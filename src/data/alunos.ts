@@ -15,7 +15,7 @@ import {
   type NivelAluno,
   type PerfilEditavel,
 } from "@/lib/aluno";
-import { VERSAO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import { VERSAO_CONSENTIMENTO_SAUDE, VERSAO_CONSENTIMENTO_WHATSAPP } from "@/lib/consentimento";
 import { frase } from "@/lib/formato";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 import type { Resposta } from "./conta";
@@ -28,10 +28,10 @@ export async function lerContaAtual(): Promise<ContaAluno | null> {
   const { supabase, id, email } = await usuarioAtual();
   if (!id) return null;
 
-  const [aluno, saude, consentimento] = await Promise.all([
+  const [aluno, saude, consentimentos] = await Promise.all([
     supabase
       .from("alunos")
-      .select("nome_completo, data_nascimento, genero, objetivo, nivel, cep, endereco, bairro, cidade")
+      .select("nome_completo, data_nascimento, genero, objetivo, nivel, cep, endereco, bairro, cidade, whatsapp")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -39,14 +39,9 @@ export async function lerContaAtual(): Promise<ContaAluno | null> {
       .select("restricoes, peso_kg, altura_cm, outras_medidas, restricoes_declaradas_em")
       .eq("aluno_id", id)
       .maybeSingle(),
-    supabase
-      .from("consentimentos")
-      .select("id")
-      .eq("aluno_id", id)
-      .eq("tipo", "dados_saude")
-      .is("revogado_em", null)
-      .maybeSingle(),
+    supabase.from("consentimentos").select("tipo").eq("aluno_id", id).is("revogado_em", null),
   ]);
+  const ativos = new Set((consentimentos.data ?? []).map((c) => c.tipo));
 
   const a = aluno.data;
   if (aluno.error || !a) return null;
@@ -64,8 +59,10 @@ export async function lerContaAtual(): Promise<ContaAluno | null> {
       endereco: texto(a.endereco),
       bairro: texto(a.bairro),
       cidade: texto(a.cidade),
+      whatsapp: texto(a.whatsapp),
     },
-    consentimentoSaude: !!consentimento.data,
+    consentimentoSaude: ativos.has("dados_saude"),
+    avisosWhatsapp: ativos.has("whatsapp") && !!a.whatsapp,
     saude: s
       ? {
           temRestricoes: s.restricoes_declaradas_em ? texto(s.restricoes).trim() !== "" : null,
@@ -98,6 +95,7 @@ export async function salvarPerfil(dados: PerfilEditavel): Promise<Resposta> {
       cep: vazioViraNulo(dados.cep),
       endereco: vazioViraNulo(dados.endereco),
       bairro: vazioViraNulo(dados.bairro),
+      whatsapp: vazioViraNulo(dados.whatsapp.replace(/\D/g, "")),
       cidade: vazioViraNulo(dados.cidade),
     })
     .eq("id", id);
@@ -175,4 +173,33 @@ export async function retirarConsentimentoSaude(): Promise<Resposta> {
     .is("revogado_em", null);
 
   return error ? { ok: false, erro: "Não foi possível retirar a autorização. Tente de novo." } : { ok: true };
+}
+
+/**
+ * Liga ou desliga os avisos por WhatsApp (consentimento tipo "whatsapp", com versão e
+ * data). Ligar exige número informado no perfil.
+ */
+export async function definirAvisosWhatsapp(querAvisos: boolean): Promise<Resposta> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+
+  if (querAvisos) {
+    const { data: aluno } = await supabase.from("alunos").select("whatsapp").eq("id", id).maybeSingle();
+    if (!aluno?.whatsapp) return { ok: false, erro: "Informe o WhatsApp para receber os avisos." };
+    const { error } = await supabase
+      .from("consentimentos")
+      .insert({ aluno_id: id, tipo: "whatsapp", versao_texto: VERSAO_CONSENTIMENTO_WHATSAPP });
+    // 23505 = já estava ligado.
+    return error && error.code !== "23505"
+      ? { ok: false, erro: "Não foi possível ligar os avisos. Tente de novo." }
+      : { ok: true };
+  }
+
+  const { error } = await supabase
+    .from("consentimentos")
+    .update({ revogado_em: new Date().toISOString() })
+    .eq("aluno_id", id)
+    .eq("tipo", "whatsapp")
+    .is("revogado_em", null);
+  return error ? { ok: false, erro: "Não foi possível desligar os avisos. Tente de novo." } : { ok: true };
 }

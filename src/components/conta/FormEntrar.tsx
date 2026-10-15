@@ -24,7 +24,7 @@ export function FormEntrar() {
         const r = await entrar(email, senha);
         if (!r.ok) return setErro(r.erro);
         // Sem página de volta pedida, cada tipo de conta vai para a sua área.
-        router.replace(parametros.get("voltar") ? voltar : r.tipo === "personal" ? "/agenda" : "/perfil");
+        router.replace(parametros.get("voltar") ? voltar : r.tipo === "personal" ? "/agenda" : "/aluno");
         router.refresh();
       } catch {
         setErro("Não foi possível entrar agora. Confira sua internet e tente de novo.");

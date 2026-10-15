@@ -40,6 +40,10 @@ volume cobrado pelo app, para levar números a um investidor.
 | 7 | Entrada do aluno | **E-mail e senha** (o que já existe). |
 | 8 | CREF | **Sem conferência na Fase 1** (sem captação): a conta nasce liberada. Volta na Fase 2. |
 | 9 | Horários padrão | **Todos os dias ligados** (06:00–21:00); o personal desliga os que não trabalha. |
+| 10 | Convite | **Link individual por aluno**, válido por **14 dias**, um aluno por link. Na Fase 2: link único do personal, para divulgar em redes sociais e captar alunos. |
+| 11 | WhatsApp do aluno | **Opcional** (idosos, estrangeiros, quem não quer mensagens). Caixa "Quero receber notificações do meu treino e avisos via WhatsApp" no cadastro e no perfil. Sem número, sem avisos por lá. |
+| 12 | Perfil completo | Obrigatório para o vínculo ficar ativo: objetivo, nível, autorização de saúde e declaração de restrições. |
+| 13 | Excluir conta | Aluno e personal podem excluir a própria conta, confirmando com a senha. Hoje a exclusão é completa; quando houver cobranças, registros financeiros podem precisar ser guardados (apagando os dados pessoais). |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -95,7 +99,7 @@ volume cobrado pelo app, para levar números a um investidor.
 |---|---|---|
 | 0 | Preparação: marketplace desligado, conta de personal, página inicial nova | pronta (15/10) |
 | 1 | Horários de trabalho e bloqueios (seg–dom, de 30 em 30 min, duração padrão 30/45/60/90) | pronta (15/10) |
-| 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal | — |
+| 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal; excluir conta | pronta (15/10) |
 | 3 | Matrículas e aulas fixas na agenda da semana e do dia | — |
 | 4 | App no celular (PWA) | — |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição; menores adicionados à mão | — |

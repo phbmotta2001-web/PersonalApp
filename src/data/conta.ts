@@ -6,7 +6,11 @@
 
 import { redirect } from "next/navigation";
 import { problemasDoCadastro, type DadosCadastro } from "@/lib/aluno";
-import { VERSAO_CONSENTIMENTO_SAUDE, VERSAO_TERMO_CONFIDENCIALIDADE } from "@/lib/consentimento";
+import {
+  VERSAO_CONSENTIMENTO_SAUDE,
+  VERSAO_CONSENTIMENTO_WHATSAPP,
+  VERSAO_TERMO_CONFIDENCIALIDADE,
+} from "@/lib/consentimento";
 import { destinoSeguro } from "@/lib/destino";
 import { frase } from "@/lib/formato";
 import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } from "@/lib/personal";
@@ -47,6 +51,8 @@ export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<
         data_nascimento: dados.dataNascimento,
         genero: dados.genero ?? "",
         consentimento_saude_versao: dados.consentimentoSaude ? VERSAO_CONSENTIMENTO_SAUDE : "",
+        whatsapp: soDigitos(dados.whatsapp ?? ""),
+        consentimento_whatsapp_versao: dados.avisosWhatsapp ? VERSAO_CONSENTIMENTO_WHATSAPP : "",
       },
     },
   });
@@ -123,4 +129,24 @@ export async function trocarEmail(novoEmail: string): Promise<Resposta> {
     { emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=/perfil` },
   );
   return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
+/**
+ * Exclui a conta de quem está logado (aluno ou personal), depois de conferir a senha
+ * de novo, para ninguém apagar a conta de outra pessoa com o celular dela aberto.
+ * O banco apaga em cascata tudo o que é da conta (função excluir_minha_conta).
+ */
+export async function excluirConta(senha: string): Promise<Resposta> {
+  const { supabase, id, email } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+  if (typeof senha !== "string" || !senha) return { ok: false, erro: "Digite sua senha para confirmar." };
+
+  const conferencia = await supabase.auth.signInWithPassword({ email, password: senha });
+  if (conferencia.error) return { ok: false, erro: "Senha incorreta." };
+
+  const { error } = await supabase.rpc("excluir_minha_conta");
+  if (error) return { ok: false, erro: "Não foi possível excluir a conta agora. Tente de novo." };
+
+  await supabase.auth.signOut();
+  return { ok: true };
 }

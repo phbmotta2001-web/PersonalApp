@@ -62,9 +62,9 @@ async function MenuConta() {
   if (tipo === "aluno")
     return (
       <div className="flex flex-col gap-3">
-        <Link href="/perfil" className={principal}>
+        <Link href="/aluno" className={principal}>
           <Icone nome="usuario" />
-          Meu perfil
+          Abrir minha área
         </Link>
         {/* Cada e-mail é aluno OU personal: para criar a conta de personal, é preciso sair desta. */}
         <form action={sair} className="text-center text-[13px] text-ink-3">

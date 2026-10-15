@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import {
   darConsentimentoSaude,
+  definirAvisosWhatsapp,
   retirarConsentimentoSaude,
   salvarPerfil,
   salvarSaude,
@@ -15,15 +17,18 @@ import {
   NIVEIS_ALUNO,
   problemasDaSaude,
   problemasDoPerfil,
+  problemasDoWhatsapp,
   SAUDE_VAZIA,
   type ContaAluno,
   type DadosSaude,
   type PerfilEditavel,
 } from "@/lib/aluno";
 import {
+  AJUDA_CONSENTIMENTO_WHATSAPP,
   AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO,
   AVISO_RETIRAR_CONSENTIMENTO,
   TEXTO_CONSENTIMENTO_SAUDE,
+  TEXTO_CONSENTIMENTO_WHATSAPP,
 } from "@/lib/consentimento";
 import { frase } from "@/lib/formato";
 import { Avatar } from "../Avatar";
@@ -77,11 +82,16 @@ const editavel = (c: ContaAluno): PerfilEditavel => ({
   endereco: c.perfil.endereco,
   bairro: c.perfil.bairro,
   cidade: c.perfil.cidade,
+  whatsapp: c.perfil.whatsapp,
 });
 
 const dataBr = (iso: string) => iso.split("-").reverse().join("/");
 
-export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
+/**
+ * `voltar`: quando o aluno veio de um convite (ex.: /convite/abc…), aparece o botão
+ * "Voltar ao convite" assim que o perfil fica completo.
+ */
+export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?: string }) {
   const [perfil, setPerfil] = useState(() => editavel(conta));
   const [perfilSalvo, setPerfilSalvo] = useState(() => editavel(conta));
   const [saude, setSaude] = useState(() => paraDigitada(conta.saude));
@@ -92,14 +102,24 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
   // hora, sem perder o que já foi digitado no resto do perfil.
   const [consentimentoSaude, setConsentimentoSaude] = useState(conta.consentimentoSaude);
   const [declaradasEm, setDeclaradasEm] = useState(conta.saude.restricoesDeclaradasEm);
+  const [avisos, setAvisos] = useState(conta.avisosWhatsapp);
+  const [avisosSalvo, setAvisosSalvo] = useState(conta.avisosWhatsapp);
   const { perfil: p } = conta;
 
   const mudouPerfil = JSON.stringify(perfil) !== JSON.stringify(perfilSalvo);
   const mudouSaude = consentimentoSaude && JSON.stringify(saude) !== JSON.stringify(saudeSalva);
+  const mudouAvisos = avisos !== avisosSalvo;
+  const mudouAlgo = mudouPerfil || mudouSaude || mudouAvisos;
   const problemas = [
-    ...problemasDoPerfil(perfil),
-    ...(consentimentoSaude ? problemasDaSaude(paraSaude(saude)) : []),
+    ...new Set([
+      ...problemasDoPerfil(perfil),
+      ...problemasDoWhatsapp(perfil.whatsapp, avisos),
+      ...(consentimentoSaude ? problemasDaSaude(paraSaude(saude)) : []),
+    ]),
   ];
+  // Completo com o que já está SALVO (é o que o banco confere ao aceitar um convite).
+  const completo =
+    perfilSalvo.objetivo.trim() !== "" && perfilSalvo.nivel !== null && consentimentoSaude && declaradasEm !== null;
 
   const mudarPerfil = (parte: Partial<PerfilEditavel>) => {
     setAviso(null);
@@ -118,6 +138,11 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
           const r = await salvarPerfil(perfil);
           if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
           setPerfilSalvo(perfil);
+        }
+        if (mudouAvisos) {
+          const r = await definirAvisosWhatsapp(avisos);
+          if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+          setAvisosSalvo(avisos);
         }
         if (mudouSaude) {
           const r = await salvarSaude(paraSaude(saude));
@@ -142,8 +167,38 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
         </div>
 
         {/* ── Conta ── */}
-        <Bloco titulo="Sua conta" descricao="O personal nunca vê seu e-mail nem sua data de nascimento.">
+        <Bloco
+          titulo="Sua conta"
+          descricao="Seus personais veem o seu perfil, mas nunca seu e-mail nem sua data de nascimento (só a idade)."
+        >
           <TrocarEmail emailAtual={p.email} />
+          <Campo id="pf-whatsapp" rotulo="WhatsApp" opcional ajuda="Com DDD. Sem número, você não recebe avisos por WhatsApp.">
+            <input
+              id="pf-whatsapp"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="(21) 99999-0000"
+              value={perfil.whatsapp}
+              onChange={(e) => mudarPerfil({ whatsapp: e.target.value })}
+              className={ESTILO_CAIXA}
+            />
+          </Campo>
+          <label className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5">
+            <input
+              type="checkbox"
+              checked={avisos}
+              onChange={(e) => {
+                setAviso(null);
+                setAvisos(e.target.checked);
+              }}
+              className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
+            />
+            <span className="text-[13px] text-ink-2">
+              <b className="block text-ink">{TEXTO_CONSENTIMENTO_WHATSAPP}</b>
+              {AJUDA_CONSENTIMENTO_WHATSAPP}
+            </span>
+          </label>
           <Campo id="pf-nome" rotulo="Nome completo">
             <input id="pf-nome" value={p.nomeCompleto} disabled className={ESTILO_CAIXA} />
           </Campo>
@@ -158,8 +213,8 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
 
         {/* ── Antes do aceite ── */}
         <Bloco
-          titulo="O personal vê ao receber seu pedido"
-          descricao="Junto com seu primeiro nome."
+          titulo="Seu treino"
+          descricao="Objetivo e nível são obrigatórios para treinar com um personal pelo Pienel."
         >
           <Campo id="pf-objetivo" rotulo="Objetivo">
             <textarea
@@ -221,8 +276,8 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
 
         {/* ── Depois do aceite ── */}
         <Bloco
-          titulo="O personal vê só depois de aceitar"
-          descricao="Endereço para treinos em casa, gênero e, abaixo, seus dados de saúde."
+          titulo="Gênero e endereço"
+          descricao="O endereço serve para treinos na sua casa."
         >
           <fieldset className="flex flex-col gap-[7px]">
             <legend className="mb-[7px] text-[13px] font-bold text-ink-2">
@@ -290,8 +345,8 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
             <div>
               <h2 className="text-[17px] font-semibold">Dados de saúde</h2>
               <p className="text-[12.5px] text-ink-3">
-                Suas restrições vão junto com todo pedido, para o personal treinar você com
-                segurança. Peso, altura e medidas, só depois do aceite.
+                Seus personais veem estes dados para treinar você com segurança. A declaração de
+                restrições é obrigatória para treinar com um personal pelo Pienel.
               </p>
             </div>
           </div>
@@ -406,24 +461,31 @@ export function FormPerfilAluno({ conta }: { conta: ContaAluno }) {
         <button type="button" onClick={() => sair()} className={ESTILO_BOTAO_SECUNDARIO}>
           Sair da conta
         </button>
+        <Link href="/conta/excluir" className="self-center text-[13px] font-semibold text-bad">
+          Excluir minha conta
+        </Link>
       </div>
 
       <div className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t border-line bg-surface px-[18px] pt-3 pb-3.5">
-        <button
-          type="submit"
-          disabled={(!mudouPerfil && !mudouSaude) || problemas.length > 0 || ocupado}
-          className={ESTILO_BOTAO_PRINCIPAL}
-        >
-          {ocupado ? "Salvando…" : "Salvar"}
-        </button>
+        {voltar && completo && !mudouAlgo ? (
+          <Link href={voltar} className={ESTILO_BOTAO_PRINCIPAL}>
+            Perfil completo: voltar ao convite
+          </Link>
+        ) : (
+          <button type="submit" disabled={!mudouAlgo || problemas.length > 0 || ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
+            {ocupado ? "Salvando…" : "Salvar"}
+          </button>
+        )}
         <p aria-live="polite" className="min-h-4 text-center text-xs text-ink-3">
           {problemas.length > 0
             ? `Para salvar: ${frase(problemas)}`
-            : aviso && !(aviso.tipo === "ok" && (mudouPerfil || mudouSaude))
+            : aviso && !(aviso.tipo === "ok" && mudouAlgo)
               ? aviso.texto
-              : mudouPerfil || mudouSaude
+              : mudouAlgo
                 ? "Você tem alterações não salvas."
-                : ""}
+                : voltar && !completo
+                  ? "Para aceitar o convite, complete objetivo, nível e a declaração de restrições."
+                  : ""}
         </p>
       </div>
     </form>

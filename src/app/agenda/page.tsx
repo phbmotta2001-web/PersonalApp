@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { sair } from "@/data/conta";
+import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { curtoDoDia, dataCurta, horariosLivres, minParaHora } from "@/lib/expediente";
@@ -25,7 +26,9 @@ export default function PaginaAgenda() {
 
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
-  const [expediente, bloqueios] = await Promise.all([lerExpediente(), listarBloqueios()]);
+  const [expediente, bloqueios, alunos] = await Promise.all([lerExpediente(), listarBloqueios(), listarMeusAlunos()]);
+  const ativos = alunos.filter((a) => a.situacao === "ativo").length;
+  const aguardando = alunos.filter((a) => a.situacao === "convidado").length;
   const faixas = expediente?.faixas ?? [];
   const duracao = expediente?.duracao ?? 60;
   const semana = horariosLivres(faixas, bloqueios, duracao, 7);
@@ -44,6 +47,23 @@ async function Conteudo() {
           <p className="mt-1">Fale com a equipe do Pienel.</p>
         </section>
       )}
+
+      <Link
+        href="/agenda/alunos"
+        className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-3.5 hover:border-brand"
+      >
+        <span className="grid size-9 place-items-center rounded-full bg-brand-soft text-brand">
+          <Icone nome="usuario" className="size-[18px]" />
+        </span>
+        <span className="flex-1">
+          <span className="block text-sm font-bold">Alunos</span>
+          <span className="block text-xs text-ink-3">
+            {ativos === 0 ? "Convide seus alunos por link" : `${ativos} ${ativos === 1 ? "aluno ativo" : "alunos ativos"}`}
+            {aguardando > 0 && ` · ${aguardando} convite${aguardando > 1 ? "s" : ""} aguardando`}
+          </span>
+        </span>
+        <span className="text-ink-3" aria-hidden="true">›</span>
+      </Link>
 
       <nav className="grid grid-cols-2 gap-3" aria-label="Configurar agenda">
         <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários de trabalho" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
@@ -92,7 +112,6 @@ async function Conteudo() {
       <section className="rounded-[20px] border border-line bg-surface p-4">
         <h2 className="text-[15px] font-semibold">O que vem por aí</h2>
         <ul className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink-2">
-          <li>Convidar alunos por link e ver o cadastro de cada um</li>
           <li>Aulas fixas na agenda da semana e do dia</li>
           <li>Remarcações e reposições feitas pelo próprio aluno</li>
           <li>Mensalidades, atrasos e lembretes por WhatsApp</li>
@@ -113,6 +132,9 @@ async function Conteudo() {
           Sair da conta
         </button>
       </form>
+      <Link href="/conta/excluir" className="self-center text-[13px] font-semibold text-bad">
+        Excluir minha conta
+      </Link>
     </div>
   );
 }

@@ -5,7 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrar } from "@/data/conta";
 import { GENEROS, LIMITES, problemasDoCadastro, type DadosCadastro } from "@/lib/aluno";
-import { AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO, TEXTO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import {
+  AJUDA_CONSENTIMENTO_WHATSAPP,
+  AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO,
+  TEXTO_CONSENTIMENTO_SAUDE,
+  TEXTO_CONSENTIMENTO_WHATSAPP,
+} from "@/lib/consentimento";
 import { destinoSeguro } from "@/lib/destino";
 import { frase } from "@/lib/formato";
 import { Chip } from "../Chip";
@@ -18,6 +23,8 @@ const VAZIO: DadosCadastro = {
   dataNascimento: "",
   genero: null,
   consentimentoSaude: false,
+  whatsapp: "",
+  avisosWhatsapp: false,
 };
 
 /** Hoje menos 18 anos, no formato AAAA-MM-DD (limite do campo de data). */
@@ -27,8 +34,12 @@ function dataMaxima(): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function FormCadastro() {
-  const voltar = destinoSeguro(useSearchParams().get("voltar"));
+/**
+ * Cadastro do ALUNO. Na Fase 1 aparece dentro da página do convite (`voltar` = o próprio
+ * convite), para o aluno voltar a ele depois de confirmar o e-mail.
+ */
+export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {}) {
+  const voltar = destinoSeguro(useSearchParams().get("voltar") ?? voltarPadrao);
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -110,6 +121,32 @@ export function FormCadastro() {
           className={ESTILO_CAIXA}
         />
       </Campo>
+
+      <Campo id="cad-whatsapp" rotulo="WhatsApp" opcional ajuda="Com DDD. Sem número, você não recebe avisos por WhatsApp.">
+        <input
+          id="cad-whatsapp"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="(21) 99999-0000"
+          value={dados.whatsapp}
+          onChange={(e) => mudar({ whatsapp: e.target.value })}
+          className={ESTILO_CAIXA}
+        />
+      </Campo>
+
+      <label className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5">
+        <input
+          type="checkbox"
+          checked={dados.avisosWhatsapp}
+          onChange={(e) => mudar({ avisosWhatsapp: e.target.checked })}
+          className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
+        />
+        <span className="text-[13px] text-ink-2">
+          <b className="block text-ink">{TEXTO_CONSENTIMENTO_WHATSAPP}</b>
+          {AJUDA_CONSENTIMENTO_WHATSAPP}
+        </span>
+      </label>
 
       <Campo
         id="cad-nascimento"

@@ -55,12 +55,14 @@ export interface PerfilAluno {
   endereco: string;
   bairro: string;
   cidade: string;
+  /** Opcional ("" = não informado). Só números, com DDD. */
+  whatsapp: string;
 }
 
 /** O que o aluno pode mudar a qualquer momento na tela "Meu perfil". */
 export type PerfilEditavel = Pick<
   PerfilAluno,
-  "genero" | "objetivo" | "nivel" | "cep" | "endereco" | "bairro" | "cidade"
+  "genero" | "objetivo" | "nivel" | "cep" | "endereco" | "bairro" | "cidade" | "whatsapp"
 >;
 
 export interface DadosSaude {
@@ -80,6 +82,8 @@ export interface DadosSaude {
 export interface ContaAluno {
   perfil: PerfilAluno;
   consentimentoSaude: boolean;
+  /** Marcou "quero receber avisos via WhatsApp" (e tem número informado). */
+  avisosWhatsapp: boolean;
   saude: DadosSaude;
 }
 
@@ -122,6 +126,37 @@ export function idadeEm(dataNascimento: string, hoje = new Date()): number | nul
   return idade;
 }
 
+/**
+ * WhatsApp do aluno (decisão de 15/10/2026): OPCIONAL, porque há quem não tenha
+ * (idosos, estrangeiros) ou não queira mensagens. Quem não informa não recebe avisos.
+ * Aceita 10 a 13 dígitos (com DDD; estrangeiros podem incluir o código do país).
+ */
+export function problemasDoWhatsapp(whatsapp: unknown, querAvisos: unknown): string[] {
+  if (whatsapp != null && typeof whatsapp !== "string") return ["confira o WhatsApp"];
+  const digitos = typeof whatsapp === "string" ? whatsapp.replace(/\D/g, "") : "";
+  if (digitos !== "" && (digitos.length < 10 || digitos.length > 13)) return ["confira o WhatsApp (com DDD)"];
+  if (querAvisos === true && digitos === "") return ["informe o WhatsApp para receber os avisos"];
+  return [];
+}
+
+/**
+ * Perfil completo (decisão de 15/10/2026): requisito para o vínculo com um personal
+ * ficar ativo. Objetivo, nível, autorização de saúde e declaração de restrições.
+ */
+export function perfilCompleto(conta: Pick<ContaAluno, "perfil" | "consentimentoSaude" | "saude">): boolean {
+  return perfilProntoParaPedido(conta.perfil) && restricoesDeclaradas(conta);
+}
+
+/** O que falta para o perfil ficar completo, em frases curtas. */
+export function faltaNoPerfil(conta: Pick<ContaAluno, "perfil" | "consentimentoSaude" | "saude">): string[] {
+  const falta: string[] = [];
+  if (!conta.perfil.objetivo.trim()) falta.push("seu objetivo");
+  if (conta.perfil.nivel === null) falta.push("seu nível de experiência");
+  if (!conta.consentimentoSaude) falta.push("a autorização dos dados de saúde");
+  if (!restricoesDeclaradas(conta)) falta.push("a declaração das suas restrições");
+  return falta;
+}
+
 /** O perfil tem o mínimo para enviar pedidos (objetivo e nível). */
 export function perfilProntoParaPedido(perfil: Pick<PerfilAluno, "objetivo" | "nivel">): boolean {
   return perfil.objetivo.trim().length > 0 && perfil.nivel !== null;
@@ -146,6 +181,10 @@ export interface DadosCadastro {
   dataNascimento: string;
   genero: Genero | null;
   consentimentoSaude: boolean;
+  /** Opcional: com DDD; estrangeiros podem informar o código do país. */
+  whatsapp: string;
+  /** Caixa "quero receber notificações do meu treino e avisos via WhatsApp". */
+  avisosWhatsapp: boolean;
 }
 
 export function problemasDoCadastro(d: Partial<DadosCadastro> | null | undefined, hoje = new Date()): string[] {
@@ -166,6 +205,7 @@ export function problemasDoCadastro(d: Partial<DadosCadastro> | null | undefined
 
   if (d?.genero != null && !GENEROS.some((g) => g.valor === d.genero)) problemas.push("escolha um gênero da lista");
   if (typeof d?.consentimentoSaude !== "boolean") problemas.push("confira o consentimento");
+  problemas.push(...problemasDoWhatsapp(d?.whatsapp, d?.avisosWhatsapp));
   return problemas;
 }
 
@@ -176,6 +216,7 @@ export function problemasDoPerfil(d: Partial<PerfilEditavel> | null | undefined)
   if (d?.genero != null && !GENEROS.some((g) => g.valor === d.genero)) problemas.push("escolha um gênero da lista");
   const cep = texto(d?.cep);
   if (cep === null || (cep !== "" && !/^\d{5}-?\d{3}$/.test(cep))) problemas.push("confira o CEP (8 números)");
+  problemas.push(...problemasDoWhatsapp(d?.whatsapp, false));
   conferirTexto(problemas, d?.endereco, LIMITES.endereco, "o endereço");
   conferirTexto(problemas, d?.bairro, LIMITES.bairro, "o bairro");
   conferirTexto(problemas, d?.cidade, LIMITES.cidade, "a cidade");

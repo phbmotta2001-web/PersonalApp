@@ -10,6 +10,16 @@
 
 export const VERSAO_CONSENTIMENTO_SAUDE = "saude-v1-rascunho";
 
+// ─── Avisos por WhatsApp (aluno) ──────────────────────────────────────────
+// Opcional (decisão de 15/10/2026). Fica registrado como consentimento tipo
+// "whatsapp", com versão e data; só vale com número informado.
+export const VERSAO_CONSENTIMENTO_WHATSAPP = "whatsapp-v1-rascunho";
+
+export const TEXTO_CONSENTIMENTO_WHATSAPP = "Quero receber notificações do meu treino e avisos via WhatsApp";
+
+export const AJUDA_CONSENTIMENTO_WHATSAPP =
+  "Lembretes de aula, remarcações e cobranças. Você pode desligar quando quiser, no seu perfil.";
+
 // ─── Personal ─────────────────────────────────────────────────────────────
 // Aceito no cadastro do personal; a versão fica guardada na tabela "personais".
 export const VERSAO_TERMO_CONFIDENCIALIDADE = "confidencialidade-v1-rascunho";
@@ -25,9 +35,11 @@ export const TEXTO_CONSENTIMENTO_SAUDE =
   "medidas e, no futuro, exames) para que personais avaliem meus pedidos e montem treinos " +
   "seguros para mim. Posso retirar esta autorização quando quiser, no meu perfil.";
 
+// Fase 1: a autorização é necessária para o vínculo com o personal ficar ativo
+// (perfil completo). O nome da constante vem do marketplace (Fase 2).
 export const AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO =
-  "Sem esta autorização você pode navegar, mas não pode enviar pedidos: o personal precisa " +
-  "conhecer suas restrições para treinar você com segurança.";
+  "Necessária para treinar com um personal pelo Pienel: ele precisa conhecer suas restrições " +
+  "para treinar você com segurança.";
 
 export const TEXTO_CONFIRMACAO_RESTRICOES = "Confirmo que minhas restrições e limitações estão atualizadas";
 
