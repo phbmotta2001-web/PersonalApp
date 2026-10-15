@@ -92,7 +92,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | # | Etapa | Situação |
 |---|---|---|
 | 0 | Preparação: marketplace desligado, conta de personal, página inicial nova | pronta (15/10) |
-| 1 | Horários de trabalho e bloqueios | — |
+| 1 | Horários de trabalho e bloqueios (seg–dom, de 30 em 30 min, duração padrão 30/45/60/90) | pronta (15/10) |
 | 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal | — |
 | 3 | Matrículas e aulas fixas na agenda da semana e do dia | — |
 | 4 | App no celular (PWA) | — |

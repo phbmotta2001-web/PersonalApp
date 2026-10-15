@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
-import { Icone } from "@/components/Icone";
-import { sair, tipoDaConta } from "@/data/conta";
-import { lerPersonalAtual } from "@/data/profissional";
+import { Icone, type NomeIcone } from "@/components/Icone";
+import { sair } from "@/data/conta";
+import { exigirPersonal } from "@/data/exigir-personal";
+import { lerExpediente, listarBloqueios } from "@/data/expediente";
+import { curtoDoDia, dataCurta, horariosLivres, minParaHora } from "@/lib/expediente";
 import { formatarWhatsapp, ROTULO_SITUACAO } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -21,15 +23,12 @@ export default function PaginaAgenda() {
   );
 }
 
-// Área do personal. Na etapa 0 é só a "casa" da conta; a agenda chega nas próximas etapas.
 async function Conteudo() {
-  const personal = await lerPersonalAtual();
-  if (!personal) {
-    if ((await tipoDaConta()) === "aluno") redirect("/perfil");
-    redirect("/entrar?voltar=/agenda");
-  }
-
-  const emAnalise = personal.situacao !== "aprovado";
+  const personal = await exigirPersonal("/agenda");
+  const [expediente, bloqueios] = await Promise.all([lerExpediente(), listarBloqueios()]);
+  const faixas = expediente?.faixas ?? [];
+  const duracao = expediente?.duracao ?? 60;
+  const semana = horariosLivres(faixas, bloqueios, duracao, 7);
 
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-5 pb-6">
@@ -38,39 +37,68 @@ async function Conteudo() {
         <h1 className="text-[24px] font-extrabold">Olá, {personal.nomeCompleto.split(" ")[0]}</h1>
       </header>
 
-      <section
-        className={`rounded-[20px] p-4 text-[13.5px] ${
-          emAnalise ? "bg-gold-soft text-gold" : "bg-ok-soft text-ok"
-        }`}
-      >
-        <p className="font-bold">Conta: {ROTULO_SITUACAO[personal.situacao]}</p>
-        <p className="mt-1">
-          {personal.situacao === "em_analise"
-            ? "Estamos conferindo o seu CREF. Enquanto isso, você já pode conhecer o Pienel."
-            : personal.situacao === "suspenso"
-              ? "Sua conta está suspensa. Fale com a equipe do Pienel."
-              : "Tudo certo com o seu cadastro."}
+      {personal.situacao !== "aprovado" && (
+        <section className="rounded-[20px] bg-gold-soft p-4 text-[13.5px] text-gold">
+          <p className="font-bold">Conta: {ROTULO_SITUACAO[personal.situacao]}</p>
+          <p className="mt-1">
+            {personal.situacao === "em_analise"
+              ? "Estamos conferindo o seu CREF. Enquanto isso, você já pode configurar seus horários."
+              : "Sua conta está suspensa. Fale com a equipe do Pienel."}
+          </p>
+        </section>
+      )}
+
+      <nav className="grid grid-cols-2 gap-3" aria-label="Configurar agenda">
+        <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários de trabalho" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
+        <Atalho href="/agenda/bloqueios" icone="calendario" titulo="Bloqueios" texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"} />
+      </nav>
+
+      <section className="flex flex-col gap-2.5">
+        <h2 className="text-[17px] font-semibold">Seus horários livres nos próximos 7 dias</h2>
+        {faixas.length === 0 ? (
+          <p className="rounded-[20px] border border-dashed border-line p-4 text-sm text-ink-3">
+            Você ainda não configurou seus horários de trabalho.{" "}
+            <Link href="/agenda/horarios" className="font-semibold text-brand">
+              Configurar agora
+            </Link>
+          </p>
+        ) : (
+          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
+            {semana.map((d, i) => (
+              <li key={d.data} className="flex flex-col gap-1.5 py-3">
+                <p className="text-sm font-bold">
+                  {i === 0 ? "Hoje" : i === 1 ? "Amanhã" : curtoDoDia(d.diaSemana)}{" "}
+                  <span className="font-normal text-ink-3 tabular-nums">{dataCurta(d.data)}</span>
+                </p>
+                {d.livres.length > 0 ? (
+                  <span className="flex flex-wrap gap-1.5">
+                    {d.livres.map((m) => (
+                      <span key={m} className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums">
+                        {minParaHora(m)}
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="text-xs text-ink-3">
+                    {!d.trabalha ? "Folga" : d.bloqueios.length ? `Bloqueado: ${d.bloqueios.join(", ")}` : "Sem horários livres"}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="text-xs text-ink-3">
+          Por enquanto não há aulas marcadas, então todos os horários de trabalho aparecem livres.
         </p>
       </section>
 
-      <section className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
-        <h2 className="text-[17px] font-semibold">Sua agenda está chegando</h2>
-        <p className="text-[13px] text-ink-3">O que vem nas próximas versões do Pienel:</p>
-        <ul className="flex flex-col gap-2 text-sm text-ink-2">
-          {[
-            "Seus horários de trabalho e bloqueios (férias, feriados)",
-            "Convidar alunos por link e ver o cadastro de cada um",
-            "Aulas fixas na agenda da semana e do dia",
-            "Remarcações e reposições feitas pelo próprio aluno",
-            "Mensalidades, atrasos e lembretes por WhatsApp",
-          ].map((item) => (
-            <li key={item} className="flex items-start gap-2">
-              <span className="mt-0.5 text-brand">
-                <Icone nome="relogio" className="size-4" />
-              </span>
-              {item}
-            </li>
-          ))}
+      <section className="rounded-[20px] border border-line bg-surface p-4">
+        <h2 className="text-[15px] font-semibold">O que vem por aí</h2>
+        <ul className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink-2">
+          <li>Convidar alunos por link e ver o cadastro de cada um</li>
+          <li>Aulas fixas na agenda da semana e do dia</li>
+          <li>Remarcações e reposições feitas pelo próprio aluno</li>
+          <li>Mensalidades, atrasos e lembretes por WhatsApp</li>
         </ul>
       </section>
 
@@ -79,7 +107,7 @@ async function Conteudo() {
         <p>{personal.email}</p>
         <p>WhatsApp {formatarWhatsapp(personal.whatsapp)}</p>
         <p>
-          CREF {personal.cref}/{personal.crefUf}
+          CREF {personal.cref}/{personal.crefUf} · conta {ROTULO_SITUACAO[personal.situacao].toLowerCase()}
         </p>
       </section>
 
@@ -89,5 +117,17 @@ async function Conteudo() {
         </button>
       </form>
     </div>
+  );
+}
+
+function Atalho({ href, icone, titulo, texto }: { href: string; icone: NomeIcone; titulo: string; texto: string }) {
+  return (
+    <Link href={href} className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-3.5 hover:border-brand">
+      <span className="grid size-9 place-items-center rounded-full bg-brand-soft text-brand">
+        <Icone nome={icone} className="size-[18px]" />
+      </span>
+      <span className="text-sm font-bold">{titulo}</span>
+      <span className="text-xs text-ink-3">{texto}</span>
+    </Link>
   );
 }
