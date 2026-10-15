@@ -240,7 +240,8 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
               ? aviso.texto
               : mudou
                 ? "Você tem alterações não salvas."
-                : (aviso?.texto ?? "")}
+                : (aviso?.texto ??
+                  (JSON.parse(salvo).faixas.length > 0 ? "Tudo salvo. Mude algum horário para salvar de novo." : ""))}
         </p>
       </div>
     </div>
