@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { buscarPersonal } from "@/data/personais";
+import { ordenarHorarios } from "@/lib/agenda";
 import { rotuloGenero, rotuloNivel, type Genero, type NivelAluno } from "@/lib/aluno";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 
@@ -41,6 +42,11 @@ type Visao = {
   nivel: NivelAluno | null;
   bairro: string | null;
   mensagem: string | null;
+  vezes_por_semana: number;
+  horarios: string[] | null;
+  dias: string[] | null;
+  periodos: string[] | null;
+  locais: string[];
   restricoes: string | null;
   sem_restricoes: boolean | null;
   restricoes_confirmadas_em: string | null;
@@ -108,6 +114,16 @@ async function Pedidos() {
               <Linha nome="Objetivo" valor={v.objetivo} />
               <Linha nome="Nível" valor={rotuloNivel(v.nivel)} />
               <Linha nome="Bairro" valor={v.bairro} />
+              <Linha nome="Plano" valor={`${v.vezes_por_semana}x por semana`} />
+              <Linha
+                nome="Horários pedidos"
+                valor={
+                  v.horarios?.length
+                    ? ordenarHorarios(v.horarios).join(", ")
+                    : [...(v.dias ?? []), ...(v.periodos ?? [])].join(", ") + " (pedido antigo)"
+                }
+              />
+              <Linha nome="Onde" valor={v.locais?.join(", ")} />
               <Linha nome="Mensagem" valor={v.mensagem} />
               <Linha nome="Restrições" valor={textoRestricoes(v)} />
               {v.status === "aceito" ? (

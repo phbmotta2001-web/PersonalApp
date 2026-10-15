@@ -7,6 +7,7 @@
 //
 // O resto do arquivo descreve o formato de um personal (que informações ele tem).
 
+import type { Disponibilidade } from "@/lib/agenda";
 import { PERSONAIS_EXEMPLO } from "./exemplos/personais-exemplo";
 
 export type Genero = "f" | "m";
@@ -65,6 +66,8 @@ export interface Personal {
   nome: string;
   genero: Genero;
   publico: PublicoAtendido;
+  /** Horários livres que se repetem toda semana (aulas de 1 h). */
+  disponibilidade: Disponibilidade;
   cor: CorAvatar;
   nivel?: Nivel;
   bairro: string;

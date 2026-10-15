@@ -1,4 +1,5 @@
 import type { Genero, Local, Objetivo, Personal, PublicoAtendido } from "@/data/personais";
+import { compatibilidade, QUANDO_PADRAO, quandoAtivo, type FiltroQuando } from "./agenda";
 import type { Genero as GeneroAluno } from "@/lib/aluno";
 
 export type FaixaPreco = "ate-110" | "110-150" | "acima-150";
@@ -10,6 +11,8 @@ export interface Filtros {
   locais: Local[];
   preco: FaixaPreco | null;
   notaMinima: NotaMinima | null;
+  /** Dias e faixa de horário em que o aluno pode treinar. */
+  quando: FiltroQuando;
 }
 
 export const FILTROS_VAZIOS: Filtros = {
@@ -18,6 +21,7 @@ export const FILTROS_VAZIOS: Filtros = {
   locais: [],
   preco: null,
   notaMinima: null,
+  quando: { dias: [], ...QUANDO_PADRAO },
 };
 
 export const FAIXAS_PRECO: { valor: FaixaPreco; rotulo: string }[] = [
@@ -40,15 +44,24 @@ function cabeNaFaixa(preco: number, faixa: FaixaPreco): boolean {
 /**
  * Regra da busca: dentro de um mesmo grupo basta combinar com uma das opções
  * marcadas (ex.: "Em casa" ou "Online"); entre grupos, precisa combinar com todos.
+ *
+ * "Quando você pode treinar": aparece quem tem horário livre na faixa em pelo menos
+ * um dos dias escolhidos; quem combina em mais dias vem primeiro.
  */
 export function filtrarPersonais(personais: Personal[], f: Filtros): Personal[] {
-  return personais.filter(
+  const filtrados = personais.filter(
     (p) =>
       (!f.genero || p.genero === f.genero) &&
       (f.objetivos.length === 0 || f.objetivos.some((o) => p.objetivos.includes(o))) &&
       (f.locais.length === 0 || f.locais.some((l) => p.locais.includes(l))) &&
       (!f.preco || cabeNaFaixa(p.precoAula, f.preco)) &&
-      (!f.notaMinima || p.nota >= f.notaMinima),
+      (!f.notaMinima || p.nota >= f.notaMinima) &&
+      (!quandoAtivo(f.quando) || compatibilidade(p.disponibilidade, f.quando).livres > 0),
+  );
+  if (!quandoAtivo(f.quando)) return filtrados;
+  return [...filtrados].sort(
+    (a, b) =>
+      compatibilidade(b.disponibilidade, f.quando).livres - compatibilidade(a.disponibilidade, f.quando).livres,
   );
 }
 
@@ -58,7 +71,8 @@ export function temFiltroAtivo(f: Filtros): boolean {
     f.objetivos.length > 0 ||
     f.locais.length > 0 ||
     f.preco !== null ||
-    f.notaMinima !== null
+    f.notaMinima !== null ||
+    quandoAtivo(f.quando)
   );
 }
 

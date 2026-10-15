@@ -1,10 +1,5 @@
 import type { Local, Personal } from "@/data/personais";
-
-export const DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex"] as const;
-export type Dia = (typeof DIAS)[number];
-
-export const PERIODOS = ["Manhã, 6h–9h", "Almoço", "Noite"] as const;
-export type Periodo = (typeof PERIODOS)[number];
+import { problemasDosHorarios, type Horario } from "./agenda";
 
 /** A mensagem pode ter informações de saúde e o personal a lê antes de aceitar. */
 export const LIMITE_MENSAGEM = 200;
@@ -19,8 +14,8 @@ export const LIMITE_MENSAGEM = 200;
 export interface Pedido {
   slug: string;
   vezesPorSemana: number;
-  dias: Dia[];
-  periodos: Periodo[];
+  /** Exatamente `vezesPorSemana` horários livres do personal, um por dia (ex.: "Seg 07:00"). */
+  horarios: Horario[];
   locais: Local[];
   mensagem: string;
   confirmoRestricoes: boolean;
@@ -41,9 +36,7 @@ export function oQueFalta(pedido: Pedido, personal: Personal): string[] {
   const planos = personal.perfil.planos.map((pl) => pl.vezesPorSemana);
 
   if (!planos.includes(pedido.vezesPorSemana)) falta.push("quantas vezes por semana");
-  if (!listaValida(pedido.dias, DIAS) || pedido.dias.length < pedido.vezesPorSemana)
-    falta.push(`pelo menos ${pedido.vezesPorSemana} dias`);
-  if (!listaValida(pedido.periodos, PERIODOS)) falta.push("um horário");
+  else falta.push(...problemasDosHorarios(pedido.horarios, pedido.vezesPorSemana, personal.disponibilidade));
   if (!listaValida(pedido.locais, personal.locais)) falta.push("um local");
   if (typeof pedido.mensagem !== "string" || pedido.mensagem.length > LIMITE_MENSAGEM)
     falta.push(`uma mensagem com até ${LIMITE_MENSAGEM} caracteres`);

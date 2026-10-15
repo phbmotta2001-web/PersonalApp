@@ -63,6 +63,18 @@ decisão mudar.
 - Controle em duas camadas: função única no servidor (`perfilParaPersonal`) e regras
   de segurança por linha (RLS) no Supabase.
 
+### Horários (decisão de 14/10/2026)
+- Cada personal tem uma agenda semanal de horários livres (aulas de 1 h, começando
+  em hora cheia, entre 06:00 e 21:00). Hoje vem dos dados de exemplo (inventados);
+  depois, da agenda que o personal mantém no app.
+- O perfil do personal mostra os horários livres de cada dia.
+- No pedido, o aluno escolhe exatamente tantos horários quanto o plano (4x = 4),
+  um por dia. Planos maiores que a agenda ficam desativados.
+- O pedido não reserva o horário: ele só fica do aluno quando o personal aceitar.
+- Busca: filtro "Quando você pode treinar" (dias + faixa "das Xh às Yh"). Aparece
+  quem tem horário livre na faixa em pelo menos um dos dias; o card mostra "Livre em
+  X de Y dias" e quem combina mais vem primeiro.
+
 ### WhatsApp
 - A mensagem ao personal **não leva dados de saúde nem detalhes do pedido**: só
   "Você recebeu um novo pedido, abra o app".

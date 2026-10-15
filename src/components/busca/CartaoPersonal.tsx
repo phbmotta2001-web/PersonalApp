@@ -6,7 +6,14 @@ import { Icone } from "../Icone";
 import { Nota } from "../Nota";
 import { SeloNivel } from "../SeloNivel";
 
-export function CartaoPersonal({ personal: p }: { personal: Personal }) {
+export function CartaoPersonal({
+  personal: p,
+  compatibilidade,
+}: {
+  personal: Personal;
+  /** Quando o filtro de horário está ligado: em quantos dos dias pedidos há horário livre. */
+  compatibilidade?: { livres: number; total: number };
+}) {
   return (
     <Link
       href={`/personais/${p.slug}`}
@@ -25,6 +32,17 @@ export function CartaoPersonal({ personal: p }: { personal: Personal }) {
           </span>
           · {p.bairro} · {p.distancia}
         </div>
+        {compatibilidade && (
+          <span
+            className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold ${
+              compatibilidade.livres === compatibilidade.total ? "bg-ok-soft text-ok" : "bg-gold-soft text-gold"
+            }`}
+          >
+            <Icone nome="relogio" className="size-3.5" />
+            Livre em {compatibilidade.livres} de {compatibilidade.total}{" "}
+            {compatibilidade.total === 1 ? "dia" : "dias"}
+          </span>
+        )}
         <div className="mt-2 flex flex-wrap gap-1.5">
           {p.especialidades.map((e) => (
             <span

@@ -1,6 +1,7 @@
 "use client";
 
 import { LOCAIS, OBJETIVOS, type Genero } from "@/data/personais";
+import { DIAS_SEMANA, HORA_MAX, HORA_MIN } from "@/lib/agenda";
 import {
   alternar,
   FAIXAS_PRECO,
@@ -11,7 +12,10 @@ import {
 import { Chip } from "../Chip";
 import { Gaveta, GrupoDaGaveta } from "../Gaveta";
 
-const GENEROS: { valor: Genero | null; rotulo: string }[] = [
+/** [de, de+1, …, ate] */
+const horas = (de: number, ate: number) => Array.from({ length: ate - de + 1 }, (_, i) => de + i);
+
+const GENEROS:{ valor: Genero | null; rotulo: string }[] = [
   { valor: "f", rotulo: "Mulher" },
   { valor: "m", rotulo: "Homem" },
   { valor: null, rotulo: "Tanto faz" },
@@ -102,6 +106,55 @@ export function GavetaFiltros({
             {l.rotulo}
           </Chip>
         ))}
+      </GrupoDaGaveta>
+
+      <GrupoDaGaveta titulo="Quando você pode treinar">
+        {DIAS_SEMANA.map((d) => (
+          <Chip
+            key={d}
+            ativo={filtros.quando.dias.includes(d)}
+            onClick={() => mudar({ quando: { ...filtros.quando, dias: alternar(filtros.quando.dias, d) } })}
+          >
+            {d}
+          </Chip>
+        ))}
+        <div className="flex w-full flex-wrap items-center gap-2 text-sm text-ink-2">
+          <label htmlFor="filtro-de">das</label>
+          <select
+            id="filtro-de"
+            value={filtros.quando.de}
+            onChange={(e) => {
+              const de = Number(e.target.value);
+              mudar({ quando: { ...filtros.quando, de, ate: Math.max(filtros.quando.ate, de + 1) } });
+            }}
+            className="min-h-10 rounded-[11px] border border-line bg-surface px-2"
+          >
+            {horas(HORA_MIN, HORA_MAX).map((h) => (
+              <option key={h} value={h}>
+                {h}h
+              </option>
+            ))}
+          </select>
+          <label htmlFor="filtro-ate">às</label>
+          <select
+            id="filtro-ate"
+            value={filtros.quando.ate}
+            onChange={(e) => {
+              const ate = Number(e.target.value);
+              mudar({ quando: { ...filtros.quando, ate, de: Math.min(filtros.quando.de, ate - 1) } });
+            }}
+            className="min-h-10 rounded-[11px] border border-line bg-surface px-2"
+          >
+            {horas(HORA_MIN + 1, HORA_MAX + 1).map((h) => (
+              <option key={h} value={h}>
+                {h}h
+              </option>
+            ))}
+          </select>
+        </div>
+        <p className="w-full text-xs text-ink-3">
+          Mostra quem tem aula livre nessa faixa em pelo menos um dos dias escolhidos. Aulas de 1 hora.
+        </p>
       </GrupoDaGaveta>
 
       <GrupoDaGaveta titulo="Preço por aula">

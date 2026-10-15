@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Personal } from "@/data/personais";
+import { compatibilidade, quandoAtivo } from "@/lib/agenda";
 import { alternar, FILTROS_VAZIOS, filtrarPersonais, temFiltroAtivo } from "@/lib/filtros";
 import { BotaoVoltar } from "../BotaoVoltar";
 import { Chip } from "../Chip";
@@ -76,7 +77,12 @@ export function TelaBusca({ personais }: { personais: Personal[] }) {
           <ul className="flex flex-col gap-2.5">
             {resultados.map((p) => (
               <li key={p.slug}>
-                <CartaoPersonal personal={p} />
+                <CartaoPersonal
+                  personal={p}
+                  compatibilidade={
+                    quandoAtivo(filtros.quando) ? compatibilidade(p.disponibilidade, filtros.quando) : undefined
+                  }
+                />
               </li>
             ))}
           </ul>

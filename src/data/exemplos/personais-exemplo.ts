@@ -7,6 +7,8 @@
 // `src/data/personais.ts`. Para passar a usar dados reais, mude aquelas funções
 // e depois apague este arquivo.
 //
+// A agenda de horários livres (disponibilidade) de TODOS foi inventada.
+//
 // De onde vem cada personal:
 // - Camila Duarte: dados do protótipo navegável.
 // - Juliana Reis, Rafael Nunes, Beatriz Lemos e Thiago Prado: o card veio do
@@ -19,6 +21,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "camila-duarte",
     publico: "todos",
+    disponibilidade: { Seg: [7, 9], Ter: [6, 8], Qua: [7], Qui: [12], Sex: [7, 9], Sáb: [9] },
     nome: "Camila Duarte",
     genero: "f",
     cor: "av1",
@@ -69,6 +72,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "juliana-reis",
     publico: "feminino",
+    disponibilidade: { Seg: [10, 14], Ter: [9, 15], Qua: [10], Qui: [9, 14], Sáb: [8] },
     nome: "Juliana Reis",
     genero: "f",
     cor: "av2",
@@ -117,6 +121,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "rafael-nunes",
     publico: "todos",
+    disponibilidade: { Seg: [6, 18, 19], Ter: [18], Qua: [6, 19], Qui: [18], Sex: [6, 19] },
     nome: "Rafael Nunes",
     genero: "m",
     cor: "av4",
@@ -165,6 +170,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "beatriz-lemos",
     publico: "todos",
+    disponibilidade: { Seg: [6], Ter: [6, 7], Qua: [6], Qui: [7], Sex: [6], Sáb: [8, 9] },
     nome: "Beatriz Lemos",
     genero: "f",
     cor: "av3",
@@ -213,6 +219,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "thiago-prado",
     publico: "todos",
+    disponibilidade: { Seg: [6, 20], Qua: [6, 20], Sáb: [7, 8] },
     nome: "Thiago Prado",
     genero: "m",
     cor: "av5",

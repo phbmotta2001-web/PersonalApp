@@ -72,8 +72,7 @@ export async function enviarPedido(pedido: Pedido): Promise<Resposta> {
   const { error } = await supabase.rpc("enviar_pedido", {
     p_personal_slug: personal.slug,
     p_vezes_por_semana: pedido.vezesPorSemana,
-    p_dias: pedido.dias,
-    p_periodos: pedido.periodos,
+    p_horarios: pedido.horarios,
     p_locais: pedido.locais,
     p_mensagem: pedido.mensagem,
     p_confirmo_restricoes: pedido.confirmoRestricoes,

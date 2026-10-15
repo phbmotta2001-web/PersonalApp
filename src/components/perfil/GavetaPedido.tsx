@@ -5,25 +5,37 @@ import { useState, useTransition } from "react";
 import { enviarPedido } from "@/data/pedidos";
 import { LOCAIS, type Personal } from "@/data/personais";
 import {
+  diasLivres,
+  faixaDaAula,
+  horario,
+  lerHorario,
+  maximoPorSemana,
+  ordenarHorarios,
+  type DiaSemana,
+  type Horario,
+} from "@/lib/agenda";
+import {
   AVISO_APAGAR_30_DIAS,
   AVISO_RESTRICOES_NO_PEDIDO,
   TEXTO_CONFIRMACAO_RESTRICOES,
 } from "@/lib/consentimento";
 import { alternar } from "@/lib/filtros";
 import { formatarReais, juntarComE, maiuscula, tratamento } from "@/lib/formato";
-import { DIAS, LIMITE_MENSAGEM, oQueFalta, PERIODOS, type Pedido } from "@/lib/pedido";
+import { LIMITE_MENSAGEM, oQueFalta, type Pedido } from "@/lib/pedido";
 import { Chip } from "../Chip";
 import { ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Gaveta, GrupoDaGaveta } from "../Gaveta";
 import { Icone } from "../Icone";
 
 function pedidoInicial(personal: Personal): Pedido {
-  const planos = personal.perfil.planos;
+  // Começa no plano "mais escolhido", ou no maior que caiba na agenda do personal.
+  const maximo = maximoPorSemana(personal.disponibilidade);
+  const cabem = personal.perfil.planos.filter((pl) => pl.vezesPorSemana <= maximo);
+  const plano = cabem.find((pl) => pl.maisEscolhido) ?? cabem.at(-1) ?? personal.perfil.planos[0];
   return {
     slug: personal.slug,
-    vezesPorSemana: (planos.find((pl) => pl.maisEscolhido) ?? planos[0]).vezesPorSemana,
-    dias: [],
-    periodos: [],
+    vezesPorSemana: plano.vezesPorSemana,
+    horarios: [],
     locais: [],
     mensagem: "",
     confirmoRestricoes: false,
@@ -50,13 +62,35 @@ export function GavetaPedido({
   const [pedido, setPedido] = useState(() => pedidoInicial(personal));
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, iniciarEnvio] = useTransition();
+  const [avisoHorario, setAvisoHorario] = useState<string | null>(null);
 
   const t = tratamento(personal);
+  const maximo = maximoPorSemana(personal.disponibilidade);
   const falta = oQueFalta(pedido, personal);
   const mudar = (parte: Partial<Pedido>) => {
     setErro(null);
     setPedido({ ...pedido, ...parte });
   };
+
+  /** Um horário por dia: escolher outro no mesmo dia troca; passar do plano avisa. */
+  function escolher(dia: DiaSemana, hora: number) {
+    const h = horario(dia, hora);
+    const outros = pedido.horarios.filter((x) => lerHorario(x)?.dia !== dia);
+    setAvisoHorario(null);
+    if (pedido.horarios.includes(h)) return mudar({ horarios: outros });
+    if (outros.length < pedido.horarios.length) return mudar({ horarios: ordenarHorarios([...outros, h]) as Horario[] });
+    if (pedido.horarios.length >= pedido.vezesPorSemana)
+      return setAvisoHorario(`
+        Você já escolheu ${pedido.vezesPorSemana} horários. Desmarque um para trocar, ou mude o plano.`
+      );
+    mudar({ horarios: ordenarHorarios([...pedido.horarios, h]) as Horario[] });
+  }
+
+  /** Ao diminuir o plano, ficam só os primeiros horários da semana. */
+  function trocarPlano(vezes: number) {
+    setAvisoHorario(null);
+    mudar({ vezesPorSemana: vezes, horarios: pedido.horarios.slice(0, vezes) });
+  }
 
   function enviar() {
     iniciarEnvio(async () => {
@@ -91,45 +125,63 @@ export function GavetaPedido({
         <div className="grid w-full grid-cols-3 gap-1.5 rounded-[14px] bg-surface-2 p-1">
           {personal.perfil.planos.map((pl) => {
             const ativo = pedido.vezesPorSemana === pl.vezesPorSemana;
+            const cabe = pl.vezesPorSemana <= maximo;
             return (
               <button
                 key={pl.vezesPorSemana}
                 type="button"
                 aria-pressed={ativo}
-                onClick={() => mudar({ vezesPorSemana: pl.vezesPorSemana })}
-                className={`flex min-h-11 flex-col items-center justify-center rounded-[11px] py-1 text-sm leading-tight font-bold ${
+                disabled={!cabe}
+                onClick={() => trocarPlano(pl.vezesPorSemana)}
+                className={`flex min-h-11 flex-col items-center justify-center rounded-[11px] py-1 text-sm leading-tight font-bold disabled:opacity-50 ${
                   ativo ? "bg-surface text-ink shadow-sm" : "text-ink-2"
                 }`}
               >
                 {pl.vezesPorSemana}x
                 <small className="text-[11.5px] font-medium text-ink-3">
-                  {formatarReais(pl.precoAula)}/aula
+                  {cabe ? `${formatarReais(pl.precoAula)}/aula` : "sem horários"}
                 </small>
               </button>
             );
           })}
         </div>
+        {personal.perfil.planos.some((pl) => pl.vezesPorSemana > maximo) && (
+          <p className="w-full text-xs text-ink-3">
+            {maiuscula(t.artigo)} {t.nome} tem horários livres em {maximo} {maximo === 1 ? "dia" : "dias"} da semana.
+          </p>
+        )}
       </GrupoDaGaveta>
 
-      <GrupoDaGaveta titulo="Melhores dias e horário">
-        {DIAS.map((d) => (
-          <Chip key={d} ativo={pedido.dias.includes(d)} onClick={() => mudar({ dias: alternar(pedido.dias, d) })}>
-            {d}
-          </Chip>
-        ))}
-        <div className="flex w-full flex-wrap gap-2">
-          {PERIODOS.map((p) => (
-            <Chip
-              key={p}
-              ativo={pedido.periodos.includes(p)}
-              onClick={() => mudar({ periodos: alternar(pedido.periodos, p) })}
-            >
-              {p}
-            </Chip>
+      <fieldset className="flex flex-col gap-[7px]">
+        <legend className="mb-[7px] flex w-full justify-between gap-2 text-[13px] font-bold text-ink-2">
+          <span>
+            Escolha {pedido.vezesPorSemana} {pedido.vezesPorSemana === 1 ? "horário" : "horários"} (um por dia)
+          </span>
+          <span className="font-normal text-ink-3 tabular-nums">
+            {pedido.horarios.length} de {pedido.vezesPorSemana}
+          </span>
+        </legend>
+        <ul className="divide-y divide-line rounded-2xl border border-line bg-surface px-3">
+          {diasLivres(personal.disponibilidade).map((d) => (
+            <li key={d} className="flex items-center gap-3 py-2">
+              <span className="w-10 shrink-0 text-sm font-bold">{d}</span>
+              <span className="flex flex-wrap gap-1.5">
+                {(personal.disponibilidade[d] ?? []).map((hora) => {
+                  const h = horario(d, hora);
+                  return (
+                    <Chip key={h} ativo={pedido.horarios.includes(h)} onClick={() => escolher(d, hora)}>
+                      {faixaDaAula(hora)}
+                    </Chip>
+                  );
+                })}
+              </span>
+            </li>
           ))}
-        </div>
-      </GrupoDaGaveta>
-
+        </ul>
+        <p aria-live="polite" className="text-xs text-ink-3">
+          {avisoHorario ?? "O pedido não reserva o horário: ele só fica seu quando o personal aceitar."}
+        </p>
+      </fieldset>
       <GrupoDaGaveta titulo="Onde">
         {LOCAIS.filter((l) => personal.locais.includes(l.valor)).map((l) => (
           <Chip

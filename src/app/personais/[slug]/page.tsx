@@ -9,6 +9,7 @@ import { Nota } from "@/components/Nota";
 import { BotaoInteresse } from "@/components/perfil/BotaoInteresse";
 import { SeloNivel } from "@/components/SeloNivel";
 import { buscarPersonal, listarPersonais, type Local } from "@/data/personais";
+import { DIAS_SEMANA, faixaDaAula, NOME_DIA } from "@/lib/agenda";
 import { formatarNota, formatarReais } from "@/lib/formato";
 
 const ICONE_DO_LOCAL: Record<Local, NomeIcone> = {
@@ -103,6 +104,41 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
               </span>
             ))}
           </div>
+        </section>
+
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-[17px] font-semibold">Horários livres</h2>
+            <span className="text-xs text-ink-3">toda semana · aulas de 1 h</span>
+          </div>
+          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4 py-1">
+            {DIAS_SEMANA.map((d) => {
+              const horas = personal.disponibilidade[d] ?? [];
+              return (
+                <li key={d} className="flex items-center gap-3 py-2.5">
+                  <span className="w-[72px] shrink-0 text-sm font-bold">{NOME_DIA[d]}</span>
+                  {horas.length > 0 ? (
+                    <span className="flex flex-wrap gap-1.5">
+                      {horas.map((h) => (
+                        <span
+                          key={h}
+                          className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums"
+                        >
+                          {faixaDaAula(h)}
+                        </span>
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-ink-3">Sem horário livre</span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-xs text-ink-3">
+            Você escolhe seus horários ao clicar em &quot;Tenho interesse&quot;. Eles só ficam reservados
+            quando {personal.genero === "f" ? "ela" : "ele"} aceitar.
+          </p>
         </section>
 
         <section className="flex flex-col gap-2.5">
