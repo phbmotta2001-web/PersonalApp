@@ -6,13 +6,14 @@ export type Dia = (typeof DIAS)[number];
 export const PERIODOS = ["Manhã, 6h–9h", "Almoço", "Noite"] as const;
 export type Periodo = (typeof PERIODOS)[number];
 
-export const LIMITE_MENSAGEM = 500;
+/** A mensagem pode ter informações de saúde e o personal a lê antes de aceitar. */
+export const LIMITE_MENSAGEM = 200;
 
 /**
- * O que a aluna preenche ao clicar em "Tenho interesse".
- * Nome, objetivos, restrições e nível não entram aqui: vêm da parte pública do perfil
- * do aluno (src/data/alunos.ts), que o servidor junta ao pedido. Medidas, fotos e
- * exames nunca vão junto: só ficam visíveis depois que o personal aceita.
+ * O que o aluno preenche ao clicar em "Tenho interesse".
+ * Primeiro nome, objetivo, nível e bairro vêm do perfil guardado no banco. As
+ * restrições só vão junto se o aluno marcar `autorizarRestricoes` (opcional), e a
+ * cópia é feita pelo próprio banco, a partir do perfil (função enviar_pedido).
  */
 export interface Pedido {
   slug: string;
@@ -21,6 +22,7 @@ export interface Pedido {
   periodos: Periodo[];
   locais: Local[];
   mensagem: string;
+  autorizarRestricoes: boolean;
 }
 
 function listaValida<T>(valor: unknown, permitidos: readonly T[]): valor is T[] {
@@ -31,7 +33,7 @@ function listaValida<T>(valor: unknown, permitidos: readonly T[]): valor is T[] 
 
 /**
  * Lista o que ainda falta para o pedido poder ser enviado (vazia = tudo certo).
- * Usada na tela, para avisar a aluna, e no servidor, para não aceitar pedidos inválidos.
+ * Usada na tela, para avisar o aluno, e no servidor, para não aceitar pedidos inválidos.
  */
 export function oQueFalta(pedido: Pedido, personal: Personal): string[] {
   const falta: string[] = [];
@@ -44,12 +46,7 @@ export function oQueFalta(pedido: Pedido, personal: Personal): string[] {
   if (!listaValida(pedido.locais, personal.locais)) falta.push("um local");
   if (typeof pedido.mensagem !== "string" || pedido.mensagem.length > LIMITE_MENSAGEM)
     falta.push(`uma mensagem com até ${LIMITE_MENSAGEM} caracteres`);
+  if (typeof pedido.autorizarRestricoes !== "boolean") falta.push("a opção de restrições");
 
   return falta;
-}
-
-/** ["a", "b", "c"] → "a, b e c" */
-export function juntarComE(itens: string[]): string {
-  if (itens.length <= 1) return itens.join("");
-  return itens.slice(0, -1).join(", ") + " e " + itens[itens.length - 1];
 }

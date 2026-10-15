@@ -21,6 +21,18 @@ export function maiuscula(texto: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+/** ["a", "b", "c"] → "a, b e c" */
+export function juntarComE(itens: string[]): string {
+  if (itens.length <= 1) return itens.join("");
+  return itens.slice(0, -1).join(", ") + " e " + itens[itens.length - 1];
+}
+
+/** ["escreva o nome", "escolha o nível"] → "Escreva o nome e escolha o nível." */
+export function frase(itens: string[]): string {
+  const t = juntarComE(itens);
+  return t ? maiuscula(t) + "." : "";
+}
+
 export function iniciais(nome: string): string {
   return nome
     .split(" ")

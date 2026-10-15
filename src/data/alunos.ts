@@ -1,47 +1,157 @@
 "use server";
 
-// Porta de entrada dos dados do aluno. Roda só no servidor.
-//
-// Hoje: não há cadastro nem login, então o "aluno atual" é sempre o aluno de
-// exemplo (`src/data/exemplos/aluno-exemplo.ts`). As mudanças feitas na tela
-// "Meu perfil" ficam guardadas NA MEMÓRIA do servidor: valem enquanto o
-// `npm run dev` estiver ligado e voltam ao exemplo quando ele é reiniciado.
-// Todo mundo que abre o site vê e edita o mesmo aluno.
-//
-// Quando houver login e banco de dados, troque só o conteúdo destas duas funções
-// para ler e salvar o aluno que está logado. As telas continuam iguais.
-//
-// ATENÇÃO: funções deste arquivo podem ser chamadas pelo navegador. Hoje isso é
-// aceitável porque só existe um aluno; com login, cada função precisa conferir
-// que quem chama é o próprio aluno, porque o perfil tem dados privados de saúde.
+// Porta de entrada dos dados do aluno logado. Roda só no servidor.
+// Os dados ficam no Supabase (tabelas alunos, alunos_saude e consentimentos).
+// O banco só deixa cada pessoa ler e mudar os PRÓPRIOS dados (regras de segurança
+// por linha em supabase/migrations), mesmo que este código tenha algum erro.
 
-import { connection } from "next/server";
-import { limparAluno, problemasDoAluno, type Aluno } from "@/lib/aluno";
-import { juntarComE } from "@/lib/pedido";
-import { ALUNO_EXEMPLO } from "./exemplos/aluno-exemplo";
+import {
+  problemasDaSaude,
+  problemasDoPerfil,
+  SAUDE_VAZIA,
+  type ContaAluno,
+  type DadosSaude,
+  type Genero,
+  type NivelAluno,
+  type PerfilEditavel,
+} from "@/lib/aluno";
+import { VERSAO_CONSENTIMENTO_SAUDE } from "@/lib/consentimento";
+import { frase } from "@/lib/formato";
+import { usuarioAtual } from "@/lib/supabase/servidor";
+import type { Resposta } from "./conta";
 
-// Guardado em `globalThis` para não se perder quando o Next.js recarrega o código
-// durante o desenvolvimento.
-const memoria = globalThis as typeof globalThis & { __pienelAluno?: Aluno };
+const texto = (v: unknown) => (typeof v === "string" ? v : "");
+const numero = (v: unknown) => (v === null || v === undefined ? null : Number(v));
 
-/** O perfil completo (público e privado) do aluno que está usando o app. */
-export async function lerAlunoAtual(): Promise<Aluno> {
-  await connection(); // sempre lê o valor atual, nunca uma cópia guardada do momento da compilação
-  return structuredClone(memoria.__pienelAluno ?? ALUNO_EXEMPLO);
+/** Perfil completo do aluno logado, ou null se ninguém estiver logado. */
+export async function lerContaAtual(): Promise<ContaAluno | null> {
+  const { supabase, id, email } = await usuarioAtual();
+  if (!id) return null;
+
+  const [aluno, saude, consentimento] = await Promise.all([
+    supabase
+      .from("alunos")
+      .select("nome_completo, data_nascimento, genero, objetivo, nivel, cep, endereco, bairro, cidade")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("alunos_saude")
+      .select("restricoes, peso_kg, altura_cm, outras_medidas")
+      .eq("aluno_id", id)
+      .maybeSingle(),
+    supabase
+      .from("consentimentos")
+      .select("id")
+      .eq("aluno_id", id)
+      .eq("tipo", "dados_saude")
+      .is("revogado_em", null)
+      .maybeSingle(),
+  ]);
+
+  const a = aluno.data;
+  if (aluno.error || !a) return null;
+  const s = saude.data;
+
+  return {
+    perfil: {
+      email,
+      nomeCompleto: texto(a.nome_completo),
+      dataNascimento: texto(a.data_nascimento),
+      genero: (a.genero as Genero | null) ?? null,
+      objetivo: texto(a.objetivo),
+      nivel: (a.nivel as NivelAluno | null) ?? null,
+      cep: texto(a.cep),
+      endereco: texto(a.endereco),
+      bairro: texto(a.bairro),
+      cidade: texto(a.cidade),
+    },
+    consentimentoSaude: !!consentimento.data,
+    saude: s
+      ? {
+          restricoes: texto(s.restricoes),
+          pesoKg: numero(s.peso_kg),
+          alturaCm: numero(s.altura_cm),
+          outrasMedidas: texto(s.outras_medidas),
+        }
+      : SAUDE_VAZIA,
+  };
 }
 
-export type RespostaPerfil = { ok: true; aluno: Aluno } | { ok: false; erro: string };
+const vazioViraNulo = (v: string) => (v.trim() === "" ? null : v.trim());
 
-/** Salva o perfil do aluno que está usando o app. */
-export async function salvarAlunoAtual(dados: Aluno): Promise<RespostaPerfil> {
-  // Confere tudo de novo aqui: o que chega do navegador não é confiável.
-  const problemas = problemasDoAluno(dados);
-  if (problemas.length > 0) {
-    const texto = juntarComE(problemas);
-    return { ok: false, erro: texto.charAt(0).toUpperCase() + texto.slice(1) + "." };
-  }
+export async function salvarPerfil(dados: PerfilEditavel): Promise<Resposta> {
+  const problemas = problemasDoPerfil(dados);
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
-  const aluno = limparAluno(dados);
-  memoria.__pienelAluno = aluno;
-  return { ok: true, aluno: structuredClone(aluno) };
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+
+  // Nome completo e data de nascimento não estão aqui: só o suporte altera.
+  const { error } = await supabase
+    .from("alunos")
+    .update({
+      genero: dados.genero,
+      objetivo: dados.objetivo.trim(),
+      nivel: dados.nivel,
+      cep: vazioViraNulo(dados.cep),
+      endereco: vazioViraNulo(dados.endereco),
+      bairro: vazioViraNulo(dados.bairro),
+      cidade: vazioViraNulo(dados.cidade),
+    })
+    .eq("id", id);
+
+  return error ? { ok: false, erro: "Não foi possível salvar o perfil. Tente de novo." } : { ok: true };
+}
+
+export async function salvarSaude(dados: DadosSaude): Promise<Resposta> {
+  const problemas = problemasDaSaude(dados);
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
+
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+
+  // Sem consentimento ativo, o próprio banco recusa a gravação.
+  const { error } = await supabase.from("alunos_saude").upsert(
+    {
+      aluno_id: id,
+      restricoes: dados.restricoes.trim(),
+      peso_kg: dados.pesoKg,
+      altura_cm: dados.alturaCm,
+      outras_medidas: dados.outrasMedidas.trim(),
+    },
+    { onConflict: "aluno_id" },
+  );
+
+  return error
+    ? { ok: false, erro: "Não foi possível salvar os dados de saúde. Confira se a autorização está ativa." }
+    : { ok: true };
+}
+
+export async function darConsentimentoSaude(): Promise<Resposta> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+
+  const { error } = await supabase
+    .from("consentimentos")
+    .insert({ aluno_id: id, tipo: "dados_saude", versao_texto: VERSAO_CONSENTIMENTO_SAUDE });
+
+  // 23505 = já existe uma autorização ativa (o que também está certo).
+  return error && error.code !== "23505"
+    ? { ok: false, erro: "Não foi possível registrar a autorização. Tente de novo." }
+    : { ok: true };
+}
+
+/** Retirar a autorização APAGA os dados de saúde (feito pelo próprio banco). */
+export async function retirarConsentimentoSaude(): Promise<Resposta> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
+
+  const { error } = await supabase
+    .from("consentimentos")
+    .update({ revogado_em: new Date().toISOString() })
+    .eq("aluno_id", id)
+    .eq("tipo", "dados_saude")
+    .is("revogado_em", null);
+
+  return error ? { ok: false, erro: "Não foi possível retirar a autorização. Tente de novo." } : { ok: true };
 }

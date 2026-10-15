@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { Carregando } from "@/components/Formulario";
 import { Avatar } from "@/components/Avatar";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Icone, type NomeIcone } from "@/components/Icone";
@@ -30,7 +32,16 @@ export async function generateMetadata({
   return { title: personal?.nome ?? "Personal não encontrado" };
 }
 
-export default async function PaginaPerfil({ params }: PageProps<"/personais/[slug]">) {
+export default function PaginaPerfil({ params }: PageProps<"/personais/[slug]">) {
+  // O endereço (slug) é lido dentro do bloco de carregamento, para a navegação não travar.
+  return (
+    <Suspense fallback={<Carregando />}>
+      <Perfil params={params} />
+    </Suspense>
+  );
+}
+
+async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["params"] }) {
   const { slug } = await params;
   const personal = await buscarPersonal(slug);
   if (!personal) notFound();
@@ -61,6 +72,11 @@ export default async function PaginaPerfil({ params }: PageProps<"/personais/[sl
           {perfil.selo && (
             <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-xs font-bold">
               {perfil.selo}
+            </span>
+          )}
+          {personal.publico !== "todos" && (
+            <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-xs font-bold">
+              {personal.genero === "f" ? "Especializada" : "Especializado"} em treino {personal.publico}
             </span>
           )}
         </div>

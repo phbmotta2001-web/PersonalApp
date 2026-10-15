@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import type { Personal } from "@/data/personais";
+import { AVISO_APAGAR_30_DIAS } from "@/lib/consentimento";
 import { maiuscula, tratamento } from "@/lib/formato";
 import { Icone } from "../Icone";
 
@@ -10,9 +11,11 @@ import { Icone } from "../Icone";
 export function PedidoEnviado({
   personal,
   hora,
+  autorizouRestricoes,
 }: {
   personal: Personal;
   hora: string;
+  autorizouRestricoes: boolean;
 }) {
   const titulo = useRef<HTMLHeadingElement>(null);
   const t = tratamento(personal);
@@ -22,14 +25,14 @@ export function PedidoEnviado({
   // Leva o foco para o título, para leitores de tela anunciarem a nova tela.
   useEffect(() => titulo.current?.focus(), []);
 
-  // EXEMPLO: os passos "avisado no WhatsApp" ainda não acontecem de verdade (veja src/data/pedidos.ts).
+  // Ainda não há aviso por WhatsApp/e-mail ao personal (ver src/data/pedidos.ts),
+  // então esta tela não promete isso.
   const passos = [
     { feito: true, titulo: "Pedido enviado", detalhe: `Hoje, ${hora}` },
-    { feito: true, titulo: `${t.nome} ${t.avisado} no WhatsApp`, detalhe: `Hoje, ${hora}` },
     {
       feito: false,
       titulo: `${t.nome} responde com uma proposta`,
-      detalhe: `${maiuscula(t.pronome)} tem até 24 h. Você recebe no WhatsApp e no app.`,
+      detalhe: `${maiuscula(t.pronome)} tem até 24 h para responder.`,
     },
     {
       feito: false,
@@ -60,8 +63,8 @@ export function PedidoEnviado({
               Pedido enviado
             </h1>
             <p className="max-w-[30ch] text-ink-3">
-              {maiuscula(quem)} acabou de receber seu perfil no WhatsApp. {maiuscula(t.pronome)}{" "}
-              costuma responder em {resposta}.
+              Seu pedido foi guardado para {quem}. {maiuscula(t.pronome)} costuma responder em{" "}
+              {resposta}.
             </p>
           </div>
 
@@ -89,12 +92,20 @@ export function PedidoEnviado({
             ))}
           </ol>
 
-          <p className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+          <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
             <span className="mt-px text-brand">
               <Icone nome="cadeado" />
             </span>
-            Suas medidas, fotos e exames só aparecem para {quem} se {t.pronome} aceitar o pedido.
-          </p>
+            <div className="flex flex-col gap-1.5">
+              <p>
+                {autorizouRestricoes
+                  ? `Você autorizou ${quem} a ver suas restrições para decidir este pedido.`
+                  : `Suas restrições não foram compartilhadas: ${quem} vê que você preferiu mostrá-las só depois do aceite.`}{" "}
+                Peso, altura, medidas, endereço e exames só aparecem se {t.pronome} aceitar.
+              </p>
+              <p>{AVISO_APAGAR_30_DIAS}</p>
+            </div>
+          </div>
 
           <div className="flex flex-col gap-2.5">
             <Link

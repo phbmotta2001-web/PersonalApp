@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Icone } from "@/components/Icone";
+import { usuarioAtual } from "@/lib/supabase/servidor";
 
 export default function Home() {
   return (
@@ -15,10 +17,35 @@ export default function Home() {
         <Icone nome="busca" />
         Buscar personais
       </Link>
-      <Link href="/perfil" className="inline-flex items-center gap-1.5 font-semibold text-brand">
+      {/* Depende de quem está logado: aparece logo depois do resto da página. */}
+      <Suspense fallback={<div className="h-6" />}>
+        <MenuConta />
+      </Suspense>
+    </main>
+  );
+}
+
+async function MenuConta() {
+  const { id } = await usuarioAtual();
+  const estiloLink = "inline-flex items-center gap-1.5 font-semibold text-brand";
+
+  if (id)
+    return (
+      <Link href="/perfil" className={estiloLink}>
         <Icone nome="usuario" />
         Meu perfil
       </Link>
-    </main>
+    );
+
+  return (
+    <div className="flex items-center gap-5">
+      <Link href="/entrar" className={estiloLink}>
+        Entrar
+      </Link>
+      <Link href="/cadastro" className={estiloLink}>
+        <Icone nome="usuario" />
+        Criar conta
+      </Link>
+    </div>
   );
 }

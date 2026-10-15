@@ -18,6 +18,7 @@ import type { Personal } from "../personais";
 export const PERSONAIS_EXEMPLO: Personal[] = [
   {
     slug: "camila-duarte",
+    publico: "todos",
     nome: "Camila Duarte",
     genero: "f",
     cor: "av1",
@@ -67,6 +68,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   },
   {
     slug: "juliana-reis",
+    publico: "feminino",
     nome: "Juliana Reis",
     genero: "f",
     cor: "av2",
@@ -114,6 +116,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   },
   {
     slug: "rafael-nunes",
+    publico: "todos",
     nome: "Rafael Nunes",
     genero: "m",
     cor: "av4",
@@ -161,6 +164,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   },
   {
     slug: "beatriz-lemos",
+    publico: "todos",
     nome: "Beatriz Lemos",
     genero: "f",
     cor: "av3",
@@ -208,6 +212,7 @@ export const PERSONAIS_EXEMPLO: Personal[] = [
   },
   {
     slug: "thiago-prado",
+    publico: "todos",
     nome: "Thiago Prado",
     genero: "m",
     cor: "av5",

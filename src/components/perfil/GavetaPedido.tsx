@@ -1,12 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { enviarPedido } from "@/data/pedidos";
 import { LOCAIS, type Personal } from "@/data/personais";
+import { AVISO_APAGAR_30_DIAS, TEXTO_AUTORIZACAO_PEDIDO } from "@/lib/consentimento";
 import { alternar } from "@/lib/filtros";
-import { formatarReais, tratamento } from "@/lib/formato";
-import { DIAS, juntarComE, LIMITE_MENSAGEM, oQueFalta, PERIODOS, type Pedido } from "@/lib/pedido";
+import { formatarReais, juntarComE, maiuscula, tratamento } from "@/lib/formato";
+import { DIAS, LIMITE_MENSAGEM, oQueFalta, PERIODOS, type Pedido } from "@/lib/pedido";
 import { Chip } from "../Chip";
+import { ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Gaveta, GrupoDaGaveta } from "../Gaveta";
 import { Icone } from "../Icone";
 
@@ -19,6 +22,7 @@ function pedidoInicial(personal: Personal): Pedido {
     periodos: [],
     locais: [],
     mensagem: "",
+    autorizarRestricoes: false,
   };
 }
 
@@ -26,13 +30,17 @@ function pedidoInicial(personal: Personal): Pedido {
 export function GavetaPedido({
   personal,
   aberta,
+  consentimentoSaude,
+  temRestricoes,
   aoFechar,
   aoEnviar,
 }: {
   personal: Personal;
   aberta: boolean;
+  consentimentoSaude: boolean;
+  temRestricoes: boolean;
   aoFechar: () => void;
-  aoEnviar: () => void;
+  aoEnviar: (autorizouRestricoes: boolean) => void;
 }) {
   const [pedido, setPedido] = useState(() => pedidoInicial(personal));
   const [erro, setErro] = useState<string | null>(null);
@@ -49,7 +57,7 @@ export function GavetaPedido({
     iniciarEnvio(async () => {
       try {
         const resposta = await enviarPedido(pedido);
-        if (resposta.ok) aoEnviar();
+        if (resposta.ok) aoEnviar(pedido.autorizarRestricoes && temRestricoes);
         else setErro(resposta.erro);
       } catch {
         setErro("Não foi possível enviar agora. Confira sua internet e tente de novo.");
@@ -64,12 +72,7 @@ export function GavetaPedido({
       titulo={`Pedido para ${t.artigo} ${t.nome}`}
       rodape={
         <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={enviar}
-            disabled={falta.length > 0 || enviando}
-            className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] bg-brand px-[18px] font-bold text-brand-ink hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100"
-          >
+          <button type="button" onClick={enviar} disabled={falta.length > 0 || enviando} className={ESTILO_BOTAO_PRINCIPAL}>
             <Icone nome="enviar" className="size-4" />
             {enviando ? "Enviando…" : `Enviar para ${t.artigo} ${t.nome}`}
           </button>
@@ -144,20 +147,60 @@ export function GavetaPedido({
           maxLength={LIMITE_MENSAGEM}
           value={pedido.mensagem}
           onChange={(e) => mudar({ mensagem: e.target.value })}
+          aria-describedby="pedido-mensagem-ajuda"
           placeholder="Ex.: Quero voltar a treinar com alguém que me acompanhe de perto."
           className="min-h-[84px] w-full resize-none rounded-[13px] border border-line bg-surface px-3.5 py-3 placeholder:text-ink-3"
         />
+        <p id="pedido-mensagem-ajuda" className="flex justify-between gap-3 text-xs text-ink-3">
+          <span>
+            Pode incluir restrições e limitações. {maiuscula(t.artigo)} {t.nome} lê esta mensagem antes de
+            aceitar.
+          </span>
+          <span className="shrink-0 tabular-nums">
+            {pedido.mensagem.length}/{LIMITE_MENSAGEM}
+          </span>
+        </p>
       </div>
 
-      <p className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+      {temRestricoes ? (
+        <label className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5">
+          <input
+            type="checkbox"
+            checked={pedido.autorizarRestricoes}
+            onChange={(e) => mudar({ autorizarRestricoes: e.target.checked })}
+            className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
+          />
+          <span className="text-[13px] text-ink-2">
+            <b className="block text-ink">
+              {TEXTO_AUTORIZACAO_PEDIDO} <span className="font-normal text-ink-3">(opcional)</span>
+            </b>
+            Se não marcar, o pedido vai mesmo assim, e {t.artigo} {t.nome} vê que você preferiu não
+            compartilhar restrições antes do aceite.
+          </span>
+        </label>
+      ) : (
+        <p className="rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+          {consentimentoSaude
+            ? "Você não informou restrições no seu perfil."
+            : "Para compartilhar restrições guardadas, autorize os dados de saúde no seu perfil."}{" "}
+          <Link href="/perfil" className="font-semibold text-brand">
+            Abrir meu perfil
+          </Link>
+        </p>
+      )}
+
+      <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
         <span className="mt-px text-brand">
           <Icone nome="cadeado" />
         </span>
-        <span>
-          Seus objetivos, restrições e nível vão junto com o pedido. Medidas, fotos e exames só
-          aparecem para {t.artigo} {t.nome} se {t.pronome} aceitar.
-        </span>
-      </p>
+        <div className="flex flex-col gap-1.5">
+          <p>
+            {maiuscula(t.artigo)} {t.nome} vê seu primeiro nome, objetivo, nível e bairro. Peso, altura, medidas,
+            endereço e exames, só se {t.pronome} aceitar.
+          </p>
+          <p>{AVISO_APAGAR_30_DIAS}</p>
+        </div>
+      </div>
     </Gaveta>
   );
 }

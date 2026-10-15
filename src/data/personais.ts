@@ -20,7 +20,9 @@ export type Objetivo =
   | "Corrida"
   | "Pós-parto"
   | "50+";
-export type CorAvatar = "av1" | "av2" | "av3" | "av4" | "av5" | "av6";
+/** Para quem o personal monta treinos: todos, ou especializado em treino feminino/masculino. */
+export type PublicoAtendido = "todos" | "feminino" | "masculino";
+export type CorAvatar ="av1" | "av2" | "av3" | "av4" | "av5" | "av6";
 
 export const OBJETIVOS: Objetivo[] = [
   "Fortalecimento",
@@ -62,6 +64,7 @@ export interface Personal {
   slug: string;
   nome: string;
   genero: Genero;
+  publico: PublicoAtendido;
   cor: CorAvatar;
   nivel?: Nivel;
   bairro: string;

@@ -1,43 +1,24 @@
 // Perfil do aluno: o que ele tem e quais valores são aceitos.
-// Usado na tela "Meu perfil" e no servidor.
+// Usado nas telas e no servidor. O banco (supabase/migrations) repete estas regras.
 //
-// O perfil tem duas partes:
-// - PÚBLICA (nome, objetivos, restrições, nível): vai para o personal junto com cada pedido.
-// - PRIVADA (medidas, fotos, exames): só o aluno vê. O personal só poderá ver depois
-//   de aceitar o pedido (essa etapa ainda não existe).
+// Quem vê o quê (ver docs/plano-perfil-e-privacidade.md):
+// - Antes do aceite, o personal vê: primeiro nome, objetivo, nível, bairro, a
+//   mensagem do pedido e, se o aluno autorizar no pedido, as restrições.
+// - Depois do aceite: nome completo, idade, gênero, endereço, peso, altura e medidas.
+// - Nunca: e-mail, senha, data de nascimento (o personal vê só a idade).
 //
-// ATENÇÃO (LGPD): restrições, medidas, fotos e exames são dados de saúde, tratados
-// pela lei como dados sensíveis. Antes do lançamento, exigem login, armazenamento
-// protegido e consentimento do aluno.
+// ATENÇÃO (LGPD): restrições, peso, altura, medidas e exames são dados de saúde
+// (dados sensíveis). Só são guardados com consentimento (src/lib/consentimento.ts).
 
+export type Genero = "feminino" | "masculino" | "outro" | "prefiro_nao_informar";
 export type NivelAluno = "iniciante" | "intermediario" | "avancado";
 
-export interface DadosPrivados {
-  pesoKg: number | null;
-  alturaCm: number | null;
-  outrasMedidas: string;
-  // Fotos e exames entram junto com o banco de dados.
-}
-
-export interface Aluno {
-  nome: string;
-  objetivos: string;
-  restricoes: string;
-  nivel: NivelAluno;
-  privado: DadosPrivados;
-}
-
-/** A parte do perfil que o personal vê junto com o pedido. */
-export type PerfilPublico = Omit<Aluno, "privado">;
-
-export function perfilPublico(aluno: Aluno): PerfilPublico {
-  return {
-    nome: aluno.nome,
-    objetivos: aluno.objetivos,
-    restricoes: aluno.restricoes,
-    nivel: aluno.nivel,
-  };
-}
+export const GENEROS: { valor: Genero; rotulo: string }[] = [
+  { valor: "feminino", rotulo: "Feminino" },
+  { valor: "masculino", rotulo: "Masculino" },
+  { valor: "outro", rotulo: "Outro" },
+  { valor: "prefiro_nao_informar", rotulo: "Prefiro não informar" },
+];
 
 // O nível é pela experiência com treinamento (há quanto tempo treina), não pela
 // frequência semanal.
@@ -48,62 +29,150 @@ export const NIVEIS_ALUNO: { valor: NivelAluno; rotulo: string; descricao: strin
 ];
 
 export const LIMITES = {
-  nome: 60,
-  texto: 300, // objetivos, restrições e outras medidas
+  nome: { min: 2, max: 120 },
+  senha: 8,
+  objetivo: 300,
+  restricoes: 300,
+  outrasMedidas: 300,
+  endereco: 200,
+  bairro: 80,
+  cidade: 80,
   peso: { min: 20, max: 300 },
   altura: { min: 100, max: 250 },
+  idadeMinima: 18,
 };
 
-export function rotuloNivel(nivel: NivelAluno): string {
-  return NIVEIS_ALUNO.find((n) => n.valor === nivel)?.rotulo ?? nivel;
+/** Dados que vêm do cadastro. Nome completo e data de nascimento ficam fixos depois. */
+export interface PerfilAluno {
+  email: string;
+  nomeCompleto: string;
+  /** "AAAA-MM-DD" */
+  dataNascimento: string;
+  genero: Genero | null;
+  objetivo: string;
+  nivel: NivelAluno | null;
+  cep: string;
+  endereco: string;
+  bairro: string;
+  cidade: string;
 }
 
-function texto(valor: unknown): string | null {
-  return typeof valor === "string" ? valor.trim() : null;
+/** O que o aluno pode mudar a qualquer momento na tela "Meu perfil". */
+export type PerfilEditavel = Pick<
+  PerfilAluno,
+  "genero" | "objetivo" | "nivel" | "cep" | "endereco" | "bairro" | "cidade"
+>;
+
+export interface DadosSaude {
+  restricoes: string;
+  pesoKg: number | null;
+  alturaCm: number | null;
+  outrasMedidas: string;
 }
 
-function numeroOuVazio(valor: unknown, faixa: { min: number; max: number }): boolean {
-  return valor === null || (typeof valor === "number" && valor >= faixa.min && valor <= faixa.max);
+export interface ContaAluno {
+  perfil: PerfilAluno;
+  consentimentoSaude: boolean;
+  saude: DadosSaude;
 }
 
-/** Lista o que está errado no perfil (vazia = tudo certo). */
-export function problemasDoAluno(dados: Partial<Aluno> | null | undefined): string[] {
+export const SAUDE_VAZIA: DadosSaude = { restricoes: "", pesoKg: null, alturaCm: null, outrasMedidas: "" };
+
+export function rotuloNivel(nivel: NivelAluno | null): string {
+  return NIVEIS_ALUNO.find((n) => n.valor === nivel)?.rotulo ?? "Não informado";
+}
+
+export function rotuloGenero(genero: Genero | null): string {
+  return GENEROS.find((g) => g.valor === genero)?.rotulo ?? "Não informado";
+}
+
+export function primeiroNome(nomeCompleto: string): string {
+  return nomeCompleto.trim().split(/\s+/)[0] ?? "";
+}
+
+/** Idade completa em anos numa data (padrão: hoje). */
+export function idadeEm(dataNascimento: string, hoje = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dataNascimento);
+  if (!m) return null;
+  const [ano, mes, dia] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const nascimento = new Date(ano, mes - 1, dia);
+  if (nascimento.getFullYear() !== ano || nascimento.getMonth() !== mes - 1 || nascimento.getDate() !== dia)
+    return null; // data que não existe, como 31/02
+  let idade = hoje.getFullYear() - ano;
+  if (hoje.getMonth() < mes - 1 || (hoje.getMonth() === mes - 1 && hoje.getDate() < dia)) idade--;
+  return idade;
+}
+
+/** O perfil tem o mínimo para enviar pedidos (objetivo e nível). */
+export function perfilProntoParaPedido(perfil: Pick<PerfilAluno, "objetivo" | "nivel">): boolean {
+  return perfil.objetivo.trim().length > 0 && perfil.nivel !== null;
+}
+
+// ─── Conferências ──────────────────────────────────────────────────────────
+
+const texto = (v: unknown) => (typeof v === "string" ? v.trim() : null);
+const emailValido = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 254;
+
+function conferirTexto(problemas: string[], valor: unknown, limite: number, rotulo: string, obrigatorio = false) {
+  const t = texto(valor);
+  if (t === null) problemas.push(`confira ${rotulo}`);
+  else if (obrigatorio && t.length === 0) problemas.push(`preencha ${rotulo}`);
+  else if (t.length > limite) problemas.push(`use até ${limite} caracteres em ${rotulo}`);
+}
+
+export interface DadosCadastro {
+  email: string;
+  senha: string;
+  nomeCompleto: string;
+  dataNascimento: string;
+  genero: Genero | null;
+  consentimentoSaude: boolean;
+}
+
+export function problemasDoCadastro(d: Partial<DadosCadastro> | null | undefined, hoje = new Date()): string[] {
   const problemas: string[] = [];
-  const nome = texto(dados?.nome) ?? "";
-  const objetivos = texto(dados?.objetivos) ?? "";
-  const restricoes = texto(dados?.restricoes);
-  const privado = dados?.privado;
-  const outras = texto(privado?.outrasMedidas);
+  const email = texto(d?.email) ?? "";
+  const nome = texto(d?.nomeCompleto) ?? "";
 
-  if (nome.length < 2) problemas.push("escreva seu nome");
-  else if (nome.length > LIMITES.nome) problemas.push(`use até ${LIMITES.nome} letras no nome`);
-  if (objetivos.length < 3) problemas.push("conte seus objetivos");
-  else if (objetivos.length > LIMITES.texto)
-    problemas.push(`use até ${LIMITES.texto} caracteres nos objetivos`);
-  if (restricoes === null || restricoes.length > LIMITES.texto)
-    problemas.push(`use até ${LIMITES.texto} caracteres nas restrições`);
-  if (!NIVEIS_ALUNO.some((n) => n.valor === dados?.nivel)) problemas.push("escolha seu nível");
-  if (!numeroOuVazio(privado?.pesoKg, LIMITES.peso))
-    problemas.push(`informe um peso entre ${LIMITES.peso.min} e ${LIMITES.peso.max} kg`);
-  if (!numeroOuVazio(privado?.alturaCm, LIMITES.altura))
-    problemas.push(`informe uma altura entre ${LIMITES.altura.min} e ${LIMITES.altura.max} cm`);
-  if (outras === null || outras.length > LIMITES.texto)
-    problemas.push(`use até ${LIMITES.texto} caracteres em outras medidas`);
+  if (!emailValido(email)) problemas.push("informe um e-mail válido");
+  if (typeof d?.senha !== "string" || d.senha.length < LIMITES.senha)
+    problemas.push(`crie uma senha com pelo menos ${LIMITES.senha} caracteres`);
+  else if (d.senha.length > 72) problemas.push("use uma senha com até 72 caracteres");
+  if (nome.length < LIMITES.nome.min || nome.length > LIMITES.nome.max || !nome.includes(" "))
+    problemas.push("escreva seu nome completo");
 
+  const idade = idadeEm(typeof d?.dataNascimento === "string" ? d.dataNascimento : "", hoje);
+  if (idade === null || idade > 120) problemas.push("informe uma data de nascimento válida");
+  else if (idade < LIMITES.idadeMinima) problemas.push("o cadastro é só para maiores de 18 anos");
+
+  if (d?.genero != null && !GENEROS.some((g) => g.valor === d.genero)) problemas.push("escolha um gênero da lista");
+  if (typeof d?.consentimentoSaude !== "boolean") problemas.push("confira o consentimento");
   return problemas;
 }
 
-/** Deixa o perfil limpo para guardar (sem espaços sobrando, só os campos conhecidos). */
-export function limparAluno(dados: Aluno): Aluno {
-  return {
-    nome: dados.nome.trim(),
-    objetivos: dados.objetivos.trim(),
-    restricoes: dados.restricoes.trim(),
-    nivel: dados.nivel,
-    privado: {
-      pesoKg: dados.privado.pesoKg,
-      alturaCm: dados.privado.alturaCm,
-      outrasMedidas: dados.privado.outrasMedidas.trim(),
-    },
-  };
+export function problemasDoPerfil(d: Partial<PerfilEditavel> | null | undefined): string[] {
+  const problemas: string[] = [];
+  conferirTexto(problemas, d?.objetivo, LIMITES.objetivo, "seu objetivo", true);
+  if (!NIVEIS_ALUNO.some((n) => n.valor === d?.nivel)) problemas.push("escolha seu nível");
+  if (d?.genero != null && !GENEROS.some((g) => g.valor === d.genero)) problemas.push("escolha um gênero da lista");
+  const cep = texto(d?.cep);
+  if (cep === null || (cep !== "" && !/^\d{5}-?\d{3}$/.test(cep))) problemas.push("confira o CEP (8 números)");
+  conferirTexto(problemas, d?.endereco, LIMITES.endereco, "o endereço");
+  conferirTexto(problemas, d?.bairro, LIMITES.bairro, "o bairro");
+  conferirTexto(problemas, d?.cidade, LIMITES.cidade, "a cidade");
+  return problemas;
+}
+
+const numeroOuVazio = (v: unknown, f: { min: number; max: number }) =>
+  v === null || (typeof v === "number" && v >= f.min && v <= f.max);
+
+export function problemasDaSaude(d: Partial<DadosSaude> | null | undefined): string[] {
+  const problemas: string[] = [];
+  conferirTexto(problemas, d?.restricoes, LIMITES.restricoes, "as restrições");
+  if (!numeroOuVazio(d?.pesoKg, LIMITES.peso))
+    problemas.push(`informe um peso entre ${LIMITES.peso.min} e ${LIMITES.peso.max} kg`);
+  if (!numeroOuVazio(d?.alturaCm, LIMITES.altura))
+    problemas.push(`informe uma altura entre ${LIMITES.altura.min} e ${LIMITES.altura.max} cm`);
+  conferirTexto(problemas, d?.outrasMedidas, LIMITES.outrasMedidas, "outras medidas");
+  return problemas;
 }

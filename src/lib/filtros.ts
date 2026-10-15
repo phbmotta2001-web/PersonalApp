@@ -1,4 +1,5 @@
-import type { Genero, Local, Objetivo, Personal } from "@/data/personais";
+import type { Genero, Local, Objetivo, Personal, PublicoAtendido } from "@/data/personais";
+import type { Genero as GeneroAluno } from "@/lib/aluno";
 
 export type FaixaPreco = "ate-110" | "110-150" | "acima-150";
 export type NotaMinima = 4.5 | 4.8;
@@ -59,6 +60,17 @@ export function temFiltroAtivo(f: Filtros): boolean {
     f.preco !== null ||
     f.notaMinima !== null
   );
+}
+
+/**
+ * Regra de gênero (ver docs/plano-perfil-e-privacidade.md): quem marcou Feminino não
+ * vê personais especializados só em treino masculino, e vice-versa. "Outro",
+ * "Prefiro não informar", sem resposta ou sem login: vê todos, sempre.
+ */
+export function personalAtendeAluno(publico: PublicoAtendido, generoAluno: GeneroAluno | null): boolean {
+  if (generoAluno === "feminino") return publico !== "masculino";
+  if (generoAluno === "masculino") return publico !== "feminino";
+  return true;
 }
 
 /** Marca o item se não estiver na lista, desmarca se estiver. */
