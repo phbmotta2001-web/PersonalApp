@@ -7,7 +7,7 @@ import { sair } from "@/data/conta";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { curtoDoDia, dataCurta, horariosLivres, minParaHora } from "@/lib/expediente";
-import { formatarWhatsapp, ROTULO_SITUACAO } from "@/lib/personal";
+import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
   title: "Minha agenda",
@@ -37,14 +37,11 @@ async function Conteudo() {
         <h1 className="text-[24px] font-extrabold">Olá, {personal.nomeCompleto.split(" ")[0]}</h1>
       </header>
 
-      {personal.situacao !== "aprovado" && (
+      {/* Fase 1: as contas nascem liberadas (sem conferência do CREF); só a suspensão avisa. */}
+      {personal.situacao === "suspenso" && (
         <section className="rounded-[20px] bg-gold-soft p-4 text-[13.5px] text-gold">
-          <p className="font-bold">Conta: {ROTULO_SITUACAO[personal.situacao]}</p>
-          <p className="mt-1">
-            {personal.situacao === "em_analise"
-              ? "Estamos conferindo o seu CREF. Enquanto isso, você já pode configurar seus horários."
-              : "Sua conta está suspensa. Fale com a equipe do Pienel."}
-          </p>
+          <p className="font-bold">Conta suspensa</p>
+          <p className="mt-1">Fale com a equipe do Pienel.</p>
         </section>
       )}
 
@@ -107,7 +104,7 @@ async function Conteudo() {
         <p>{personal.email}</p>
         <p>WhatsApp {formatarWhatsapp(personal.whatsapp)}</p>
         <p>
-          CREF {personal.cref}/{personal.crefUf} · conta {ROTULO_SITUACAO[personal.situacao].toLowerCase()}
+          CREF {personal.cref}/{personal.crefUf}
         </p>
       </section>
 

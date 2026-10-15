@@ -6,6 +6,10 @@ export const UFS = [
   "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
 ] as const;
 
+/**
+ * Fase 1: toda conta nasce "aprovado" (sem conferência do CREF, porque não há
+ * captação de alunos). "em_analise" fica para a Fase 2 (marketplace).
+ */
 export type Situacao = "em_analise" | "aprovado" | "suspenso";
 
 export const ROTULO_SITUACAO: Record<Situacao, string> = {

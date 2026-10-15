@@ -45,6 +45,17 @@ export interface Bloqueio {
 }
 
 export const MAX_FAIXAS_POR_DIA = 4;
+
+/** Faixa sugerida para cada dia ligado: 06:00 às 21:00. */
+export const FAIXA_PADRAO = { inicioMin: 360, fimMin: 1260 } as const;
+
+/**
+ * Ponto de partida de quem ainda não configurou nada: TODOS os dias ligados
+ * (decisão de 15/10/2026). O personal desliga os dias em que não trabalha.
+ */
+export function expedientePadrao(): Faixa[] {
+  return DIAS.map((d) => ({ dia: d.valor, ...FAIXA_PADRAO }));
+}
 export const LIMITE_MOTIVO = 80;
 
 // ─── Horas ─────────────────────────────────────────────────────────────────

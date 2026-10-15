@@ -5,6 +5,8 @@ import { salvarExpediente } from "@/data/expediente";
 import {
   DIAS,
   DURACOES,
+  expedientePadrao,
+  FAIXA_PADRAO,
   MAX_FAIXAS_POR_DIA,
   minParaHora,
   opcoesDeHora,
@@ -17,7 +19,6 @@ import { Chip } from "../Chip";
 import { ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Icone } from "../Icone";
 
-const FAIXA_NOVA = { inicioMin: 360, fimMin: 720 }; // 06:00–12:00
 const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums";
 
 const ordenar = (faixas: Faixa[]) => [...faixas].sort((a, b) => a.dia - b.dia || a.inicioMin - b.inicioMin);
@@ -25,7 +26,9 @@ const ordenar = (faixas: Faixa[]) => [...faixas].sort((a, b) => a.dia - b.dia ||
 /** Editor dos horários de trabalho: dias, faixas e duração padrão da aula. */
 export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas: Faixa[] } }) {
   const [duracao, setDuracao] = useState<Duracao>(inicial.duracao);
-  const [faixas, setFaixas] = useState<Faixa[]>(ordenar(inicial.faixas));
+  // Quem ainda não salvou nenhum horário começa com todos os dias ligados (06:00–21:00).
+  const nuncaConfigurou = inicial.faixas.length === 0;
+  const [faixas, setFaixas] = useState<Faixa[]>(ordenar(nuncaConfigurou ? expedientePadrao() : inicial.faixas));
   const [salvo, setSalvo] = useState(() => JSON.stringify({ duracao: inicial.duracao, faixas: ordenar(inicial.faixas) }));
   const [copiandoDe, setCopiandoDe] = useState<number | null>(null);
   const [destinos, setDestinos] = useState<number[]>([]);
@@ -40,8 +43,12 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
     setAviso(null);
     setFaixas(ordenar(novas));
   };
-  const ligarDia = (dia: number, ligado: boolean) =>
-    trocar(ligado ? [...faixas, { dia, ...FAIXA_NOVA }] : faixas.filter((f) => f.dia !== dia));
+  /** Ligar um dia copia o horário do primeiro dia já ligado (ou usa 06:00–21:00). */
+  const ligarDia = (dia: number, ligado: boolean) => {
+    if (!ligado) return trocar(faixas.filter((f) => f.dia !== dia));
+    const modelo = DIAS.map((d) => doDia(d.valor)).find((lista) => lista.length > 0);
+    trocar([...faixas, ...(modelo ?? [FAIXA_PADRAO]).map((f) => ({ dia, inicioMin: f.inicioMin, fimMin: f.fimMin }))]);
+  };
   const mudarFaixa = (dia: number, indice: number, parte: Partial<Faixa>) => {
     const alvo = doDia(dia)[indice];
     trocar(faixas.map((f) => (f === alvo ? { ...f, ...parte } : f)));
@@ -52,7 +59,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
   };
   const adicionarFaixa = (dia: number) => {
     const ultimo = doDia(dia).at(-1);
-    const inicioMin = ultimo ? Math.min(ultimo.fimMin + 60, 1380) : FAIXA_NOVA.inicioMin;
+    const inicioMin = ultimo ? Math.min(ultimo.fimMin + 60, 1380) : FAIXA_PADRAO.inicioMin;
     trocar([...faixas, { dia, inicioMin, fimMin: Math.min(inicioMin + 180, 1440) }]);
   };
   const aplicarCopia = () => {
@@ -82,6 +89,13 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
+        {nuncaConfigurou && (
+          <p className="rounded-[14px] bg-brand-soft px-3.5 py-3 text-[13px] text-brand">
+            Todos os dias começam ligados, das 06:00 às 21:00. Desligue os dias em que você não trabalha,
+            ajuste os horários e salve.
+          </p>
+        )}
+
         <fieldset className="flex flex-col gap-[7px]">
           <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Duração padrão da aula</legend>
           <div className="flex flex-wrap gap-2">

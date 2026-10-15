@@ -57,7 +57,6 @@ export function FormCadastroPersonal() {
         <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-3">
           <li>Abra o link <b>neste mesmo navegador</b>.</li>
           <li>Não chegou? Procure no spam. A mensagem pode levar alguns minutos.</li>
-          <li>Depois, a equipe do Pienel confere o seu CREF para liberar a conta.</li>
         </ul>
         <Link href="/entrar" className="font-semibold text-brand">
           Ir para Entrar

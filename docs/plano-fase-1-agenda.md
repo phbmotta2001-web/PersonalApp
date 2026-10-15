@@ -38,6 +38,8 @@ volume cobrado pelo app, para levar números a um investidor.
 | 5 | Agenda antes do cadastro do aluno | **Não.** O aluno só ocupa espaço na agenda depois de aceitar o convite e se cadastrar. Evita conflito de horário no cadastro e faz o personal trazer todos os alunos para o app. O cadastro do aluno é obrigatório e padrão. |
 | 6 | Menores de 18 | **Só maiores têm conta no beta.** Para alunos menores, o personal poderá **adicioná-los manualmente na agenda**, sem conta (exceção prevista). |
 | 7 | Entrada do aluno | **E-mail e senha** (o que já existe). |
+| 8 | CREF | **Sem conferência na Fase 1** (sem captação): a conta nasce liberada. Volta na Fase 2. |
+| 9 | Horários padrão | **Todos os dias ligados** (06:00–21:00); o personal desliga os que não trabalha. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -105,17 +107,16 @@ volume cobrado pelo app, para levar números a um investidor.
 | 11 | Painel de acompanhamento do aluno (presença, sequência, evolução) | — |
 | 12 | Painel do beta (métricas para o investidor) | — |
 
-## Aprovar o CREF de um personal (equipe)
-Conferir o registro no site do CONFEF/CREF do estado e, se estiver ativo, rodar no
-**SQL Editor** do Supabase (trocando o e-mail):
+## CREF (decisão de 15/10/2026)
+Na Fase 1 **não há conferência do CREF**: o Pienel é a agenda do personal com os
+próprios alunos, sem captação. Toda conta de personal nasce liberada ("aprovado").
+O CREF continua sendo pedido no cadastro. A conferência (e uma tela de administração
+para isso) volta na **Fase 2**, junto com o marketplace.
 
-```sql
-update public.personais
-   set situacao = 'aprovado'
- where id = (select id from auth.users where email = 'email-do-personal@exemplo.com');
-```
-
-Para suspender, troque `'aprovado'` por `'suspenso'`.
+## Horários de trabalho (decisão de 15/10/2026)
+Quem ainda não configurou começa com **todos os dias ligados, das 06:00 às 21:00**,
+e desliga os dias em que não trabalha. Religar um dia copia o horário de outro dia
+já ligado.
 
 ## Para começar já, fora do código
 1. Pedido da conta empresarial verificada na Meta (WhatsApp), com número próprio.
