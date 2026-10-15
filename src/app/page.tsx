@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Icone } from "@/components/Icone";
-import { tipoDaConta } from "@/data/conta";
+import { sair, tipoDaConta } from "@/data/conta";
 import { MARKETPLACE_ATIVO } from "@/lib/recursos";
 
 // Fase 1: a página inicial fala com o PERSONAL (agenda e cobrança num só lugar).
@@ -61,10 +61,19 @@ async function MenuConta() {
     );
   if (tipo === "aluno")
     return (
-      <Link href="/perfil" className={principal}>
-        <Icone nome="usuario" />
-        Meu perfil
-      </Link>
+      <div className="flex flex-col gap-3">
+        <Link href="/perfil" className={principal}>
+          <Icone nome="usuario" />
+          Meu perfil
+        </Link>
+        {/* Cada e-mail é aluno OU personal: para criar a conta de personal, é preciso sair desta. */}
+        <form action={sair} className="text-center text-[13px] text-ink-3">
+          É personal? Use outro e-mail:{" "}
+          <button type="submit" className="font-semibold text-brand">
+            sair desta conta de aluno
+          </button>
+        </form>
+      </div>
     );
 
   return (
