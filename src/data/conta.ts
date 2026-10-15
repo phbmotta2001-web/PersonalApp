@@ -147,6 +147,10 @@ export async function excluirConta(senha: string): Promise<Resposta> {
   const { error } = await supabase.rpc("excluir_minha_conta");
   if (error) return { ok: false, erro: "Não foi possível excluir a conta agora. Tente de novo." };
 
+  // Confere no servidor de login que a conta sumiu mesmo antes de dizer que deu certo.
+  const depois = await supabase.auth.getUser();
+  if (depois.data.user?.id === id) return { ok: false, erro: "Não foi possível excluir a conta agora. Tente de novo." };
+
   await supabase.auth.signOut();
   return { ok: true };
 }
