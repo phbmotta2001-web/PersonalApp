@@ -11,6 +11,7 @@ export function FormEntrar() {
   const parametros = useSearchParams();
   const voltar = destinoSeguro(parametros.get("voltar"));
   const linkVencido = parametros.get("erro") === "link";
+  const confirmadoEmOutroNavegador = parametros.get("aviso") === "confirmado";
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -39,6 +40,9 @@ export function FormEntrar() {
           O link de confirmação não funcionou: ele pode ter vencido ou ter sido aberto em outro
           navegador. Tente entrar; se o e-mail ainda não estiver confirmado, avisaremos.
         </Aviso>
+      )}
+      {confirmadoEmOutroNavegador && (
+        <Aviso tipo="ok">E-mail confirmado! Entre com seu e-mail e senha para continuar.</Aviso>
       )}
 
       <Campo id="ent-email" rotulo="E-mail">
