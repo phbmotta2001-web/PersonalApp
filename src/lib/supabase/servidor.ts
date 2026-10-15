@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
+import { connection } from "next/server";
 import { configSupabase } from "./config";
 
 /**
@@ -8,6 +9,9 @@ import { configSupabase } from "./config";
  * O banco aplica as regras de segurança por linha (RLS) para essa pessoa.
  */
 export async function criarClienteSupabase() {
+  // O Supabase consulta o relógio (validade do login): avisa o Next.js que isto só
+  // roda na hora da visita, nunca na pré-montagem das páginas.
+  await connection();
   const { url, chave } = configSupabase();
   const loja = await cookies();
 
