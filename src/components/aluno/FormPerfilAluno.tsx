@@ -169,7 +169,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
         {/* ── Conta ── */}
         <Bloco
           titulo="Sua conta"
-          descricao="Seus personais veem o seu perfil, mas nunca seu e-mail nem sua data de nascimento (só a idade)."
+          descricao="Seus personais veem o seu perfil, sua idade e o dia do seu aniversário, mas nunca o seu e-mail."
         >
           <TrocarEmail emailAtual={p.email} />
           <Campo id="pf-whatsapp" rotulo="WhatsApp" opcional ajuda="Com DDD. Sem número, você não recebe avisos por WhatsApp.">

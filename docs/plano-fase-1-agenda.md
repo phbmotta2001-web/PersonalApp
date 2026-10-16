@@ -60,6 +60,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 27 | Aluno resolve sozinho (17/10) | O **aluno cancela, remarca e marca reposição pelo app**; o personal recebe um **aviso** (sininho na agenda; WhatsApp na etapa 9). A opção manual do personal continua (menores, quem não usa o app). |
 | 28 | Reposição pelo aluno (17/10) | Entra **direto na agenda**, nos horários livres do personal, com pelo menos **8 h** de antecedência (ajustável), para o personal ver o aviso. |
 | 29 | Remarcar (17/10) | Num passo só, só com a antecedência de cancelamento; em cima da hora, o aluno fala com o personal. |
+| 30 | Aniversários (17/10) | A agenda mostra os **aniversários dos alunos do mês** (e o do dia escolhido). O personal passa a ver o dia e o mês do aniversário, além da idade; o aluno é avisado no convite e no perfil. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do

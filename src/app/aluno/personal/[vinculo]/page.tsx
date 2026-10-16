@@ -111,8 +111,8 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         )}
 
         <p className="text-xs text-ink-3">
-          {primeiro} vê o seu perfil completo (objetivo, nível, restrições, medidas, endereço e WhatsApp), nunca seu
-          e-mail nem sua data de nascimento.
+          {primeiro} vê o seu perfil completo (objetivo, nível, restrições, medidas, endereço e WhatsApp), sua idade e o
+          dia do seu aniversário. Nunca o seu e-mail.
         </p>
 
         <EncerrarVinculo

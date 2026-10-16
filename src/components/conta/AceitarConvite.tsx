@@ -16,7 +16,7 @@ export function AceitarConvite({ codigo, personal }: { codigo: string; personal:
     <div className="flex flex-col gap-3">
       <p className="rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
         Ao aceitar, {primeiro} poderá ver seu cadastro completo: objetivo, nível, restrições, peso,
-        altura, medidas, endereço e WhatsApp. Nunca seu e-mail nem sua data de nascimento (só a idade).
+        altura, medidas, endereço, WhatsApp, sua idade e o dia do seu aniversário. Nunca o seu e-mail.
         Você pode encerrar o vínculo quando quiser.
       </p>
       <Aviso>{erro}</Aviso>

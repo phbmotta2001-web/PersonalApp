@@ -161,3 +161,24 @@ export async function listarMeusPersonais(): Promise<MeuPersonal[]> {
     aceitoEm: p.aceito_em,
   }));
 }
+
+export interface Aniversariante {
+  vinculoId: string;
+  nome: string;
+  /** Dia do mês do aniversário. */
+  dia: number;
+  /** Idade que completa no ano. */
+  fazAnos: number;
+}
+
+/** Alunos ativos que fazem aniversário no mês da data "AAAA-MM-DD" (padrão: este mês). */
+export async function aniversariantesDoMes(data?: string): Promise<Aniversariante[]> {
+  const supabase = await criarClienteSupabase();
+  const { data: linhas } = await supabase.rpc("aniversariantes_do_mes", { p_data: data ?? null });
+  return ((linhas ?? []) as { vinculo_id: string; nome: string; dia: number; faz_anos: number }[]).map((l) => ({
+    vinculoId: l.vinculo_id,
+    nome: l.nome,
+    dia: l.dia,
+    fazAnos: l.faz_anos,
+  }));
+}

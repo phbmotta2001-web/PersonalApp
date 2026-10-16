@@ -5,7 +5,8 @@
 // - Antes do aceite, o personal vê: primeiro nome, objetivo, nível, bairro, a
 //   mensagem do pedido e, se o aluno autorizar no pedido, as restrições.
 // - Depois do aceite: nome completo, idade, gênero, endereço, peso, altura e medidas.
-// - Nunca: e-mail, senha, data de nascimento (o personal vê só a idade).
+// - Nunca: e-mail, senha. Da data de nascimento, o personal vê a idade e o dia do
+//   aniversário (dia e mês; decisão de 17/10/2026, para lembrar os aniversários).
 //
 // ATENÇÃO (LGPD): restrições, peso, altura, medidas e exames são dados de saúde
 // (dados sensíveis). Só são guardados com consentimento (src/lib/consentimento.ts).

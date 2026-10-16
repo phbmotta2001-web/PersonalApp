@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { sair } from "@/data/conta";
-import { listarMeusAlunos } from "@/data/convites";
+import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { lerAntecedencia } from "@/data/aulas";
@@ -66,7 +66,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
@@ -74,7 +74,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     lerTabelaDeValores(),
     lerAntecedencia(),
     contarAvisosNaoLidos(),
+    aniversariantesDoMes(dia),
   ]);
+  const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
+  const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
   const ativos = alunos.filter((a) => a.situacao === "ativo").length;
   const aguardando = alunos.filter((a) => a.situacao === "convidado").length;
   const faixas = expediente?.faixas ?? [];
@@ -187,6 +190,18 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
               </Link>
             )}
           </div>
+          {aniversariosDoDia.map((a) => (
+            <Link
+              key={a.vinculoId}
+              href={`/agenda/alunos/${a.vinculoId}`}
+              className="flex items-center gap-2 rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold"
+            >
+              <Icone nome="estrela" className="size-4 shrink-0" />
+              <span>
+                <strong>Aniversário de {a.nome.split(" ")[0]}</strong> (faz {a.fazAnos})
+              </span>
+            </Link>
+          ))}
           {doDia.bloqueios.length > 0 && (
             <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-xs text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
           )}
@@ -252,6 +267,30 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.
         </p>
       </section>
+
+      {aniversarios.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Aniversários do mês">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+            <Icone nome="estrela" className="size-[18px] text-gold" /> Aniversários de {mesDoDia}
+          </h2>
+          <ul className="flex flex-col gap-1">
+            {aniversarios.map((a) => {
+              const data = `${dia.slice(0, 8)}${String(a.dia).padStart(2, "0")}`;
+              const passou = data < hoje;
+              return (
+                <li key={a.vinculoId}>
+                  <Link href={`/agenda/alunos/${a.vinculoId}`} className={`flex items-center gap-3 py-1 text-sm ${passou ? "text-ink-3" : ""}`}>
+                    <span className="w-14 shrink-0 font-bold tabular-nums">dia {a.dia}</span>
+                    <span className="min-w-0 flex-1 truncate">{a.nome}</span>
+                    <span className="shrink-0 text-xs text-ink-3">faz {a.fazAnos}</span>
+                    {data === hoje && <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-gold">hoje</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <Link
         href="/agenda/alunos"
