@@ -10,10 +10,12 @@ import {
   centavosParaCampo,
   centavosParaReais,
   choquesComOutros,
+  diaDoMes,
   foraDoExpediente,
   LIMITE_LOCAL,
   ordenarHorarios,
   problemasDaMatricula,
+  proximoVencimento,
   type DadosMatricula,
   type HorarioOcupado,
   type Matricula,
@@ -22,6 +24,9 @@ import { mensalidadeDaTabela, SEMANAS_POR_MES, type TabelaDeValores } from "@/li
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
+
+/** "2026-11-16" → "16/11/2026" */
+const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 
 const estiloSelect = "min-h-11 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums";
 
@@ -54,13 +59,15 @@ export function FormMatricula({
     local: atual?.local ?? "",
     valorForaDoPadrao: atual?.valorForaDoPadrao ?? false,
     valor: atual?.valorForaDoPadrao ? centavosParaCampo(atual.valorCentavos) : "",
-    diaVencimento: atual?.diaVencimento ?? null,
+    // Novo: vence no mesmo dia do início (um mês depois); o personal pode trocar.
+    diaVencimento: atual ? atual.diaVencimento : diaDoMes(hoje),
     inicio: atual?.inicio ?? hoje,
     fim: atual?.fim ?? "",
   }));
   // Marcar um dia já traz a hora do último dia mexido (ou 07:00).
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
   const [aPartir, setAPartir] = useState(hoje);
+  const [vencimentoMexido, setVencimentoMexido] = useState(!!atual);
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
@@ -246,14 +253,29 @@ export function FormMatricula({
             </button>
           </>
         )}
-        <Campo id="mat-venc" rotulo="Vencimento" opcional>
+        <Campo
+          id="mat-venc"
+          rotulo="Vencimento"
+          ajuda={
+            dados.diaVencimento != null && /^\d{4}-\d{2}-\d{2}$/.test(dados.inicio)
+              ? atual
+                ? `Vence todo dia ${dados.diaVencimento}.`
+                : `1ª mensalidade no início (${dataBr(dados.inicio)}); a próxima vence em ${dataBr(
+                    proximoVencimento(dados.inicio, dados.diaVencimento),
+                  )} e depois todo dia ${dados.diaVencimento}.`
+              : undefined
+          }
+        >
           <select
             id="mat-venc"
             value={dados.diaVencimento ?? ""}
-            onChange={(e) => mudar({ diaVencimento: e.target.value ? Number(e.target.value) : null })}
+            onChange={(e) => {
+              setVencimentoMexido(true);
+              mudar({ diaVencimento: e.target.value ? Number(e.target.value) : null });
+            }}
             className={ESTILO_CAIXA}
           >
-            <option value="">—</option>
+            {dados.diaVencimento == null && <option value="">—</option>}
             {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
                 Dia {d}
@@ -271,7 +293,12 @@ export function FormMatricula({
             type="date"
             value={dados.inicio}
             disabled={!!atual}
-            onChange={(e) => mudar({ inicio: e.target.value })}
+            onChange={(e) =>
+              mudar({
+                inicio: e.target.value,
+                ...(!vencimentoMexido && e.target.value ? { diaVencimento: diaDoMes(e.target.value) } : {}),
+              })
+            }
             className={ESTILO_CAIXA}
           />
         </Campo>

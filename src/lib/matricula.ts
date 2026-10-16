@@ -124,3 +124,19 @@ export function resumoDosHorarios(horarios: HorarioFixo[]): string {
     return `${juntarComE(h.map((x) => curtoDoDia(x.dia)))} às ${minParaHora(h[0].inicioMin)}`;
   return juntarComE(h.map((x) => `${curtoDoDia(x.dia)} ${minParaHora(x.inicioMin)}`));
 }
+
+// ─── Vencimento (decisão de 16/10/2026) ─────────────────────────────────────
+// A primeira mensalidade é paga no início da matrícula; as seguintes vencem um mês
+// depois, todo mês no mesmo dia. O personal pode trocar o dia.
+
+/** Dia do mês de uma data "AAAA-MM-DD". */
+export const diaDoMes = (data: string) => Number(data.slice(8, 10));
+
+/** Vencimento seguinte ao início: no mês seguinte, no dia escolhido (ou no último dia do mês, se não existir). */
+export function proximoVencimento(inicio: string, dia: number): string {
+  const [a, m] = inicio.split("-").map(Number);
+  const ano = m === 12 ? a + 1 : a;
+  const mes = m === 12 ? 1 : m + 1;
+  const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+  return `${ano}-${String(mes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
+}
