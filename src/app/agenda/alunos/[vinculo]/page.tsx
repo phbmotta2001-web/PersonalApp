@@ -8,8 +8,10 @@ import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { lerMatricula } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { linkWhatsapp } from "@/lib/convite";
+import { centavosParaReais, resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -32,7 +34,7 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const a = await lerFichaDoAluno(vinculo);
+  const [a, matricula] = await Promise.all([lerFichaDoAluno(vinculo), lerMatricula(vinculo)]);
 
   if (!a)
     return (
@@ -72,6 +74,45 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         </div>
       </section>
 
+      {matricula ? (
+        <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
+          <div className="flex items-center gap-2">
+            <Icone nome="calendario" className="size-[18px] text-brand" />
+            <h3 className="flex-1 text-[15px] font-bold">Matrícula</h3>
+            <Link href={`/agenda/alunos/${vinculo}/matricula`} className="text-[13px] font-semibold text-brand">
+              Alterar
+            </Link>
+          </div>
+          <p className="text-[17px] font-extrabold">{resumoDosHorarios(matricula.horarios)}</p>
+          <p className="text-[13px] text-ink-2">
+            {[
+              `Aulas de ${matricula.duracao} min`,
+              matricula.local,
+              matricula.valorCentavos != null && `${centavosParaReais(matricula.valorCentavos)} por mês`,
+              matricula.diaVencimento != null && `vence dia ${matricula.diaVencimento}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          <p className="text-xs text-ink-3">
+            Desde {new Date(`${matricula.inicio}T12:00:00`).toLocaleDateString("pt-BR")}
+            {matricula.fim && ` até ${new Date(`${matricula.fim}T12:00:00`).toLocaleDateString("pt-BR")}`}
+          </p>
+        </section>
+      ) : (
+        <Link
+          href={`/agenda/alunos/${vinculo}/matricula`}
+          className="flex items-center gap-3 rounded-[20px] border border-dashed border-brand bg-brand-soft p-4 text-brand"
+        >
+          <Icone nome="calendario" className="size-5" />
+          <span className="flex-1">
+            <span className="block text-sm font-bold">Criar matrícula</span>
+            <span className="block text-xs">Horários fixos, local e valor. As aulas entram na sua agenda.</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
+
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-sm">
         <Linha nome="Objetivo" valor={a.objetivo} />
         <Linha nome="Nível" valor={rotuloNivel(a.nivel)} />
@@ -99,7 +140,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       <EncerrarVinculo
         vinculoId={a.vinculoId}
         depois="/agenda/alunos"
-        aviso={`Ao encerrar, ${a.nomeCompleto.split(" ")[0]} sai da sua lista de alunos e você deixa de ver o cadastro dele. A conta do aluno continua existindo.`}
+        aviso={`Ao encerrar, ${a.nomeCompleto.split(" ")[0]} sai da sua lista de alunos, as aulas futuras saem da agenda e você deixa de ver o cadastro dele. A conta do aluno continua existindo.`}
       />
     </div>
   );

@@ -59,7 +59,14 @@ export function Bloqueios({ bloqueios }: { bloqueios: Required<Bloqueio>[] }) {
       if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
       setNovo(novoVazio());
       setTentou(false);
-      setAviso({ tipo: "ok", texto: "Bloqueio adicionado." });
+      setAviso(
+        r.aulas > 0
+          ? {
+              tipo: "erro",
+              texto: `Bloqueio adicionado. Atenção: ${r.aulas} ${r.aulas === 1 ? "aula marcada cai" : "aulas marcadas caem"} nesse período e ${r.aulas === 1 ? "continua marcada" : "continuam marcadas"}. Avise os alunos.`,
+            }
+          : { tipo: "ok", texto: "Bloqueio adicionado." },
+      );
       router.refresh();
     });
   }

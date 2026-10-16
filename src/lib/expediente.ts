@@ -193,8 +193,9 @@ export interface DiaLivre {
 }
 
 /**
- * Horários livres de `dias` dias a partir de hoje (Brasília), cortados no tamanho da
- * aula a partir do início de cada faixa, sem bloqueios e sem horários que já passaram.
+ * Horários livres de `dias` dias a partir de `de` (padrão: hoje, em Brasília), cortados
+ * no tamanho da aula a partir do início de cada faixa, sem bloqueios, sem aulas
+ * marcadas (etapa 3) e sem horários que já passaram.
  */
 export function horariosLivres(
   faixas: Faixa[],
@@ -202,9 +203,12 @@ export function horariosLivres(
   duracao: number,
   dias = 7,
   agora = new Date(),
+  aulas: { inicio: string; fim: string }[] = [],
+  de?: string,
 ): DiaLivre[] {
-  const hoje = agoraEmBrasilia(agora).data;
+  const hoje = de ?? agoraEmBrasilia(agora).data;
   const periodos = bloqueios.map((b) => ({ ini: Date.parse(b.inicio), fim: Date.parse(b.fim), motivo: b.motivo }));
+  const ocupados = aulas.map((a) => ({ ini: Date.parse(a.inicio), fim: Date.parse(a.fim) }));
   const resultado: DiaLivre[] = [];
 
   for (let i = 0; i < dias; i++) {
@@ -222,6 +226,7 @@ export function horariosLivres(
         const fim = ini + duracao * 60_000;
         if (ini <= agora.getTime()) continue;
         if (bloqueiosDoDia.some((p) => p.ini < fim && p.fim > ini)) continue;
+        if (ocupados.some((a) => a.ini < fim && a.fim > ini)) continue;
         livres.push(m);
       }
     }

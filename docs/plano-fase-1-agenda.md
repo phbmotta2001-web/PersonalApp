@@ -44,6 +44,10 @@ volume cobrado pelo app, para levar números a um investidor.
 | 11 | WhatsApp do aluno | **Opcional** (idosos, estrangeiros, quem não quer mensagens). Caixa "Quero receber notificações do meu treino e avisos via WhatsApp" no cadastro e no perfil. Sem número, sem avisos por lá. |
 | 12 | Perfil completo | Obrigatório para o vínculo ficar ativo: objetivo, nível, autorização de saúde e declaração de restrições. |
 | 13 | Excluir conta | Aluno e personal podem excluir a própria conta, confirmando com a senha. Hoje a exclusão é completa; quando houver cobranças, registros financeiros podem precisar ser guardados (apagando os dados pessoais). |
+| 14 | Horário de aluno (16/10) | **Exclusivo:** um horário aceito por um aluno fica indisponível para os outros (o banco impede dois alunos no mesmo horário). Aula em dupla ou grupo fica para depois. |
+| 15 | Duração por aluno (16/10) | **Pode ser diferente** da padrão do personal (a matrícula já vem com a padrão). |
+| 16 | Fora do expediente (16/10) | Horário fixo fora do horário de trabalho **pode**, com aviso. |
+| 17 | Valor e vencimento (16/10) | Pedidos **já na matrícula** (opcionais), só anotados até a etapa 7. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -100,7 +104,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 0 | Preparação: marketplace desligado, conta de personal, página inicial nova | pronta (15/10) |
 | 1 | Horários de trabalho e bloqueios (seg–dom, de 30 em 30 min, duração padrão 30/45/60/90) | pronta (15/10) |
 | 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal; excluir conta | pronta (15/10) |
-| 3 | Matrículas e aulas fixas na agenda da semana e do dia | — |
+| 3 | Matrículas e aulas fixas na agenda da semana e do dia | pronta (16/10) |
 | 4 | App no celular (PWA) | — |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição; menores adicionados à mão | — |
 | 6 | Área do aluno: treinos, reagendar, cancelar, reposição | — |
@@ -121,6 +125,15 @@ para isso) volta na **Fase 2**, junto com o marketplace.
 Quem ainda não configurou começa com **todos os dias ligados, das 06:00 às 21:00**,
 e desliga os dias em que não trabalha. Religar um dia copia o horário de outro dia
 já ligado.
+
+## Matrículas e aulas (decisão de 16/10/2026)
+Cada aluno ativo tem no máximo uma matrícula ativa: horários fixos, duração, local,
+valor mensal e dia de vencimento, início e fim. As aulas viram registros de verdade
+para as **próximas 8 semanas**; um robô diário no banco estende a janela. Mudar os
+horários vale **a partir de uma data** e refaz só as aulas futuras ainda agendadas.
+Encerrar a matrícula, o vínculo ou a conta do aluno tira as aulas futuras da agenda.
+Bloqueio por cima de aulas: o app avisa e as aulas continuam marcadas (o que fazer
+com elas chega na etapa 5).
 
 ## Para começar já, fora do código
 1. Pedido da conta empresarial verificada na Meta (WhatsApp), com número próprio.

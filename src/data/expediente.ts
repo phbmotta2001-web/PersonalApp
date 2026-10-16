@@ -16,6 +16,7 @@ import {
 import { frase } from "@/lib/formato";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 import type { Resposta } from "./conta";
+import { contarAulasNoPeriodo } from "./matriculas";
 
 export interface Expediente {
   duracao: Duracao;
@@ -76,7 +77,8 @@ export async function listarBloqueios(): Promise<Required<Bloqueio>[]> {
   }));
 }
 
-export async function criarBloqueio(novo: NovoBloqueio): Promise<Resposta> {
+/** Cria o bloqueio e conta as aulas marcadas que caem nele (elas continuam marcadas). */
+export async function criarBloqueio(novo: NovoBloqueio): Promise<{ ok: true; aulas: number } | { ok: false; erro: string }> {
   const problemas = problemasDoBloqueio(novo);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
@@ -91,7 +93,8 @@ export async function criarBloqueio(novo: NovoBloqueio): Promise<Resposta> {
     dia_inteiro: novo.diaInteiro,
     motivo: novo.motivo.trim(),
   });
-  return error ? { ok: false, erro: "Não foi possível criar o bloqueio. Tente de novo." } : { ok: true };
+  if (error) return { ok: false, erro: "Não foi possível criar o bloqueio. Tente de novo." };
+  return { ok: true, aulas: await contarAulasNoPeriodo(inicio, fim) };
 }
 
 export async function apagarBloqueio(idBloqueio: string): Promise<Resposta> {

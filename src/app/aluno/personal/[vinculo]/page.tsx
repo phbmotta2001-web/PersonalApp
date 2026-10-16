@@ -8,7 +8,10 @@ import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
+import { lerMatricula, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
+import { curtoDoDia, dataCurta, diaDaSemana, emBrasilia } from "@/lib/expediente";
+import { resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -46,6 +49,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
+  const [matricula, aulas] = await Promise.all([lerMatricula(vinculo), proximasAulasDoAluno(vinculo)]);
 
   return (
     <>
@@ -70,9 +74,40 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           <Icone nome="conversa" className="size-4" /> Mensagem no WhatsApp · {formatarWhatsapp(p.whatsapp)}
         </a>
 
-        <section className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
-          Aulas, remarcações, reposições e mensalidades com {primeiro} vão aparecer aqui nas próximas versões.
-        </section>
+        {matricula ? (
+          <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
+            <div>
+              <p className="text-xs font-semibold text-ink-3">Seus horários</p>
+              <p className="text-[17px] font-extrabold">{resumoDosHorarios(matricula.horarios)}</p>
+              <p className="text-[13px] text-ink-2">
+                {[`Aulas de ${matricula.duracao} min`, matricula.local].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+            {aulas.length > 0 && (
+              <div className="flex flex-col gap-1.5 border-t border-line pt-3">
+                <p className="text-xs font-semibold text-ink-3">Próximas aulas</p>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {aulas.map((a) => {
+                    const { data, hora } = emBrasilia(a.inicio);
+                    return (
+                      <li key={a.id} className="flex gap-2 tabular-nums">
+                        <span className="w-[86px] text-ink-2">
+                          {curtoDoDia(diaDaSemana(data))} {dataCurta(data)}
+                        </span>
+                        <span className="font-semibold">{hora}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+            <p className="text-xs text-ink-3">Remarcar e cancelar por aqui chega numa próxima versão. Por enquanto, fale com {primeiro}.</p>
+          </section>
+        ) : (
+          <section className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
+            {primeiro} ainda não marcou seus horários fixos. Quando marcar, suas aulas aparecem aqui.
+          </section>
+        )}
 
         <p className="text-xs text-ink-3">
           {primeiro} vê o seu perfil completo (objetivo, nível, restrições, medidas, endereço e WhatsApp), nunca seu
