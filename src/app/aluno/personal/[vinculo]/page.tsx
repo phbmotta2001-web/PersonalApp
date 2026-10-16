@@ -8,10 +8,11 @@ import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
+import { AulasDoAluno } from "@/components/aluno/AulasDoAluno";
+import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { lerMatricula, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
-import { curtoDoDia, dataCurta, diaDaSemana, emBrasilia } from "@/lib/expediente";
 import { resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -50,10 +51,11 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
+    regrasParaAluno(vinculo),
   ]);
 
   return (
@@ -88,35 +90,23 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
                 {[`Aulas de ${matricula.duracao} min`, matricula.local].filter(Boolean).join(" · ")}
               </p>
             </div>
-            {aulas.length > 0 && (
-              <div className="flex flex-col gap-1.5 border-t border-line pt-3">
-                <p className="text-xs font-semibold text-ink-3">Próximas aulas</p>
-                <ul className="flex flex-col gap-1 text-sm">
-                  {aulas.map((a) => {
-                    const { data, hora } = emBrasilia(a.inicio);
-                    return (
-                      <li key={a.id} className="flex gap-2 tabular-nums">
-                        <span className="w-[86px] text-ink-2">
-                          {curtoDoDia(diaDaSemana(data))} {dataCurta(data)}
-                        </span>
-                        <span className="font-semibold">{hora}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-            {reposicoes.length > 0 && (
-              <p className="rounded-[12px] bg-brand-soft px-3 py-2 text-[13px] text-brand">
-                Você tem {reposicoes.length} {reposicoes.length === 1 ? "reposição" : "reposições"} (a primeira vale até{" "}
-                {dataCurta(reposicoes[0].validoAte)}). Combine o dia com {primeiro}.
-              </p>
-            )}
-            <p className="text-xs text-ink-3">Remarcar e cancelar por aqui chega numa próxima versão. Por enquanto, fale com {primeiro}.</p>
           </section>
         ) : (
           <section className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
             {primeiro} ainda não marcou seus horários fixos. Quando marcar, suas aulas aparecem aqui.
+          </section>
+        )}
+
+        {(aulas.length > 0 || reposicoes.length > 0) && (
+          <section className="rounded-[20px] border border-line bg-surface p-4">
+            <AulasDoAluno
+              vinculoId={vinculo}
+              nomePersonal={p.nome}
+              aulas={aulas.map((a) => ({ id: a.id, inicio: a.inicio, local: a.local, origem: a.origem }))}
+              reposicoes={reposicoes.map((r) => r.validoAte)}
+              regras={regras}
+              agora={new Date().toISOString()}
+            />
           </section>
         )}
 

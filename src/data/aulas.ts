@@ -206,17 +206,36 @@ export async function aulasDoMes(vinculoId: string): Promise<{ situacao: string;
 
 // ─── Regras ────────────────────────────────────────────────────────────────
 
-/** Antecedência mínima (em horas) para o aluno cancelar e ganhar reposição. */
-export async function lerAntecedencia(): Promise<number> {
-  const { supabase, id } = await usuarioAtual();
-  if (!id) return 12;
-  const { data } = await supabase.from("personais").select("antecedencia_cancelamento_h").eq("id", id).maybeSingle();
-  return data?.antecedencia_cancelamento_h ?? 12;
+export interface Regras {
+  /** Horas antes da aula para o aluno cancelar e ganhar reposição. */
+  cancelamentoH: number;
+  /** Horas de antecedência para o aluno marcar reposição ou remarcar pelo app. */
+  reposicaoH: number;
 }
 
-export async function salvarAntecedencia(horas: number): Promise<Resposta> {
-  if (!Number.isInteger(horas) || horas < 0 || horas > 168) return { ok: false, erro: "Escolha de 0 a 168 horas." };
+export async function lerRegras(): Promise<Regras> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { cancelamentoH: 12, reposicaoH: 8 };
+  const { data } = await supabase
+    .from("personais")
+    .select("antecedencia_cancelamento_h, antecedencia_reposicao_h")
+    .eq("id", id)
+    .maybeSingle();
+  return { cancelamentoH: data?.antecedencia_cancelamento_h ?? 12, reposicaoH: data?.antecedencia_reposicao_h ?? 8 };
+}
+
+/** Só a antecedência de cancelamento (tela da aula). */
+export async function lerAntecedencia(): Promise<number> {
+  return (await lerRegras()).cancelamentoH;
+}
+
+export async function salvarRegras(regras: Regras): Promise<Resposta> {
+  const ok = (h: number) => Number.isInteger(h) && h >= 0 && h <= 168;
+  if (!ok(regras.cancelamentoH) || !ok(regras.reposicaoH)) return { ok: false, erro: "Escolha de 0 a 168 horas." };
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("salvar_regras", { p_antecedencia_h: horas });
+  const { error } = await supabase.rpc("salvar_regras", {
+    p_antecedencia_h: regras.cancelamentoH,
+    p_antecedencia_reposicao_h: regras.reposicaoH,
+  });
   return error ? { ok: false, erro: "Não foi possível salvar. Tente de novo." } : { ok: true };
 }

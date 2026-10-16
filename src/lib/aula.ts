@@ -23,6 +23,8 @@ export const SITUACOES_QUE_OCUPAM: SituacaoAula[] = ["agendada", "confirmada", "
 
 export const ANTECEDENCIA_PADRAO_H = 12;
 export const OPCOES_ANTECEDENCIA_H = [2, 4, 6, 12, 24, 48];
+export const ANTECEDENCIA_REPOSICAO_PADRAO_H = 8;
+export const OPCOES_ANTECEDENCIA_REPOSICAO_H = [2, 4, 6, 8, 12, 24];
 
 /** Como a aula aparece hoje: agendada que já terminou vira "dada". */
 export function situacaoEfetiva(situacao: string, fim: string, agora = new Date()): SituacaoAula {

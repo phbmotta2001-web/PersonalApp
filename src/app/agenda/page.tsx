@@ -8,6 +8,7 @@ import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { lerAntecedencia } from "@/data/aulas";
+import { contarAvisosNaoLidos } from "@/data/avisos";
 import { listarAulas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
 import {
@@ -65,13 +66,14 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
     listarAulas(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
     lerTabelaDeValores(),
     lerAntecedencia(),
+    contarAvisosNaoLidos(),
   ]);
   const ativos = alunos.filter((a) => a.situacao === "ativo").length;
   const aguardando = alunos.filter((a) => a.situacao === "convidado").length;
@@ -93,9 +95,23 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
 
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-5 pb-6">
-      <header>
-        <p className="text-[12.5px] text-ink-3">Área do personal</p>
-        <h1 className="text-[24px] font-extrabold">Olá, {personal.nomeCompleto.split(" ")[0]}</h1>
+      <header className="flex items-start gap-3">
+        <div className="flex-1">
+          <p className="text-[12.5px] text-ink-3">Área do personal</p>
+          <h1 className="text-[24px] font-extrabold">Olá, {personal.nomeCompleto.split(" ")[0]}</h1>
+        </div>
+        <Link
+          href="/agenda/avisos"
+          aria-label={naoLidos > 0 ? `Avisos: ${naoLidos} novo${naoLidos > 1 ? "s" : ""}` : "Avisos"}
+          className="relative grid size-11 place-items-center rounded-full border border-line bg-surface"
+        >
+          <Icone nome="sino" className="size-5" />
+          {naoLidos > 0 && (
+            <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-bad px-1 text-[11px] font-bold text-white tabular-nums">
+              {naoLidos > 9 ? "9+" : naoLidos}
+            </span>
+          )}
+        </Link>
       </header>
 
       {/* Fase 1: as contas nascem liberadas (sem conferência do CREF); só a suspensão avisa. */}
@@ -265,7 +281,6 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         <h2 className="text-[15px] font-semibold">O que vem por aí</h2>
         <ul className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink-2">
           <li>Marcar aula dada, falta, cancelamento e aulas avulsas</li>
-          <li>Remarcações e reposições feitas pelo próprio aluno</li>
           <li>Mensalidades, atrasos e lembretes por WhatsApp</li>
         </ul>
       </section>

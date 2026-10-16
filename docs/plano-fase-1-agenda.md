@@ -57,6 +57,9 @@ volume cobrado pelo app, para levar números a um investidor.
 | 24 | Falta (16/10) | Falta sem aviso conta como dada, sem reposição. |
 | 25 | Menores sem conta (16/10) | Ficam para uma etapa 5b, depois. |
 | 26 | Histórico do perfil (16/10) | Peso, altura, outras medidas e objetivo guardam a data de cada mudança (histórico), para comparar no painel de acompanhamento. A ficha mostra "informado em". |
+| 27 | Aluno resolve sozinho (17/10) | O **aluno cancela, remarca e marca reposição pelo app**; o personal recebe um **aviso** (sininho na agenda; WhatsApp na etapa 9). A opção manual do personal continua (menores, quem não usa o app). |
+| 28 | Reposição pelo aluno (17/10) | Entra **direto na agenda**, nos horários livres do personal, com pelo menos **8 h** de antecedência (ajustável), para o personal ver o aviso. |
+| 29 | Remarcar (17/10) | Num passo só, só com a antecedência de cancelamento; em cima da hora, o aluno fala com o personal. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -117,7 +120,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 4 | App no celular (PWA) | — |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
 | 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
-| 6 | Área do aluno: treinos, reagendar, cancelar, reposição | — |
+| 6 | Área do aluno: cancelar, remarcar e marcar reposição pelo app; avisos para o personal (treinos ficam para depois) | pronta (17/10) |
 | 7 | Cobranças registradas: mensalidades, atrasos, "marcar como recebido", Pix copia e cola | — |
 | 8 | WhatsApp com um toque (texto pronto) | — |
 | 9 | WhatsApp automático (aula do dia, remarcação, cobrança) | — |
