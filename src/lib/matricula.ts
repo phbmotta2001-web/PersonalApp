@@ -19,7 +19,9 @@ export interface DadosMatricula {
   horarios: HorarioFixo[];
   duracao: Duracao;
   local: string;
-  /** Como o personal digitou: "250" ou "250,00". Vazio = sem valor. */
+  /** false = mensalidade pela tabela de valores do personal (calculada ao salvar). */
+  valorForaDoPadrao: boolean;
+  /** Só com valor fora do padrão: como o personal digitou, "250" ou "250,00". Vazio = sem valor. */
   valor: string;
   /** 1 a 31, ou null. */
   diaVencimento: number | null;
@@ -36,6 +38,7 @@ export interface Matricula {
   duracao: Duracao;
   local: string | null;
   valorCentavos: number | null;
+  valorForaDoPadrao: boolean;
   diaVencimento: number | null;
   inicio: string;
   fim: string | null;
@@ -86,7 +89,7 @@ export function problemasDaMatricula(d: DadosMatricula): string[] {
   const repetidos = d.horarios.some((a, i) => d.horarios.some((b, j) => j > i && choca(a, d.duracao, b, d.duracao)));
   if (repetidos) p.push("dois horários se sobrepõem no mesmo dia");
   if (d.local.trim().length > LIMITE_LOCAL) p.push(`use até ${LIMITE_LOCAL} caracteres no local`);
-  const valor = reaisParaCentavos(d.valor);
+  const valor = d.valorForaDoPadrao ? reaisParaCentavos(d.valor) : null;
   if (valor !== null && (Number.isNaN(valor) || valor < 1 || valor > 10_000_000)) p.push("confira o valor mensal");
   if (d.diaVencimento !== null && !(d.diaVencimento >= 1 && d.diaVencimento <= 31)) p.push("escolha o dia de vencimento");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.inicio)) p.push("escolha a data de início");

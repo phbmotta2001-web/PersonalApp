@@ -8,6 +8,7 @@ import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente } from "@/data/expediente";
 import { horariosOcupados, lerMatricula } from "@/data/matriculas";
+import { lerTabelaDeValores } from "@/data/precos";
 import { agoraEmBrasilia, DURACAO_PADRAO } from "@/lib/expediente";
 
 export const metadata: Metadata = {
@@ -27,11 +28,12 @@ export default function PaginaMatricula({ params }: PageProps<"/agenda/alunos/[v
 async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo]/matricula">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}/matricula`);
-  const [aluno, atual, expediente, ocupados] = await Promise.all([
+  const [aluno, atual, expediente, ocupados, tabela] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     lerExpediente(),
     horariosOcupados(vinculo),
+    lerTabelaDeValores(),
   ]);
 
   if (!aluno)
@@ -57,6 +59,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
         duracaoPadrao={expediente?.duracao ?? DURACAO_PADRAO}
         faixas={expediente?.faixas ?? []}
         ocupados={ocupados}
+        tabela={tabela}
         hoje={agoraEmBrasilia().data}
       />
     </>

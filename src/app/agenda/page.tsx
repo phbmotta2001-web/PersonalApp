@@ -8,6 +8,7 @@ import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { listarAulas } from "@/data/matriculas";
+import { lerTabelaDeValores } from "@/data/precos";
 import {
   agoraEmBrasilia,
   curtoDoDia,
@@ -19,7 +20,9 @@ import {
   nomeDoDia,
   somarDias,
 } from "@/lib/expediente";
+import { centavosParaReais } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
+import { aPartirDe } from "@/lib/precos";
 
 export const metadata: Metadata = {
   title: "Minha agenda",
@@ -52,15 +55,17 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
     listarAulas(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
+    lerTabelaDeValores(),
   ]);
   const ativos = alunos.filter((a) => a.situacao === "ativo").length;
   const aguardando = alunos.filter((a) => a.situacao === "convidado").length;
   const faixas = expediente?.faixas ?? [];
+  const menorValor = aPartirDe(tabela);
   const duracao = expediente?.duracao ?? 60;
 
   const aulasQueOcupam = aulas.filter((a) => OCUPA.includes(a.situacao));
@@ -214,9 +219,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         <span className="text-ink-3" aria-hidden="true">›</span>
       </Link>
 
-      <nav className="grid grid-cols-2 gap-3" aria-label="Configurar agenda">
-        <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários de trabalho" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
+      <nav className="grid grid-cols-3 gap-2" aria-label="Configurar agenda">
+        <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
         <Atalho href="/agenda/bloqueios" icone="calendario" titulo="Bloqueios" texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"} />
+        <Atalho href="/agenda/valores" icone="estrela" titulo="Valores" texto={menorValor != null ? `A partir de ${centavosParaReais(menorValor)}` : "Cadastre aqui"} />
       </nav>
 
       <section className="rounded-[20px] border border-line bg-surface p-4">
@@ -251,7 +257,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
 
 function Atalho({ href, icone, titulo, texto }: { href: string; icone: NomeIcone; titulo: string; texto: string }) {
   return (
-    <Link href={href} className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-3.5 hover:border-brand">
+    <Link href={href} className="flex flex-col gap-1.5 rounded-[18px] border border-line bg-surface p-3 hover:border-brand">
       <span className="grid size-9 place-items-center rounded-full bg-brand-soft text-brand">
         <Icone nome={icone} className="size-[18px]" />
       </span>

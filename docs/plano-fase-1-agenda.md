@@ -48,6 +48,8 @@ volume cobrado pelo app, para levar números a um investidor.
 | 15 | Duração por aluno (16/10) | **Pode ser diferente** da padrão do personal (a matrícula já vem com a padrão). |
 | 16 | Fora do expediente (16/10) | Horário fixo fora do horário de trabalho **pode**, com aviso. |
 | 17 | Valor e vencimento (16/10) | Pedidos **já na matrícula** (opcionais), só anotados até a etapa 7. |
+| 18 | Tabela de valores (16/10) | O personal cadastra o **valor de cada aula por frequência semanal** (1x a 7x por semana), uma tabela só para qualquer duração. **Mensalidade = aula × vezes por semana × 4**, calculada sozinha na matrícula; "valor fora do padrão" é a exceção manual. Fase 2: o perfil público mostra "a partir de" (menor valor por aula) e a tabela completa. |
+| 19 | Dias fixos do aluno (16/10) | Escolhidos em **caixas de marcar** (Seg a Dom), um horário por dia; marcar um dia já traz a hora do último. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do

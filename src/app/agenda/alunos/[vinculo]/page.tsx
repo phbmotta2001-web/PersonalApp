@@ -88,7 +88,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
             {[
               `Aulas de ${matricula.duracao} min`,
               matricula.local,
-              matricula.valorCentavos != null && `${centavosParaReais(matricula.valorCentavos)} por mês`,
+              matricula.valorCentavos != null && `${centavosParaReais(matricula.valorCentavos)} por mês${matricula.valorForaDoPadrao ? " (fora do padrão)" : ""}`,
               matricula.diaVencimento != null && `vence dia ${matricula.diaVencimento}`,
             ]
               .filter(Boolean)

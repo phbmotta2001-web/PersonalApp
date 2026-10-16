@@ -24,6 +24,7 @@ interface LinhaMatricula {
   duracao_min: number;
   local: string | null;
   valor_centavos: number | null;
+  valor_fora_do_padrao: boolean;
   dia_vencimento: number | null;
   inicio: string;
   fim: string | null;
@@ -31,7 +32,7 @@ interface LinhaMatricula {
 }
 
 const CAMPOS_MATRICULA =
-  "id, vinculo_id, duracao_min, local, valor_centavos, dia_vencimento, inicio, fim, matricula_horarios (dia_semana, inicio_min)";
+  "id, vinculo_id, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, matricula_horarios (dia_semana, inicio_min)";
 
 const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
@@ -40,6 +41,7 @@ const paraMatricula = (l: LinhaMatricula): Matricula => ({
   duracao: l.duracao_min as Duracao,
   local: l.local,
   valorCentavos: l.valor_centavos,
+  valorForaDoPadrao: l.valor_fora_do_padrao,
   diaVencimento: l.dia_vencimento,
   inicio: l.inicio,
   fim: l.fim,
@@ -97,7 +99,8 @@ export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, 
     p_horarios: dados.horarios.map((h) => ({ dia: h.dia, inicio_min: h.inicioMin })),
     p_duracao: dados.duracao,
     p_local: dados.local.trim(),
-    p_valor_centavos: reaisParaCentavos(dados.valor),
+    p_valor_fora_do_padrao: dados.valorForaDoPadrao,
+    p_valor_centavos: dados.valorForaDoPadrao ? reaisParaCentavos(dados.valor) : null,
     p_dia_vencimento: dados.diaVencimento,
     p_inicio: dados.inicio,
     p_fim: dados.fim || null,
