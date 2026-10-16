@@ -7,8 +7,20 @@ import { sair } from "@/data/conta";
 import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
+import { lerAntecedencia } from "@/data/aulas";
 import { listarAulas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
+import {
+  COR_SITUACAO,
+  naoAcontece,
+  ROTULO_ORIGEM,
+  ROTULO_SITUACAO,
+  situacaoEfetiva,
+  SITUACOES_QUE_OCUPAM,
+  textoDeHoras,
+  type OrigemAula,
+  type SituacaoAula,
+} from "@/lib/aula";
 import {
   agoraEmBrasilia,
   curtoDoDia,
@@ -30,8 +42,6 @@ export const metadata: Metadata = {
 
 // Até quantas semanas à frente dá para ver (as aulas fixas existem por 8 semanas).
 const SEMANAS = 8;
-// Situações de aula que ocupam o horário.
-const OCUPA = ["agendada", "confirmada", "realizada", "falta"];
 const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 export default function PaginaAgenda({ searchParams }: PageProps<"/agenda">) {
@@ -55,12 +65,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
     listarAulas(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
     lerTabelaDeValores(),
+    lerAntecedencia(),
   ]);
   const ativos = alunos.filter((a) => a.situacao === "ativo").length;
   const aguardando = alunos.filter((a) => a.situacao === "convidado").length;
@@ -68,11 +79,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const menorValor = aPartirDe(tabela);
   const duracao = expediente?.duracao ?? 60;
 
-  const aulasQueOcupam = aulas.filter((a) => OCUPA.includes(a.situacao));
+  const agora = new Date();
+  const aulasQueOcupam = aulas.filter((a) => SITUACOES_QUE_OCUPAM.includes(a.situacao as SituacaoAula));
   const semana = horariosLivres(faixas, bloqueios, duracao, 7, new Date(), aulasQueOcupam, inicioSemana);
   const doDia = semana.find((d) => d.data === dia) ?? semana[0];
   const aulasDe = (data: string) => aulasQueOcupam.filter((a) => emBrasilia(a.inicio).data === data);
-  const aulasDoDia = aulasDe(dia);
+  // No dia escolhido aparecem também as canceladas e remarcadas (riscadas).
+  const aulasDoDia = aulas.filter((a) => emBrasilia(a.inicio).data === dia);
   const caiEmBloqueio = (a: { inicio: string; fim: string }) =>
     bloqueios.some((b) => Date.parse(b.inicio) < Date.parse(a.fim) && Date.parse(b.fim) > Date.parse(a.inicio));
   const rotuloDoDia = dia === hoje ? "Hoje" : dia === somarDias(hoje, 1) ? "Amanhã" : nomeDoDia(doDia.diaSemana);
@@ -145,31 +158,53 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         </nav>
 
         <div className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
-          <p className="text-sm font-bold">
-            {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="flex-1 text-sm font-bold">
+              {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
+            </p>
+            {dia >= hoje && (
+              <Link
+                href={`/agenda/aula/nova?dia=${dia}`}
+                className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-[13px] font-bold text-brand-ink"
+              >
+                <Icone nome="mais" className="size-4" /> Aula
+              </Link>
+            )}
+          </div>
           {doDia.bloqueios.length > 0 && (
             <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-xs text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
           )}
           {aulasDoDia.length > 0 ? (
             <ul className="flex flex-col divide-y divide-line">
-              {aulasDoDia.map((a) => (
-                <li key={a.id}>
-                  <Link
-                    href={a.vinculoId ? `/agenda/alunos/${a.vinculoId}` : "/agenda/alunos"}
-                    className="flex items-start gap-3 py-2.5"
-                  >
-                    <span className="w-[92px] shrink-0 text-sm font-bold tabular-nums">
-                      {emBrasilia(a.inicio).hora}–{emBrasilia(a.fim).hora}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{a.nome}</span>
-                      {a.local && <span className="block truncate text-xs text-ink-3">{a.local}</span>}
-                      {caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              {aulasDoDia.map((a) => {
+                const s = situacaoEfetiva(a.situacao, a.fim, agora);
+                const riscada = naoAcontece(s);
+                return (
+                  <li key={a.id}>
+                    <Link href={`/agenda/aula/${a.id}`} className="flex items-start gap-3 py-2.5">
+                      <span className={`w-[92px] shrink-0 text-sm font-bold tabular-nums ${riscada ? "text-ink-3 line-through" : ""}`}>
+                        {emBrasilia(a.inicio).hora}–{emBrasilia(a.fim).hora}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className={`block truncate text-sm font-semibold ${riscada ? "text-ink-3 line-through" : ""}`}>
+                          {a.nome}
+                        </span>
+                        {a.local && !riscada && <span className="block truncate text-xs text-ink-3">{a.local}</span>}
+                        {a.origem !== "fixa" && !riscada && (
+                          <span className="block text-xs text-ink-3">{ROTULO_ORIGEM[a.origem as OrigemAula]}</span>
+                        )}
+                        {!riscada && caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
+                      </span>
+                      {s !== "agendada" && s !== "confirmada" && (
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>
+                          {ROTULO_SITUACAO[s].split(" (")[0]}
+                        </span>
+                      )}
+                      <span className="text-ink-3" aria-hidden="true">›</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="text-[13px] text-ink-3">Nenhuma aula neste dia.</p>
@@ -219,10 +254,11 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         <span className="text-ink-3" aria-hidden="true">›</span>
       </Link>
 
-      <nav className="grid grid-cols-3 gap-2" aria-label="Configurar agenda">
+      <nav className="grid grid-cols-2 gap-2" aria-label="Configurar agenda">
         <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
         <Atalho href="/agenda/bloqueios" icone="calendario" titulo="Bloqueios" texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"} />
         <Atalho href="/agenda/valores" icone="estrela" titulo="Valores" texto={menorValor != null ? `A partir de ${centavosParaReais(menorValor)}` : "Cadastre aqui"} />
+        <Atalho href="/agenda/regras" icone="escudo" titulo="Regras" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
       </nav>
 
       <section className="rounded-[20px] border border-line bg-surface p-4">

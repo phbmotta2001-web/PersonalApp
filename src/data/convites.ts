@@ -76,6 +76,8 @@ export interface FichaDoAluno {
   pesoKg: number | null;
   alturaCm: number | null;
   outrasMedidas: string | null;
+  /** Quando cada dado foi informado (o valor atual): peso_kg, altura_cm, outras_medidas, objetivo. */
+  datas: Partial<Record<"peso_kg" | "altura_cm" | "outras_medidas" | "objetivo", string>>;
 }
 
 /** Ficha completa do aluno. Só sai com vínculo ATIVO com o personal logado. */
@@ -104,6 +106,7 @@ export async function lerFichaDoAluno(vinculoId: string): Promise<FichaDoAluno |
     pesoKg: f.peso_kg == null ? null : Number(f.peso_kg),
     alturaCm: f.altura_cm == null ? null : Number(f.altura_cm),
     outrasMedidas: (f.outras_medidas as string | null) ?? null,
+    datas: (f.datas as FichaDoAluno["datas"] | null) ?? {},
   };
 }
 

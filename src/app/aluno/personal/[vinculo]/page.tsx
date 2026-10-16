@@ -8,6 +8,7 @@ import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
+import { reposicoesDisponiveis } from "@/data/aulas";
 import { lerMatricula, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { curtoDoDia, dataCurta, diaDaSemana, emBrasilia } from "@/lib/expediente";
@@ -49,7 +50,11 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas] = await Promise.all([lerMatricula(vinculo), proximasAulasDoAluno(vinculo)]);
+  const [matricula, aulas, reposicoes] = await Promise.all([
+    lerMatricula(vinculo),
+    proximasAulasDoAluno(vinculo),
+    reposicoesDisponiveis(vinculo),
+  ]);
 
   return (
     <>
@@ -100,6 +105,12 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
                   })}
                 </ul>
               </div>
+            )}
+            {reposicoes.length > 0 && (
+              <p className="rounded-[12px] bg-brand-soft px-3 py-2 text-[13px] text-brand">
+                Você tem {reposicoes.length} {reposicoes.length === 1 ? "reposição" : "reposições"} (a primeira vale até{" "}
+                {dataCurta(reposicoes[0].validoAte)}). Combine o dia com {primeiro}.
+              </p>
             )}
             <p className="text-xs text-ink-3">Remarcar e cancelar por aqui chega numa próxima versão. Por enquanto, fale com {primeiro}.</p>
           </section>

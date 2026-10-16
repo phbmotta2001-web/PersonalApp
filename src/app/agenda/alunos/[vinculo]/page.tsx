@@ -6,11 +6,14 @@ import { Avatar } from "@/components/Avatar";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
+import { aulasDoMes, reposicoesDisponiveis } from "@/data/aulas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerMatricula, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
+import { resumoDoMes } from "@/lib/aula";
 import { linkWhatsapp } from "@/lib/convite";
+import { dataCurta } from "@/lib/expediente";
 import { centavosParaReais, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -34,7 +37,14 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula, proximas] = await Promise.all([lerFichaDoAluno(vinculo), lerMatricula(vinculo), proximaAulaPorAluno()]);
+  const [a, matricula, proximas, reposicoes, doMes] = await Promise.all([
+    lerFichaDoAluno(vinculo),
+    lerMatricula(vinculo),
+    proximaAulaPorAluno(),
+    reposicoesDisponiveis(vinculo),
+    aulasDoMes(vinculo),
+  ]);
+  const resumo = resumoDoMes(doMes);
   const proxima = proximas[vinculo];
 
   if (!a)
@@ -124,12 +134,23 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         </Link>
       )}
 
+      <section className="grid grid-cols-2 gap-2" aria-label="Este mês">
+        <Numero titulo="Aulas dadas no mês" valor={resumo.dadas} />
+        <Numero titulo="Faltas no mês" valor={resumo.faltas} />
+        <Numero titulo="Canceladas no mês" valor={resumo.canceladas} />
+        <Numero
+          titulo={reposicoes.length === 1 ? "Reposição disponível" : "Reposições disponíveis"}
+          valor={reposicoes.length}
+          detalhe={reposicoes[0] ? `a 1ª vale até ${dataCurta(reposicoes[0].validoAte)}` : undefined}
+        />
+      </section>
+
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-sm">
-        <Linha nome="Objetivo" valor={a.objetivo} />
+        <Linha nome="Objetivo" valor={a.objetivo} desde={a.datas.objetivo} />
         <Linha nome="Nível" valor={rotuloNivel(a.nivel)} />
-        <Linha nome="Peso" valor={a.pesoKg != null ? `${a.pesoKg.toLocaleString("pt-BR")} kg` : null} />
-        <Linha nome="Altura" valor={a.alturaCm != null ? `${a.alturaCm.toLocaleString("pt-BR")} cm` : null} />
-        <Linha nome="Outras medidas" valor={a.outrasMedidas} />
+        <Linha nome="Peso" valor={a.pesoKg != null ? `${a.pesoKg.toLocaleString("pt-BR")} kg` : null} desde={a.datas.peso_kg} />
+        <Linha nome="Altura" valor={a.alturaCm != null ? `${a.alturaCm.toLocaleString("pt-BR")} cm` : null} desde={a.datas.altura_cm} />
+        <Linha nome="Outras medidas" valor={a.outrasMedidas} desde={a.datas.outras_medidas} />
         <Linha nome="Endereço" valor={endereco || null} />
         <Linha
           nome="WhatsApp"
@@ -157,11 +178,28 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   );
 }
 
-function Linha({ nome, valor }: { nome: string; valor: string | null }) {
+function Numero({ titulo, valor, detalhe }: { titulo: string; valor: number; detalhe?: string }) {
+  return (
+    <div className="rounded-[16px] border border-line bg-surface px-3 py-2.5">
+      <p className="text-[22px] font-extrabold tabular-nums">{valor}</p>
+      <p className="text-xs text-ink-3">{titulo}</p>
+      {detalhe && <p className="text-[11px] text-ink-3">{detalhe}</p>}
+    </div>
+  );
+}
+
+function Linha({ nome, valor, desde }: { nome: string; valor: string | null; desde?: string }) {
   return (
     <>
       <dt className="text-ink-3">{nome}</dt>
-      <dd className="font-semibold">{valor || <span className="font-normal text-ink-3">—</span>}</dd>
+      <dd className="font-semibold">
+        {valor || <span className="font-normal text-ink-3">—</span>}
+        {valor && desde && (
+          <span className="block text-[11.5px] font-normal text-ink-3">
+            informado em {new Date(desde).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
+          </span>
+        )}
+      </dd>
     </>
   );
 }

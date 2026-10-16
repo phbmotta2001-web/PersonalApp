@@ -51,6 +51,12 @@ volume cobrado pelo app, para levar números a um investidor.
 | 18 | Tabela de valores (16/10) | O personal cadastra o **valor de cada aula por frequência semanal** (1x a 7x por semana), uma tabela só para qualquer duração. **Mensalidade = aula × vezes por semana × 4**, calculada sozinha na matrícula; "valor fora do padrão" é a exceção manual. Fase 2: o perfil público mostra "a partir de" (menor valor por aula) e a tabela completa. |
 | 19 | Dias fixos do aluno (16/10) | Escolhidos em **caixas de marcar** (Seg a Dom), um horário por dia; marcar um dia já traz a hora do último. |
 | 20 | Vencimento (16/10) | **Automático:** a 1ª mensalidade é paga no início da matrícula e as seguintes vencem um mês depois, todo mês no mesmo dia do início (no último dia do mês, se o dia não existir). O personal pode trocar o dia. |
+| 21 | Aula sem marcação (16/10) | Aula que passou sem marcação **conta como dada**: o personal só marca as exceções. |
+| 22 | Antecedência (16/10) | Aluno que cancela com **12 h** ou mais (ajustável: 2, 4, 6, 12, 24, 48 h ou outro valor até 168 h) ganha reposição; em cima da hora conta como dada. Cancelada pelo personal: sempre reposição. |
+| 23 | Validade da reposição (16/10) | **Até o vencimento da mensalidade atual** (sem vencimento na matrícula: 30 dias). |
+| 24 | Falta (16/10) | Falta sem aviso conta como dada, sem reposição. |
+| 25 | Menores sem conta (16/10) | Ficam para uma etapa 5b, depois. |
+| 26 | Histórico do perfil (16/10) | Peso, altura, outras medidas e objetivo guardam a data de cada mudança (histórico), para comparar no painel de acompanhamento. A ficha mostra "informado em". |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -109,7 +115,8 @@ volume cobrado pelo app, para levar números a um investidor.
 | 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal; excluir conta | pronta (15/10) |
 | 3 | Matrículas e aulas fixas na agenda da semana e do dia | pronta (16/10) |
 | 4 | App no celular (PWA) | — |
-| 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição; menores adicionados à mão | — |
+| 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
+| 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
 | 6 | Área do aluno: treinos, reagendar, cancelar, reposição | — |
 | 7 | Cobranças registradas: mensalidades, atrasos, "marcar como recebido", Pix copia e cola | — |
 | 8 | WhatsApp com um toque (texto pronto) | — |

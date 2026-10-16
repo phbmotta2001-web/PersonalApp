@@ -124,6 +124,7 @@ export interface AulaDaAgenda {
   fim: string;
   local: string | null;
   situacao: string;
+  origem: string;
   vinculoId: string | null;
   nome: string;
 }
@@ -135,7 +136,7 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
   const [{ data }, alunos] = await Promise.all([
     supabase
       .from("aulas")
-      .select("id, inicio, fim, local, situacao, vinculo_id")
+      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso")
       .eq("personal_id", id)
       .lt("inicio", ate)
       .gt("fim", de)
@@ -149,8 +150,9 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
     fim: a.fim,
     local: a.local,
     situacao: a.situacao,
+    origem: a.origem,
     vinculoId: a.vinculo_id,
-    nome: (a.vinculo_id && nomes.get(a.vinculo_id)) || "Aluno",
+    nome: (a.vinculo_id && nomes.get(a.vinculo_id)) || a.nome_avulso || "Aluno",
   }));
 }
 
@@ -160,7 +162,7 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
   if (!id) return [];
   const { data } = await supabase
     .from("aulas")
-    .select("id, inicio, fim, local, situacao, vinculo_id")
+    .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso")
     .eq("aluno_id", id)
     .eq("vinculo_id", vinculoId)
     .gt("inicio", new Date().toISOString())
@@ -173,6 +175,7 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
     fim: a.fim,
     local: a.local,
     situacao: a.situacao,
+    origem: a.origem,
     vinculoId: a.vinculo_id,
     nome: "",
   }));
