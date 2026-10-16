@@ -191,3 +191,20 @@ export async function contarAulasNoPeriodo(inicio: string, fim: string): Promise
     .gt("fim", inicio);
   return count ?? 0;
 }
+
+/** Próxima aula marcada de cada aluno do personal logado, por vínculo. */
+export async function proximaAulaPorAluno(): Promise<Record<string, { inicio: string; local: string | null }>> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return {};
+  const { data } = await supabase
+    .from("aulas")
+    .select("vinculo_id, inicio, local")
+    .eq("personal_id", id)
+    .gt("inicio", new Date().toISOString())
+    .in("situacao", ["agendada", "confirmada"])
+    .order("inicio")
+    .limit(1000);
+  const proximas: Record<string, { inicio: string; local: string | null }> = {};
+  for (const a of data ?? []) if (a.vinculo_id && !proximas[a.vinculo_id]) proximas[a.vinculo_id] = { inicio: a.inicio, local: a.local };
+  return proximas;
+}

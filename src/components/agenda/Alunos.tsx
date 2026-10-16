@@ -13,12 +13,22 @@ import {
   type AlunoDaLista,
 } from "@/lib/convite";
 import { frase } from "@/lib/formato";
+import { textoDaAula } from "@/lib/matricula";
 import { Avatar } from "../Avatar";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
 
 /** Lista de alunos do personal + "Convidar aluno". */
-export function Alunos({ alunos, origem }: { alunos: AlunoDaLista[]; origem: string }) {
+export function Alunos({
+  alunos,
+  origem,
+  proximas,
+}: {
+  alunos: AlunoDaLista[];
+  origem: string;
+  /** Próxima aula de cada aluno ativo, por vínculo. */
+  proximas: Record<string, { inicio: string; local: string | null }>;
+}) {
   const router = useRouter();
   const [abrindo, setAbrindo] = useState(alunos.length === 0);
   const [nome, setNome] = useState("");
@@ -122,15 +132,29 @@ export function Alunos({ alunos, origem }: { alunos: AlunoDaLista[]; origem: str
           <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
             {ativos.map((a) => (
               <li key={a.vinculoId}>
-                <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex items-center gap-3 py-3">
-                  <Avatar nome={a.nome} cor="av6" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-bold">{a.nome}</span>
-                    <span className="block text-[12.5px] text-ink-3">
-                      Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}
+                <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex flex-col gap-2 py-3">
+                  <span className="flex items-center gap-3">
+                    <Avatar nome={a.nome} cor="av6" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-bold">{a.nome}</span>
+                      <span className="block text-[12.5px] text-ink-3">
+                        Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}
+                      </span>
                     </span>
+                    <span className="text-ink-3" aria-hidden="true">›</span>
                   </span>
-                  <span className="text-ink-3" aria-hidden="true">›</span>
+                  {proximas[a.vinculoId] ? (
+                    <span className="flex items-start gap-2 rounded-[12px] bg-brand-soft px-3 py-2 text-[12.5px] text-brand">
+                      <Icone nome="calendario" className="mt-px size-4 shrink-0" />
+                      <span>
+                        <strong>Próxima aula:</strong> {textoDaAula(proximas[a.vinculoId].inicio, proximas[a.vinculoId].local)}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="rounded-[12px] border border-dashed border-line px-3 py-2 text-[12.5px] text-ink-3">
+                      Sem aulas marcadas. Toque para criar a matrícula.
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}

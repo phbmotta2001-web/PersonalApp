@@ -6,7 +6,7 @@
 // - Horário fixo fora do expediente pode, só com aviso.
 // - Valor mensal e vencimento ficam anotados (opcionais); a cobrança é a etapa 7.
 
-import { DIAS, DURACOES, curtoDoDia, minParaHora, nomeDoDia, type Duracao, type Faixa } from "./expediente";
+import { DIAS, DURACOES, curtoDoDia, diaDaSemana, emBrasilia, minParaHora, nomeDoDia, type Duracao, type Faixa } from "./expediente";
 import { juntarComE } from "./formato";
 
 export interface HorarioFixo {
@@ -152,4 +152,11 @@ export function proximaDataNoDia(desde: string, dia: number): string {
     if (data > desde) return data;
   }
   return proximoVencimento(desde, dia);
+}
+
+/** "sexta, 17/10/2026 às 07:00 em Academia do Centro" (horário de Brasília). */
+export function textoDaAula(inicio: string, local: string | null): string {
+  const { data, hora } = emBrasilia(inicio);
+  const dia = nomeDoDia(diaDaSemana(data)).toLowerCase();
+  return `${dia}, ${data.slice(8, 10)}/${data.slice(5, 7)}/${data.slice(0, 4)} às ${hora}${local ? ` em ${local}` : ""}`;
 }

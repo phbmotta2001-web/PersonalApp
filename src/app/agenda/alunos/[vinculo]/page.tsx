@@ -8,10 +8,10 @@ import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { lerMatricula } from "@/data/matriculas";
+import { lerMatricula, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { linkWhatsapp } from "@/lib/convite";
-import { centavosParaReais, resumoDosHorarios } from "@/lib/matricula";
+import { centavosParaReais, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -34,7 +34,8 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula] = await Promise.all([lerFichaDoAluno(vinculo), lerMatricula(vinculo)]);
+  const [a, matricula, proximas] = await Promise.all([lerFichaDoAluno(vinculo), lerMatricula(vinculo), proximaAulaPorAluno()]);
+  const proxima = proximas[vinculo];
 
   if (!a)
     return (
@@ -73,6 +74,16 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           )}
         </div>
       </section>
+
+      {proxima && (
+        <section className="flex items-start gap-3 rounded-[20px] bg-brand p-4 text-brand-ink">
+          <Icone nome="calendario" className="mt-0.5 size-5 shrink-0" />
+          <p className="text-[14px]">
+            <span className="block text-xs opacity-80">Próxima aula</span>
+            <span className="font-bold">{textoDaAula(proxima.inicio, proxima.local)}</span>
+          </p>
+        </section>
+      )}
 
       {matricula ? (
         <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
