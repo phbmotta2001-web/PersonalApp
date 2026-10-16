@@ -140,3 +140,16 @@ export function proximoVencimento(inicio: string, dia: number): string {
   const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
   return `${ano}-${String(mes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
 }
+
+/** Primeira data DEPOIS de `desde` que cai no dia `dia` do mês (ou no último dia, se o mês for curto). */
+export function proximaDataNoDia(desde: string, dia: number): string {
+  const [a, m] = desde.split("-").map(Number);
+  for (let i = 0; i < 2; i++) {
+    const ano = a + Math.floor((m - 1 + i) / 12);
+    const mes = ((m - 1 + i) % 12) + 1;
+    const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+    const data = `${ano}-${String(mes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
+    if (data > desde) return data;
+  }
+  return proximoVencimento(desde, dia);
+}

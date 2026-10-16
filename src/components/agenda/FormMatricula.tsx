@@ -15,6 +15,7 @@ import {
   LIMITE_LOCAL,
   ordenarHorarios,
   problemasDaMatricula,
+  proximaDataNoDia,
   proximoVencimento,
   type DadosMatricula,
   type HorarioOcupado,
@@ -24,9 +25,6 @@ import { mensalidadeDaTabela, SEMANAS_POR_MES, type TabelaDeValores } from "@/li
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
-
-/** "2026-11-16" → "16/11/2026" */
-const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 
 const estiloSelect = "min-h-11 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums";
 
@@ -68,6 +66,14 @@ export function FormMatricula({
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
   const [aPartir, setAPartir] = useState(hoje);
   const [vencimentoMexido, setVencimentoMexido] = useState(!!atual);
+  // Data mostrada no campo; no banco fica o dia do mês (diaVencimento).
+  const [vencimento, setVencimento] = useState(() =>
+    atual
+      ? atual.diaVencimento != null
+        ? proximaDataNoDia(hoje, atual.diaVencimento)
+        : ""
+      : proximoVencimento(hoje, diaDoMes(hoje)),
+  );
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
@@ -253,56 +259,55 @@ export function FormMatricula({
             </button>
           </>
         )}
-        <Campo
-          id="mat-venc"
-          rotulo="Vencimento"
-          ajuda={
-            dados.diaVencimento != null && /^\d{4}-\d{2}-\d{2}$/.test(dados.inicio)
-              ? atual
-                ? `Vence todo dia ${dados.diaVencimento}.`
-                : `1ª mensalidade no início (${dataBr(dados.inicio)}); a próxima vence em ${dataBr(
-                    proximoVencimento(dados.inicio, dados.diaVencimento),
-                  )} e depois todo dia ${dados.diaVencimento}.`
-              : undefined
-          }
-        >
-          <select
-            id="mat-venc"
-            value={dados.diaVencimento ?? ""}
-            onChange={(e) => {
-              setVencimentoMexido(true);
-              mudar({ diaVencimento: e.target.value ? Number(e.target.value) : null });
-            }}
-            className={ESTILO_CAIXA}
-          >
-            {dados.diaVencimento == null && <option value="">—</option>}
-            {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-              <option key={d} value={d}>
-                Dia {d}
-              </option>
-            ))}
-          </select>
-        </Campo>
         <p className="text-xs text-ink-3">Por enquanto só fica anotado. As cobranças chegam numa próxima versão.</p>
       </section>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Campo id="mat-inicio" rotulo="Início">
-          <input
-            id="mat-inicio"
-            type="date"
-            value={dados.inicio}
-            disabled={!!atual}
-            onChange={(e) =>
-              mudar({
-                inicio: e.target.value,
-                ...(!vencimentoMexido && e.target.value ? { diaVencimento: diaDoMes(e.target.value) } : {}),
-              })
-            }
-            className={ESTILO_CAIXA}
-          />
-        </Campo>
-        <Campo id="mat-fim" rotulo="Fim" opcional>
+      <section className="flex flex-col gap-3" aria-label="Datas">
+        <div className="grid grid-cols-2 gap-3">
+          <Campo id="mat-inicio" rotulo={atual ? "Início" : "Início (1º pagamento)"}>
+            <input
+              id="mat-inicio"
+              type="date"
+              value={dados.inicio}
+              disabled={!!atual}
+              onChange={(e) => {
+                const inicio = e.target.value;
+                if (!inicio) return mudar({ inicio });
+                if (!vencimentoMexido) {
+                  setVencimento(proximoVencimento(inicio, diaDoMes(inicio)));
+                  return mudar({ inicio, diaVencimento: diaDoMes(inicio) });
+                }
+                // Dia escolhido à mão: mantém o dia, mas o vencimento nunca fica antes do início.
+                if (vencimento <= inicio && dados.diaVencimento != null)
+                  setVencimento(proximoVencimento(inicio, dados.diaVencimento));
+                mudar({ inicio });
+              }}
+              className={ESTILO_CAIXA}
+            />
+          </Campo>
+          <Campo id="mat-venc" rotulo={atual ? "Próximo vencimento" : "1º vencimento"}>
+            <input
+              id="mat-venc"
+              type="date"
+              value={vencimento}
+              min={atual ? hoje : dados.inicio}
+              onChange={(e) => {
+                const data = e.target.value;
+                setVencimentoMexido(true);
+                setVencimento(data);
+                mudar({ diaVencimento: data ? diaDoMes(data) : null });
+              }}
+              className={ESTILO_CAIXA}
+            />
+          </Campo>
+        </div>
+        {dados.diaVencimento != null && (
+          <p className="-mt-1 text-xs text-ink-3">
+            {atual || vencimentoMexido ? "" : "Calculado sozinho: um mês depois do início. "}Depois, vence todo dia {dados.diaVencimento}
+            {dados.diaVencimento > 28 ? " (ou no último dia, nos meses mais curtos)" : ""}. Você pode mudar a data.
+          </p>
+        )}
+        <Campo id="mat-fim" rotulo="Termina em" opcional ajuda="Deixe vazio se a matrícula não tem data para acabar.">
           <input
             id="mat-fim"
             type="date"
@@ -312,7 +317,7 @@ export function FormMatricula({
             className={ESTILO_CAIXA}
           />
         </Campo>
-      </div>
+      </section>
 
       {atual && (
         <Campo
