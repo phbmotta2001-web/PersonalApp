@@ -62,7 +62,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 29 | Remarcar (17/10) | Num passo só, só com a antecedência de cancelamento; em cima da hora, o aluno fala com o personal. |
 | 30 | Aniversários (17/10) | A agenda mostra os **aniversários dos alunos do mês** (e o do dia escolhido). O personal passa a ver o dia e o mês do aniversário, além da idade; o aluno é avisado no convite e no perfil. |
 | 31 | Aprovação dos pedidos (18/10) | **Substitui a 28:** reposição e remarcação pedidas pelo aluno ficam **pendentes** (horário reservado) até o personal **aceitar, recusar (com motivo) ou sugerir outro horário**; na remarcação a aula original vale até o aceite. Sem resposta, o pedido **expira 2 h antes** e a reposição volta. Sem opção de aceitar automaticamente. |
-| 32 | Histórico (18/10) | Aba **Histórico de aulas** na agenda, mês a mês, com filtro por aluno e cores: verde = dada, azul = reposição, cinza = cancelada com antecedência, vermelho = perdida (falta ou em cima da hora). |
+| 32 | Calendário (18/10) | **Calendário do mês** na agenda (mês inteiro, filtro por aluno). Dias passados com as aulas em cores; dias futuros com as aulas marcadas (bolinha vazada); tocar no dia mostra a lista. Cores: verde = dada, azul = reposição, cinza = cancelada com antecedência, vermelho = perdida (falta ou em cima da hora). |
 | 33 | Cobranças (18/10) | 1ª mensalidade **proporcional**, calculada pelo Pienel; mensalidade aparece **uma semana antes** do vencimento (com aviso); atrasada fica em vermelho para os dois e o nome do aluno fica vermelho na lista; sem bloqueio por enquanto; "Cobrar no WhatsApp" com um toque. Baixa automática só com o Asaas (etapa 10). |
 
 ### O que reaproveita, o que muda, o que fica escondido

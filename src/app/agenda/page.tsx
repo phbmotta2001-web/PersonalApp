@@ -298,7 +298,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
             <span className="size-2 rounded-full bg-ink-3" />
             <span className="size-2 rounded-full bg-bad" />
           </span>
-          Histórico de aulas ›
+          Calendário de aulas ›
         </Link>
         <p className="text-xs text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário

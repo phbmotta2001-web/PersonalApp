@@ -146,7 +146,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       </section>
 
       <Link href={`/agenda/historico?aluno=${vinculo}`} className="-mt-2 self-end text-[13px] font-semibold text-brand">
-        Ver histórico de aulas ›
+        Ver calendário de aulas ›
       </Link>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-sm">
