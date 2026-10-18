@@ -41,6 +41,14 @@ function texto(a: Aviso): string {
       return `${nome} marcou uma reposição para ${nova}.`;
     case "remarcou":
       return `${nome} remarcou a aula de ${aula} para ${nova}.`;
+    case "pediu_reposicao":
+      return `${nome} pediu uma reposição para ${nova}. Aceite, recuse ou sugira outro horário.`;
+    case "pediu_remarcacao":
+      return `${nome} pediu para remarcar a aula de ${aula} para ${nova}. Aceite, recuse ou sugira outro horário.`;
+    case "aceitou_sugestao":
+      return `${nome} aceitou o horário que você sugeriu: ${nova}.`;
+    case "recusou_sugestao":
+      return `${nome} recusou o horário que você sugeriu (${nova}).`;
   }
 }
 

@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { livresNoDia, marcarAula, remarcarAula, type DetalheDaAula } from "@/data/aulas";
+import {
+  livresNoDia,
+  marcarAula,
+  remarcarAula,
+  responderPedido,
+  sugerirHorario,
+  type DetalheDaAula,
+} from "@/data/aulas";
 import {
   avisouComAntecedencia,
   COR_SITUACAO,
@@ -94,19 +101,44 @@ export function AcoesDaAula({
         )}
         {aula.remarcadaPara && (
           <Link href={`/agenda/aula/${aula.remarcadaPara.id}`} className="text-[13px] font-semibold text-brand">
-            Remarcada para {textoDaAula(aula.remarcadaPara.inicio, null)} ›
+            {aula.situacao === "remarcada" ? "Remarcada para" : "Pedido de troca para"}{" "}
+            {textoDaAula(aula.remarcadaPara.inicio, null)} ›
           </Link>
         )}
         {aula.remarcadaDe && (
           <Link href={`/agenda/aula/${aula.remarcadaDe.id}`} className="text-xs text-ink-3">
-            Remarcada de {textoDaAula(aula.remarcadaDe.inicio, null)}
+            {aula.situacao === "pendente" ? "Pedido para trocar a aula de" : "Remarcada de"}{" "}
+            {textoDaAula(aula.remarcadaDe.inicio, null)}
           </Link>
         )}
       </section>
 
       <Aviso>{erro}</Aviso>
 
-      {aula.situacao !== "remarcada" && (
+      {aula.situacao === "pendente" &&
+        (aula.propostaPor === "personal" ? (
+          <p className="rounded-[14px] bg-gold-soft p-3 text-[13px] text-gold">
+            Você sugeriu este horário. Aguardando {primeiro} aceitar ou recusar. Sem resposta, o pedido expira 2 horas antes.
+          </p>
+        ) : (
+          <Pedido
+            aula={aula}
+            ocupado={ocupado}
+            onAceitar={() => executar(() => responderPedido(aula.id, true))}
+            onRecusar={(motivo) => executar(() => responderPedido(aula.id, false, motivo))}
+            onSugerir={(data, inicioMin) => executar(() => sugerirHorario(aula.id, data, inicioMin))}
+            duracao={duracao}
+          />
+        ))}
+
+      {aula.situacao === "recusada" && (
+        <p className="rounded-[14px] bg-surface-2 p-3 text-[13px] text-ink-2">
+          Pedido recusado{aula.resposta ? `: ${aula.resposta}` : "."} O horário ficou livre e, se era reposição, ela voltou para{" "}
+          {primeiro}.
+        </p>
+      )}
+
+      {!["remarcada", "pendente", "recusada"].includes(aula.situacao) && (
         <>
           {/* Aula que já passou: só as exceções (falta) ou desfazer. */}
           {jaComecou && !marcadaAMao && (
@@ -296,11 +328,14 @@ function Remarcar({
   duracao,
   ocupado,
   onConfirmar,
+  rotulo = "Remarcar para",
 }: {
   aula: DetalheDaAula;
   duracao: number;
   ocupado: boolean;
   onConfirmar: (data: string, inicioMin: number) => void;
+  /** Texto do botão antes da data: "Remarcar para", "Sugerir". */
+  rotulo?: string;
 }) {
   const [data, setData] = useState(emBrasilia(aula.inicio).data);
   const [hora, setHora] = useState<number | null>(null);
@@ -373,8 +408,86 @@ function Remarcar({
         onClick={() => hora !== null && onConfirmar(data, hora)}
         className={ESTILO_BOTAO_PRINCIPAL}
       >
-        {ocupado ? "Remarcando…" : hora === null ? "Escolha o horário" : `Remarcar para ${data.slice(8, 10)}/${data.slice(5, 7)} às ${minParaHora(hora)}`}
+        {ocupado ? "Remarcando…" : hora === null ? "Escolha o horário" : `${rotulo} ${data.slice(8, 10)}/${data.slice(5, 7)} às ${minParaHora(hora)}`}
       </button>
+    </section>
+  );
+}
+
+/** Pedido do aluno: aceitar, recusar (com motivo) ou sugerir outro horário. */
+function Pedido({
+  aula,
+  duracao,
+  ocupado,
+  onAceitar,
+  onRecusar,
+  onSugerir,
+}: {
+  aula: DetalheDaAula;
+  duracao: number;
+  ocupado: boolean;
+  onAceitar: () => void;
+  onRecusar: (motivo: string) => void;
+  onSugerir: (data: string, inicioMin: number) => void;
+}) {
+  const [modo, setModo] = useState<null | "recusar" | "sugerir">(null);
+  const [motivo, setMotivo] = useState("");
+  const primeiro = aula.nome.split(" ")[0];
+  const tipo = aula.remarcadaDe ? "remarcar a aula" : "uma reposição";
+
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border-2 border-gold bg-surface p-4">
+      <p className="text-[14px]">
+        <strong>{primeiro}</strong> pediu {tipo} para este horário.
+        {aula.remarcadaDe && " A aula original continua marcada até você aceitar."}
+      </p>
+      <p className="text-xs text-ink-3">Sem resposta, o pedido expira 2 horas antes do horário.</p>
+      <button type="button" disabled={ocupado} onClick={onAceitar} className={ESTILO_BOTAO_PRINCIPAL}>
+        <Icone nome="certo" className="size-4" /> {ocupado ? "Salvando…" : "Aceitar"}
+      </button>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          aria-expanded={modo === "sugerir"}
+          onClick={() => setModo(modo === "sugerir" ? null : "sugerir")}
+          className={`${ESTILO_BOTAO_SECUNDARIO} ${modo === "sugerir" ? "border-ink" : ""}`}
+        >
+          Sugerir outro
+        </button>
+        <button
+          type="button"
+          aria-expanded={modo === "recusar"}
+          onClick={() => setModo(modo === "recusar" ? null : "recusar")}
+          className={`${ESTILO_BOTAO_SECUNDARIO} text-bad ${modo === "recusar" ? "border-ink" : ""}`}
+        >
+          Recusar
+        </button>
+      </div>
+      {modo === "sugerir" && <Remarcar aula={aula} duracao={duracao} ocupado={ocupado} onConfirmar={onSugerir} rotulo="Sugerir" />}
+      {modo === "recusar" && (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="motivo" className="text-[13px] font-bold text-ink-2">
+            Motivo (opcional, {primeiro} vai ver)
+          </label>
+          <input
+            id="motivo"
+            value={motivo}
+            maxLength={200}
+            placeholder="Ex.: estou em outra aula longe daí nesse horário"
+            onChange={(e) => setMotivo(e.target.value)}
+            className={ESTILO_CAIXA}
+          />
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => onRecusar(motivo)}
+            className="flex min-h-[50px] w-full items-center justify-center rounded-[15px] bg-bad px-[18px] font-bold text-white disabled:opacity-60"
+          >
+            {ocupado ? "Salvando…" : "Recusar pedido"}
+          </button>
+          <p className="text-xs text-ink-3">{aula.remarcadaDe ? "A aula original continua marcada." : `A reposição volta para ${primeiro}.`}</p>
+        </div>
+      )}
     </section>
   );
 }

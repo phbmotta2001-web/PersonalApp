@@ -9,7 +9,7 @@ import { criarClienteSupabase } from "@/lib/supabase/servidor";
 /** Mensagens que o próprio banco escreve em português e podem ir direto para a tela. */
 function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
-  return /aula|horário|reposição|personal|cancelad|remarcad|hora/i.test(m) ? m : padrao;
+  return /aula|horário|reposição|personal|cancelad|remarcad|hora|pedido|sugest/i.test(m) ? m : padrao;
 }
 
 export interface RegrasDoPersonal {
@@ -56,4 +56,18 @@ export async function alunoRemarcarAula(aulaId: string, inicio: string): Promise
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.rpc("aluno_remarcar_aula", { p_aula: aulaId, p_inicio: inicio });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível remarcar. Tente de novo.") } : { ok: true };
+}
+
+/** Responder à sugestão de horário do personal. */
+export async function alunoResponderSugestao(aulaId: string, aceitar: boolean): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("aluno_responder_sugestao", { p_aula: aulaId, p_aceitar: aceitar });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível responder. Tente de novo.") } : { ok: true };
+}
+
+/** Desistir de um pedido que ainda não foi respondido (a reposição volta). */
+export async function alunoDesistirPedido(aulaId: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("aluno_desistir_pedido", { p_aula: aulaId });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível desistir. Tente de novo.") } : { ok: true };
 }

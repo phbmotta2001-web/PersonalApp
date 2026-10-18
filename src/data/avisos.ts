@@ -5,7 +5,15 @@
 import { criarClienteSupabase, usuarioAtual } from "@/lib/supabase/servidor";
 import { listarMeusAlunos } from "./convites";
 
-export type TipoAviso = "cancelou_com_reposicao" | "cancelou_em_cima" | "marcou_reposicao" | "remarcou";
+export type TipoAviso =
+  | "cancelou_com_reposicao"
+  | "cancelou_em_cima"
+  | "marcou_reposicao"
+  | "remarcou"
+  | "pediu_reposicao"
+  | "pediu_remarcacao"
+  | "aceitou_sugestao"
+  | "recusou_sugestao";
 
 export interface Aviso {
   id: string;

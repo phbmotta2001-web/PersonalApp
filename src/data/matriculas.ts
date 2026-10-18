@@ -127,6 +127,12 @@ export interface AulaDaAgenda {
   origem: string;
   vinculoId: string | null;
   nome: string;
+  /** Pedido pendente: quem propôs o horário (o aluno pediu ou o personal sugeriu). */
+  propostaPor: "aluno" | "personal" | null;
+  /** Pedido de remarcação: a aula que seria trocada. */
+  aulaOriginalId: string | null;
+  /** Pedido recusado: o motivo. */
+  resposta: string | null;
 }
 
 /** Aulas do personal logado entre dois instantes (ISO), com o nome de cada aluno. */
@@ -136,7 +142,7 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
   const [{ data }, alunos] = await Promise.all([
     supabase
       .from("aulas")
-      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso")
+      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta")
       .eq("personal_id", id)
       .lt("inicio", ate)
       .gt("fim", de)
@@ -153,6 +159,9 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
     origem: a.origem,
     vinculoId: a.vinculo_id,
     nome: (a.vinculo_id && nomes.get(a.vinculo_id)) || a.nome_avulso || "Aluno",
+    propostaPor: a.proposta_por as AulaDaAgenda["propostaPor"],
+    aulaOriginalId: a.aula_original_id,
+    resposta: a.resposta,
   }));
 }
 
@@ -162,11 +171,11 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
   if (!id) return [];
   const { data } = await supabase
     .from("aulas")
-    .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso")
+    .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta")
     .eq("aluno_id", id)
     .eq("vinculo_id", vinculoId)
     .gt("inicio", new Date().toISOString())
-    .in("situacao", ["agendada", "confirmada"])
+    .in("situacao", ["agendada", "confirmada", "pendente"])
     .order("inicio")
     .limit(quantas);
   return (data ?? []).map((a) => ({
@@ -178,7 +187,26 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
     origem: a.origem,
     vinculoId: a.vinculo_id,
     nome: "",
+    propostaPor: a.proposta_por as AulaDaAgenda["propostaPor"],
+    aulaOriginalId: a.aula_original_id,
+    resposta: a.resposta,
   }));
+}
+
+/** Pedidos do aluno logado recusados (ou expirados) nos últimos 7 dias. */
+export async function pedidosRecusadosDoAluno(vinculoId: string): Promise<{ id: string; inicio: string; resposta: string | null; origem: string }[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const { data } = await supabase
+    .from("aulas")
+    .select("id, inicio, resposta, origem")
+    .eq("aluno_id", id)
+    .eq("vinculo_id", vinculoId)
+    .eq("situacao", "recusada")
+    .gt("atualizada_em", new Date(Date.now() - 7 * 86_400_000).toISOString())
+    .order("atualizada_em", { ascending: false })
+    .limit(5);
+  return data ?? [];
 }
 
 /** Quantas aulas marcadas caem num período (para avisar ao criar um bloqueio). */

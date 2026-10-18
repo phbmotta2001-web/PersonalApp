@@ -7,7 +7,7 @@ import { sair } from "@/data/conta";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
-import { lerAntecedencia } from "@/data/aulas";
+import { lerAntecedencia, pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { listarAulas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
@@ -33,7 +33,7 @@ import {
   nomeDoDia,
   somarDias,
 } from "@/lib/expediente";
-import { centavosParaReais } from "@/lib/matricula";
+import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 import { aPartirDe } from "@/lib/precos";
 
@@ -66,7 +66,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
@@ -75,6 +75,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     lerAntecedencia(),
     contarAvisosNaoLidos(),
     aniversariantesDoMes(dia),
+    pedidosPendentes(),
   ]);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
@@ -90,7 +91,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const doDia = semana.find((d) => d.data === dia) ?? semana[0];
   const aulasDe = (data: string) => aulasQueOcupam.filter((a) => emBrasilia(a.inicio).data === data);
   // No dia escolhido aparecem também as canceladas e remarcadas (riscadas).
-  const aulasDoDia = aulas.filter((a) => emBrasilia(a.inicio).data === dia);
+  const aulasDoDia = aulas.filter((a) => emBrasilia(a.inicio).data === dia && a.situacao !== "recusada");
   const caiEmBloqueio = (a: { inicio: string; fim: string }) =>
     bloqueios.some((b) => Date.parse(b.inicio) < Date.parse(a.fim) && Date.parse(b.fim) > Date.parse(a.inicio));
   const rotuloDoDia = dia === hoje ? "Hoje" : dia === somarDias(hoje, 1) ? "Amanhã" : nomeDoDia(doDia.diaSemana);
@@ -116,6 +117,27 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
           )}
         </Link>
       </header>
+
+      {pedidos.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-[20px] border-2 border-gold bg-gold-soft p-4" aria-label="Pedidos aguardando você">
+          <h2 className="text-[15px] font-bold text-gold">
+            {pedidos.length === 1 ? "1 pedido aguardando você" : `${pedidos.length} pedidos aguardando você`}
+          </h2>
+          <ul className="flex flex-col gap-1.5">
+            {pedidos.map((p) => (
+              <li key={p.id}>
+                <Link href={`/agenda/aula/${p.id}`} className="flex items-center gap-2 rounded-[12px] bg-surface px-3 py-2 text-[13px]">
+                  <span className="min-w-0 flex-1">
+                    <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
+                    {textoDaAula(p.inicio, null)}
+                  </span>
+                  <span className="text-ink-3" aria-hidden="true">›</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Fase 1: as contas nascem liberadas (sem conferência do CREF); só a suspensão avisa. */}
       {personal.situacao === "suspenso" && (
@@ -228,7 +250,11 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
                       </span>
                       {s !== "agendada" && s !== "confirmada" && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>
-                          {ROTULO_SITUACAO[s].split(" (")[0]}
+                          {s === "pendente"
+                            ? a.propostaPor === "personal"
+                              ? "Aguardando aluno"
+                              : "Aguardando você"
+                            : ROTULO_SITUACAO[s].split(" (")[0]}
                         </span>
                       )}
                       <span className="text-ink-3" aria-hidden="true">›</span>
@@ -262,6 +288,18 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
             <p className="border-t border-line pt-2.5 text-xs text-ink-3">{doDia.trabalha ? "Sem horários livres." : "Folga."}</p>
           )}
         </div>
+        <Link
+          href="/agenda/historico"
+          className="flex items-center gap-2 self-start rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] font-semibold"
+        >
+          <span className="flex gap-0.5" aria-hidden="true">
+            <span className="size-2 rounded-full bg-ok" />
+            <span className="size-2 rounded-full bg-info" />
+            <span className="size-2 rounded-full bg-ink-3" />
+            <span className="size-2 rounded-full bg-bad" />
+          </span>
+          Histórico de aulas ›
+        </Link>
         <p className="text-xs text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.

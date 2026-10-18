@@ -4,14 +4,15 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
   alunoCancelarAula,
+  alunoDesistirPedido,
   alunoMarcarReposicao,
   alunoRemarcarAula,
+  alunoResponderSugestao,
   livresParaAluno,
   type RegrasDoPersonal,
 } from "@/data/aluno-aulas";
 import { textoDeHoras } from "@/lib/aula";
 import { curtoDoDia, dataCurta, diaDaSemana, emBrasilia, somarDias } from "@/lib/expediente";
-import { textoDaAula } from "@/lib/matricula";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Icone } from "../Icone";
 
@@ -20,6 +21,17 @@ export interface AulaDoAluno {
   inicio: string;
   local: string | null;
   origem: string;
+  situacao: string;
+  /** Pedido pendente: quem propôs o horário (o aluno pediu ou o personal sugeriu). */
+  propostaPor: "aluno" | "personal" | null;
+  /** Pedido de remarcação: a aula que seria trocada. */
+  aulaOriginalId: string | null;
+}
+
+export interface PedidoRecusado {
+  id: string;
+  inicio: string;
+  resposta: string | null;
 }
 
 type Acao = { tipo: "cancelar" | "remarcar"; aulaId: string } | { tipo: "reposicao" } | null;
@@ -30,6 +42,7 @@ export function AulasDoAluno({
   nomePersonal,
   aulas,
   reposicoes,
+  recusados,
   regras,
   agora,
 }: {
@@ -38,6 +51,8 @@ export function AulasDoAluno({
   aulas: AulaDoAluno[];
   /** Validade ("AAAA-MM-DD") de cada reposição disponível, da que vence antes para a que vence depois. */
   reposicoes: string[];
+  /** Pedidos recusados ou expirados nos últimos dias. */
+  recusados: PedidoRecusado[];
   regras: RegrasDoPersonal;
   /** Instante (ISO) em que a página foi montada no servidor. */
   agora: string;
@@ -73,8 +88,8 @@ export function AulasDoAluno({
       {reposicoes.length > 0 && (
         <div className="flex flex-col gap-2 rounded-[14px] bg-brand-soft p-3 text-brand">
           <p className="text-[13px]">
-            Você tem <strong>{reposicoes.length}</strong> {reposicoes.length === 1 ? "reposição" : "reposições"}. A primeira
-            vale até {dataCurta(reposicoes[0])}.
+            Você tem <strong>{reposicoes.length}</strong> {reposicoes.length === 1 ? "reposição" : "reposições"}. A
+            primeira vale até {dataCurta(reposicoes[0])}.
           </p>
           {acao?.tipo === "reposicao" ? (
             <EscolherHorario
@@ -85,7 +100,10 @@ export function AulasDoAluno({
               textoBotao={(i) => `Marcar reposição ${textoCurto(i)}`}
               onCancelar={() => setAcao(null)}
               onEscolher={(inicio) =>
-                executar(() => alunoMarcarReposicao(vinculoId, inicio), `Reposição marcada: ${textoDaAula(inicio, null)}. ${primeiro} foi avisado.`)
+                executar(
+                  () => alunoMarcarReposicao(vinculoId, inicio),
+                  `Pedido de reposição enviado para ${textoCurto(inicio)}. ${primeiro} precisa aceitar: a resposta aparece aqui.`,
+                )
               }
               antecedenciaH={regras.reposicaoH}
             />
@@ -105,6 +123,13 @@ export function AulasDoAluno({
         </div>
       )}
 
+      {recusados.map((r) => (
+        <p key={r.id} className="rounded-[14px] bg-surface-2 px-3 py-2.5 text-[13px] text-ink-2">
+          Seu pedido para {textoCurto(r.inicio)} não foi aceito
+          {r.resposta ? `: ${r.resposta.replace(/[.!]$/, "")}.` : "."} Se era uma reposição, ela continua com você.
+        </p>
+      ))}
+
       {aulas.length > 0 && (
         <div className="flex flex-col gap-1.5">
           <p className="text-xs font-semibold text-ink-3">Próximas aulas</p>
@@ -112,6 +137,60 @@ export function AulasDoAluno({
             {aulas.map((a) => {
               const aberta = acao && "aulaId" in acao && acao.aulaId === a.id ? acao.tipo : null;
               const { data, hora } = emBrasilia(a.inicio);
+              const pedida = aulas.find((x) => x.aulaOriginalId === a.id && x.situacao === "pendente");
+              if (a.situacao === "pendente")
+                return (
+                  <li key={a.id} className="flex flex-col gap-2 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 text-sm tabular-nums">
+                        <span className="text-ink-2">
+                          {curtoDoDia(diaDaSemana(data))} {dataCurta(data)}
+                        </span>{" "}
+                        <span className="font-bold">{hora}</span>
+                        <span className="block text-xs text-gold">
+                          {a.propostaPor === "personal"
+                            ? `${primeiro} sugeriu este horário`
+                            : `${a.aulaOriginalId ? "Remarcação" : "Reposição"} pedida · aguardando ${primeiro}`}
+                        </span>
+                      </span>
+                      {a.propostaPor === "aluno" && (
+                        <button
+                          type="button"
+                          disabled={ocupado}
+                          onClick={() => executar(() => alunoDesistirPedido(a.id), "Pedido cancelado.")}
+                          className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold"
+                        >
+                          Desistir
+                        </button>
+                      )}
+                    </div>
+                    {a.propostaPor === "personal" && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={ocupado}
+                          onClick={() => executar(() => alunoResponderSugestao(a.id, false), "Sugestão recusada.")}
+                          className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[13px] font-bold"
+                        >
+                          Recusar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={ocupado}
+                          onClick={() =>
+                            executar(
+                              () => alunoResponderSugestao(a.id, true),
+                              `Combinado: aula ${textoCurto(a.inicio)}.`,
+                            )
+                          }
+                          className="flex-1 rounded-[12px] bg-brand px-3 py-2.5 text-[13px] font-bold text-brand-ink"
+                        >
+                          Aceitar horário
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
               return (
                 <li key={a.id} className="flex flex-col gap-2 py-2.5">
                   <div className="flex items-center gap-2">
@@ -122,18 +201,22 @@ export function AulasDoAluno({
                       <span className="font-bold">{hora}</span>
                       {a.origem === "reposicao" && <span className="text-xs text-ink-3"> · reposição</span>}
                     </span>
-                    <button
-                      type="button"
-                      aria-expanded={aberta === "remarcar"}
-                      onClick={() => {
-                        setFeito(null);
-                        setErro(null);
-                        setAcao(aberta === "remarcar" ? null : { tipo: "remarcar", aulaId: a.id });
-                      }}
-                      className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold"
-                    >
-                      Remarcar
-                    </button>
+                    {pedida ? (
+                      <span className="text-xs text-gold">Troca pedida</span>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-expanded={aberta === "remarcar"}
+                        onClick={() => {
+                          setFeito(null);
+                          setErro(null);
+                          setAcao(aberta === "remarcar" ? null : { tipo: "remarcar", aulaId: a.id });
+                        }}
+                        className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold"
+                      >
+                        Remarcar
+                      </button>
+                    )}
                     <button
                       type="button"
                       aria-expanded={aberta === "cancelar"}
@@ -211,7 +294,7 @@ export function AulasDoAluno({
                         onEscolher={(inicio) =>
                           executar(
                             () => alunoRemarcarAula(a.id, inicio),
-                            `Aula remarcada para ${textoDaAula(inicio, a.local)}. ${primeiro} foi avisado.`,
+                            `Pedido de remarcação enviado para ${textoCurto(inicio)}. Até ${primeiro} aceitar, a aula continua no horário de antes.`,
                           )
                         }
                       />

@@ -14,12 +14,15 @@ export type SituacaoAula =
   | "falta"
   | "cancelada_com_aviso"
   | "cancelada_em_cima"
-  | "remarcada";
+  | "remarcada"
+  /** Pedido do aluno (reposição ou remarcação) esperando resposta. */
+  | "pendente"
+  | "recusada";
 
 export type OrigemAula = "fixa" | "avulsa" | "reposicao" | "experimental";
 
 /** Situações que ocupam o horário na agenda. */
-export const SITUACOES_QUE_OCUPAM: SituacaoAula[] = ["agendada", "confirmada", "realizada", "falta"];
+export const SITUACOES_QUE_OCUPAM: SituacaoAula[] = ["agendada", "confirmada", "realizada", "falta", "pendente"];
 
 export const ANTECEDENCIA_PADRAO_H = 12;
 export const OPCOES_ANTECEDENCIA_H = [2, 4, 6, 12, 24, 48];
@@ -40,6 +43,8 @@ export const ROTULO_SITUACAO: Record<SituacaoAula, string> = {
   cancelada_com_aviso: "Cancelada (com reposição)",
   cancelada_em_cima: "Cancelada em cima da hora (conta como dada)",
   remarcada: "Remarcada",
+  pendente: "Aguardando resposta",
+  recusada: "Pedido recusado",
 };
 
 export const ROTULO_ORIGEM: Record<OrigemAula, string> = {
@@ -58,10 +63,13 @@ export const COR_SITUACAO: Record<SituacaoAula, string> = {
   cancelada_com_aviso: "bg-surface-2 text-ink-3",
   cancelada_em_cima: "bg-gold-soft text-gold",
   remarcada: "bg-surface-2 text-ink-3",
+  pendente: "bg-gold-soft text-gold",
+  recusada: "bg-surface-2 text-ink-3",
 };
 
 /** A aula não acontece (some do horário, aparece riscada). */
-export const naoAcontece = (s: SituacaoAula) => s === "cancelada_com_aviso" || s === "cancelada_em_cima" || s === "remarcada";
+export const naoAcontece = (s: SituacaoAula) =>
+  s === "cancelada_com_aviso" || s === "cancelada_em_cima" || s === "remarcada" || s === "recusada";
 
 /**
  * Se o aluno cancelar AGORA, foi com antecedência? (O personal pode escolher outra
@@ -98,4 +106,32 @@ export function resumoDoMes(
     if (a.origem === "reposicao" && s === "realizada") r.reposicoes++;
   }
   return r;
+}
+
+// ─── Histórico (decisão de 18/10/2026): uma cor para cada tipo ──────────────
+
+export type CategoriaHistorico = "dada" | "reposicao" | "cancelada" | "perdida";
+
+export const CATEGORIAS_HISTORICO: { valor: CategoriaHistorico; rotulo: string; ponto: string; etiqueta: string }[] = [
+  { valor: "dada", rotulo: "Dadas", ponto: "bg-ok", etiqueta: "bg-ok-soft text-ok" },
+  { valor: "reposicao", rotulo: "Reposições", ponto: "bg-info", etiqueta: "bg-info-soft text-info" },
+  { valor: "cancelada", rotulo: "Canceladas com antecedência", ponto: "bg-ink-3", etiqueta: "bg-surface-2 text-ink-2" },
+  { valor: "perdida", rotulo: "Perdidas", ponto: "bg-bad", etiqueta: "bg-bad/10 text-bad" },
+];
+
+/**
+ * Em qual cor a aula entra no histórico. Perdida = falta ou cancelada em cima da hora.
+ * Aulas futuras, remarcadas, pedidos pendentes e recusados não entram.
+ */
+export function categoriaDoHistorico(
+  situacao: string,
+  origem: string,
+  fim: string,
+  agora = new Date(),
+): CategoriaHistorico | null {
+  const s = situacaoEfetiva(situacao, fim, agora);
+  if (s === "realizada") return origem === "reposicao" ? "reposicao" : "dada";
+  if (s === "cancelada_com_aviso") return "cancelada";
+  if (s === "falta" || s === "cancelada_em_cima") return "perdida";
+  return null;
 }

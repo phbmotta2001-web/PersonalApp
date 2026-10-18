@@ -11,7 +11,7 @@ import { exigirAluno } from "@/data/exigir-aluno";
 import { AulasDoAluno } from "@/components/aluno/AulasDoAluno";
 import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
-import { lerMatricula, proximasAulasDoAluno } from "@/data/matriculas";
+import { lerMatricula, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
@@ -51,11 +51,12 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
     regrasParaAluno(vinculo),
+    pedidosRecusadosDoAluno(vinculo),
   ]);
 
   return (
@@ -97,12 +98,21 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </section>
         )}
 
-        {(aulas.length > 0 || reposicoes.length > 0) && (
+        {(aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
           <section className="rounded-[20px] border border-line bg-surface p-4">
             <AulasDoAluno
               vinculoId={vinculo}
               nomePersonal={p.nome}
-              aulas={aulas.map((a) => ({ id: a.id, inicio: a.inicio, local: a.local, origem: a.origem }))}
+              aulas={aulas.map((a) => ({
+                id: a.id,
+                inicio: a.inicio,
+                local: a.local,
+                origem: a.origem,
+                situacao: a.situacao,
+                propostaPor: a.propostaPor,
+                aulaOriginalId: a.aulaOriginalId,
+              }))}
+              recusados={recusados}
               reposicoes={reposicoes.map((r) => r.validoAte)}
               regras={regras}
               agora={new Date().toISOString()}

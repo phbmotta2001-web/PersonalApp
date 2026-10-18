@@ -14,7 +14,7 @@ import { lerExpediente, listarBloqueios } from "./expediente";
 /** Mensagens que o próprio banco escreve em português e podem ir direto para a tela. */
 function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
-  return /aula|horário|reposição|aluno|cancelou|duração|antecedência|nome|local|situação/i.test(m) ? m : padrao;
+  return /aula|horário|reposição|aluno|cancelou|duração|antecedência|nome|local|situação|pedido|sugest/i.test(m) ? m : padrao;
 }
 
 export interface DetalheDaAula {
@@ -25,6 +25,9 @@ export interface DetalheDaAula {
   situacao: SituacaoAula;
   origem: OrigemAula;
   canceladaPor: "aluno" | "personal" | null;
+  /** Pedido pendente: quem propôs o horário atual. */
+  propostaPor: "aluno" | "personal" | null;
+  resposta: string | null;
   vinculoId: string | null;
   nome: string;
   /** Aula que foi remarcada para esta, e para qual aula esta foi remarcada. */
@@ -32,7 +35,8 @@ export interface DetalheDaAula {
   remarcadaPara: { id: string; inicio: string } | null;
 }
 
-const CAMPOS_AULA = "id, inicio, fim, local, situacao, origem, cancelada_por, vinculo_id, nome_avulso, aula_original_id";
+const CAMPOS_AULA =
+  "id, inicio, fim, local, situacao, origem, cancelada_por, vinculo_id, nome_avulso, aula_original_id, proposta_por, resposta";
 
 interface LinhaAula {
   id: string;
@@ -42,6 +46,8 @@ interface LinhaAula {
   situacao: string;
   origem: string;
   cancelada_por: string | null;
+  proposta_por: string | null;
+  resposta: string | null;
   vinculo_id: string | null;
   nome_avulso: string | null;
   aula_original_id: string | null;
@@ -59,7 +65,14 @@ export async function lerAula(aulaId: string): Promise<DetalheDaAula | null> {
     a.aula_original_id
       ? supabase.from("aulas").select("id, inicio").eq("id", a.aula_original_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    supabase.from("aulas").select("id, inicio").eq("aula_original_id", a.id).maybeSingle(),
+    supabase
+      .from("aulas")
+      .select("id, inicio")
+      .eq("aula_original_id", a.id)
+      .neq("situacao", "recusada")
+      .order("criada_em", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
   return {
     id: a.id,
@@ -69,6 +82,8 @@ export async function lerAula(aulaId: string): Promise<DetalheDaAula | null> {
     situacao: a.situacao as SituacaoAula,
     origem: a.origem as OrigemAula,
     canceladaPor: a.cancelada_por as DetalheDaAula["canceladaPor"],
+    propostaPor: a.proposta_por as DetalheDaAula["propostaPor"],
+    resposta: a.resposta,
     vinculoId: a.vinculo_id,
     nome: (a.vinculo_id && alunos.find((x) => x.vinculoId === a.vinculo_id)?.nome) || a.nome_avulso || "Aluno",
     remarcadaDe: original.data ?? null,
@@ -88,6 +103,24 @@ export async function marcarAula(
     p_cancelada_por: canceladaPor ?? null,
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível salvar. Tente de novo.") } : { ok: true };
+}
+
+/** Pedido do aluno (reposição ou remarcação): aceitar, ou recusar com um motivo opcional. */
+export async function responderPedido(aulaId: string, aceitar: boolean, resposta?: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("responder_pedido", {
+    p_aula: aulaId,
+    p_aceitar: aceitar,
+    p_resposta: resposta?.trim() || null,
+  });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível responder. Tente de novo.") } : { ok: true };
+}
+
+/** Em vez de aceitar o horário pedido, sugerir outro; o aluno aceita ou recusa. */
+export async function sugerirHorario(aulaId: string, data: string, inicioMin: number): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("sugerir_horario", { p_aula: aulaId, p_data: data, p_inicio_min: inicioMin });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível sugerir. Tente de novo.") } : { ok: true };
 }
 
 export async function remarcarAula(
@@ -238,4 +271,35 @@ export async function salvarRegras(regras: Regras): Promise<Resposta> {
     p_antecedencia_reposicao_h: regras.reposicaoH,
   });
   return error ? { ok: false, erro: "Não foi possível salvar. Tente de novo." } : { ok: true };
+}
+
+export interface PedidoPendente {
+  id: string;
+  inicio: string;
+  nome: string;
+  remarcacao: boolean;
+}
+
+/** Pedidos de alunos esperando a resposta do personal logado (os mais próximos primeiro). */
+export async function pedidosPendentes(): Promise<PedidoPendente[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const [{ data }, alunos] = await Promise.all([
+    supabase
+      .from("aulas")
+      .select("id, inicio, vinculo_id, aula_original_id")
+      .eq("personal_id", id)
+      .eq("situacao", "pendente")
+      .eq("proposta_por", "aluno")
+      .gt("inicio", new Date().toISOString())
+      .order("inicio"),
+    listarMeusAlunos(),
+  ]);
+  const nomes = new Map(alunos.map((a) => [a.vinculoId, a.nome]));
+  return (data ?? []).map((a) => ({
+    id: a.id,
+    inicio: a.inicio,
+    nome: (a.vinculo_id && nomes.get(a.vinculo_id)) || "Aluno",
+    remarcacao: a.aula_original_id != null,
+  }));
 }

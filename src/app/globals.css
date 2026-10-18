@@ -19,6 +19,8 @@
   --lime-ink: #1b2a08;
   --ok: #1a7247;
   --ok-soft: #dcf2e5;
+  --info: #1d5fb4;
+  --info-soft: #dde9f8;
   --bad: #b1261b;
   --gold: #7a5400;
   --gold-soft: #f7ebc8;
@@ -52,6 +54,8 @@
     --on-deep-2: #a9d3be;
     --ok: #7ddaa9;
     --ok-soft: #113425;
+    --info: #8fbaf3;
+    --info-soft: #14263f;
     --bad: #f38b7f;
     --gold: #e7be55;
     --gold-soft: #33280a;
@@ -82,6 +86,8 @@
   --color-lime-ink: var(--lime-ink);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-bad: var(--bad);
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
