@@ -9,6 +9,7 @@ import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { lerAntecedencia, pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
+import { resumoDasCobrancas } from "@/data/cobrancas";
 import { listarAulas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
 import {
@@ -66,7 +67,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
@@ -76,6 +77,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     contarAvisosNaoLidos(),
     aniversariantesDoMes(dia),
     pedidosPendentes(),
+    resumoDasCobrancas(hoje),
   ]);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
@@ -347,6 +349,25 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         <span className="text-ink-3" aria-hidden="true">›</span>
       </Link>
 
+      <Link
+        href="/agenda/cobrancas"
+        className={`flex items-center gap-3 rounded-[20px] border bg-surface p-3.5 hover:border-brand ${cobrancas.atrasado > 0 ? "border-bad/60" : "border-line"}`}
+      >
+        <span className={`grid size-9 place-items-center rounded-full ${cobrancas.atrasado > 0 ? "bg-bad/10 text-bad" : "bg-brand-soft text-brand"}`}>
+          <Icone nome="estrela" className="size-[18px]" />
+        </span>
+        <span className="flex-1">
+          <span className="block text-sm font-bold">Cobranças</span>
+          <span className="block text-xs text-ink-3">
+            {centavosParaReais(cobrancas.recebido)} recebido no mês · {centavosParaReais(cobrancas.aReceber)} a receber
+          </span>
+          {cobrancas.atrasado > 0 && (
+            <span className="block text-xs font-bold text-bad">{centavosParaReais(cobrancas.atrasado)} atrasado</span>
+          )}
+        </span>
+        <span className="text-ink-3" aria-hidden="true">›</span>
+      </Link>
+
       <nav className="grid grid-cols-2 gap-2" aria-label="Configurar agenda">
         <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
         <Atalho href="/agenda/bloqueios" icone="calendario" titulo="Bloqueios" texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"} />
@@ -358,7 +379,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
         <h2 className="text-[15px] font-semibold">O que vem por aí</h2>
         <ul className="mt-2 flex flex-col gap-1.5 text-[13px] text-ink-2">
           <li>Marcar aula dada, falta, cancelamento e aulas avulsas</li>
-          <li>Mensalidades, atrasos e lembretes por WhatsApp</li>
+          <li>Lembretes automáticos por WhatsApp</li>
+          <li>Pagamento com baixa automática (Asaas)</li>
         </ul>
       </section>
 

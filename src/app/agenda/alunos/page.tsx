@@ -4,8 +4,10 @@ import { Alunos } from "@/components/agenda/Alunos";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { listarMeusAlunos } from "@/data/convites";
+import { alunosComAtraso } from "@/data/cobrancas";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { proximaAulaPorAluno } from "@/data/matriculas";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { origemDoSite } from "@/lib/supabase/servidor";
 
 export const metadata: Metadata = {
@@ -27,6 +29,11 @@ export default function PaginaAlunos() {
 
 async function Conteudo() {
   await exigirPersonal("/agenda/alunos");
-  const [alunos, origem, proximas] = await Promise.all([listarMeusAlunos(), origemDoSite(), proximaAulaPorAluno()]);
-  return <Alunos alunos={alunos} origem={origem} proximas={proximas} />;
+  const [alunos, origem, proximas, comAtraso] = await Promise.all([
+    listarMeusAlunos(),
+    origemDoSite(),
+    proximaAulaPorAluno(),
+    alunosComAtraso(agoraEmBrasilia().data),
+  ]);
+  return <Alunos alunos={alunos} origem={origem} proximas={proximas} comAtraso={comAtraso} />;
 }

@@ -23,11 +23,14 @@ export function Alunos({
   alunos,
   origem,
   proximas,
+  comAtraso = [],
 }: {
   alunos: AlunoDaLista[];
   origem: string;
   /** Próxima aula de cada aluno ativo, por vínculo. */
   proximas: Record<string, { inicio: string; local: string | null }>;
+  /** Vínculos com cobrança atrasada: o nome fica em vermelho. */
+  comAtraso?: string[];
 }) {
   const router = useRouter();
   const [abrindo, setAbrindo] = useState(alunos.length === 0);
@@ -136,7 +139,10 @@ export function Alunos({
                   <span className="flex items-center gap-3">
                     <Avatar nome={a.nome} cor="av6" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-bold">{a.nome}</span>
+                      <span className={`block truncate font-bold ${comAtraso.includes(a.vinculoId) ? "text-bad" : ""}`}>
+                        {a.nome}
+                        {comAtraso.includes(a.vinculoId) && <span className="ml-1.5 text-[11px] font-bold">· mensalidade atrasada</span>}
+                      </span>
                       <span className="block text-[12.5px] text-ink-3">
                         Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}
                       </span>

@@ -49,6 +49,8 @@ function texto(a: Aviso): string {
       return `${nome} aceitou o horário que você sugeriu: ${nova}.`;
     case "recusou_sugestao":
       return `${nome} recusou o horário que você sugeriu (${nova}).`;
+    case "avisou_pagamento":
+      return `${nome} avisou que pagou uma cobrança. Confira no seu banco e confirme.`;
   }
 }
 
@@ -70,7 +72,8 @@ async function Conteudo() {
     <ul className="flex flex-col gap-2 px-[18px] pt-2 pb-6">
       <MarcarAvisosLidos haNaoLidos={haNaoLidos} />
       {avisos.map((a) => {
-        const alvo = a.aulaNova?.id ?? a.aula?.id;
+        const alvo = a.cobrancaId ? null : (a.aulaNova?.id ?? a.aula?.id);
+        const destino = a.cobrancaId ? `/agenda/cobrancas/${a.cobrancaId}` : alvo ? `/agenda/aula/${alvo}` : null;
         const quando = emBrasilia(a.criadoEm);
         const conteudo = (
           <>
@@ -86,9 +89,9 @@ async function Conteudo() {
         );
         return (
           <li key={a.id}>
-            {alvo ? (
+            {destino ? (
               <Link
-                href={`/agenda/aula/${alvo}`}
+                href={destino}
                 className={`flex items-start gap-3 rounded-[16px] border p-3 ${a.lido ? "border-line bg-surface" : "border-brand bg-brand-soft"}`}
               >
                 {conteudo}

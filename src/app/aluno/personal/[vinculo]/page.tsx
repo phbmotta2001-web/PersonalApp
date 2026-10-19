@@ -9,10 +9,13 @@ import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { AulasDoAluno } from "@/components/aluno/AulasDoAluno";
+import { CobrancasDoAluno } from "@/components/aluno/CobrancasDoAluno";
 import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
+import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { lerMatricula, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -51,13 +54,23 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
     regrasParaAluno(vinculo),
     pedidosRecusadosDoAluno(vinculo),
+    cobrancasDoAluno(vinculo),
+    pixParaAluno(vinculo),
   ]);
+  const hoje = agoraEmBrasilia().data;
+  const pixPorCobranca = Object.fromEntries(
+    (
+      await Promise.all(
+        cobrancas.filter((c) => c.situacao === "aberta").map(async (c) => [c.id, await pixDaCobranca(pixDoPersonal, c)] as const),
+      )
+    ).filter((par): par is readonly [string, { codigo: string; qrSvg: string }] => par[1] !== null),
+  );
 
   return (
     <>
@@ -117,6 +130,12 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
               regras={regras}
               agora={new Date().toISOString()}
             />
+          </section>
+        )}
+
+        {cobrancas.length > 0 && (
+          <section className="rounded-[20px] border border-line bg-surface p-4">
+            <CobrancasDoAluno cobrancas={cobrancas} pix={pixPorCobranca} nomePersonal={p.nome} hoje={hoje} />
           </section>
         )}
 

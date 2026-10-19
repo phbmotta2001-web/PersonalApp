@@ -7,13 +7,15 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { aulasDoMes, reposicoesDisponiveis } from "@/data/aulas";
+import { listarCobrancas } from "@/data/cobrancas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerMatricula, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { resumoDoMes } from "@/lib/aula";
 import { linkWhatsapp } from "@/lib/convite";
-import { dataCurta } from "@/lib/expediente";
+import { COR_COBRANCA, descricaoDaCobranca, ROTULO_COBRANCA, situacaoDaCobranca } from "@/lib/cobranca";
+import { agoraEmBrasilia, dataCurta } from "@/lib/expediente";
 import { centavosParaReais, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -37,13 +39,16 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula, proximas, reposicoes, doMes] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
     reposicoesDisponiveis(vinculo),
     aulasDoMes(vinculo),
+    listarCobrancas(vinculo),
   ]);
+  const hoje = agoraEmBrasilia().data;
+  const atrasado = cobrancas.some((c) => situacaoDaCobranca(c, hoje) === "atrasada");
   const resumo = resumoDoMes(doMes);
   const proxima = proximas[vinculo];
 
@@ -63,7 +68,8 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
       <div className="flex flex-col items-center gap-1 text-center">
         <Avatar nome={a.nomeCompleto} cor="av6" tamanho="grande" />
-        <h2 className="mt-1 text-[20px] font-extrabold">{a.nomeCompleto}</h2>
+        <h2 className={`mt-1 text-[20px] font-extrabold ${atrasado ? "text-bad" : ""}`}>{a.nomeCompleto}</h2>
+        {atrasado && <p className="text-xs font-bold text-bad">Mensalidade atrasada</p>}
         <p className="text-[13px] text-ink-3">
           {a.idade} anos · {rotuloGenero(a.genero)} · aluno desde {new Date(a.aceitoEm).toLocaleDateString("pt-BR")}
         </p>
@@ -144,6 +150,29 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           detalhe={reposicoes[0] ? `a 1ª vale até ${dataCurta(reposicoes[0].validoAte)}` : undefined}
         />
       </section>
+
+      {cobrancas.length > 0 && (
+        <section className="flex flex-col gap-1.5" aria-label="Cobranças">
+          <h3 className="text-[15px] font-semibold">Cobranças</h3>
+          <ul className="flex flex-col gap-1.5">
+            {cobrancas.slice(0, 4).map((c) => {
+              const sc = situacaoDaCobranca(c, hoje);
+              return (
+                <li key={c.id}>
+                  <Link
+                    href={`/agenda/cobrancas/${c.id}`}
+                    className={`flex items-center gap-2 rounded-[14px] border bg-surface px-3 py-2.5 text-sm ${sc === "atrasada" ? "border-bad/50" : "border-line"}`}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{descricaoDaCobranca(c)}</span>
+                    <span className="font-bold tabular-nums">{centavosParaReais(c.valorCentavos)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_COBRANCA[sc]}`}>{ROTULO_COBRANCA[sc]}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <Link href={`/agenda/historico?aluno=${vinculo}`} className="-mt-2 self-end text-[13px] font-semibold text-brand">
         Ver calendário de aulas ›

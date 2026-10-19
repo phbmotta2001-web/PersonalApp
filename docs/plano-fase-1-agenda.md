@@ -125,8 +125,8 @@ volume cobrado pelo app, para levar números a um investidor.
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
 | 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
 | 6 | Área do aluno: cancelar, remarcar e marcar reposição pelo app; avisos para o personal (treinos ficam para depois) | pronta (17/10) |
-| 7 | Cobranças registradas: mensalidades, atrasos, "marcar como recebido", Pix copia e cola | — |
-| 8 | WhatsApp com um toque (texto pronto) | — |
+| 7 | Cobranças registradas: mensalidades (1ª proporcional), atrasos, "marcar como recebido", Pix copia e cola + QR, "Já paguei" do aluno, cobrança avulsa | pronta (19/10) |
+| 8 | WhatsApp com um toque (texto pronto) | cobrança pronta (19/10, junto da 7) |
 | 9 | WhatsApp automático (aula do dia, remarcação, cobrança) | — |
 | 10 | Pagamento pelo Asaas (subcontas, Pix Automático, baixa automática) | — |
 | 11 | Painel de acompanhamento do aluno (presença, sequência, evolução) | — |
