@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
+import { InstalarApp } from "@/components/InstalarApp";
 import { sair } from "@/data/conta";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
@@ -119,6 +120,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
           )}
         </Link>
       </header>
+
+      <InstalarApp />
 
       {pedidos.length > 0 && (
         <section className="flex flex-col gap-2 rounded-[20px] border-2 border-gold bg-gold-soft p-4" aria-label="Pedidos aguardando você">

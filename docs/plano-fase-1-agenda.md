@@ -121,7 +121,8 @@ volume cobrado pelo app, para levar números a um investidor.
 | 1 | Horários de trabalho e bloqueios (seg–dom, de 30 em 30 min, duração padrão 30/45/60/90) | pronta (15/10) |
 | 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal; excluir conta | pronta (15/10) |
 | 3 | Matrículas e aulas fixas na agenda da semana e do dia | pronta (16/10) |
-| 4 | App no celular (PWA) | — |
+| 4 | App no celular (PWA): ícone, instalação (Android e iPhone), abre na área de cada um, tela sem internet | pronta (19/10) |
+| 4b | Notificações no celular (web push) | — |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
 | 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
 | 6 | Área do aluno: cancelar, remarcar e marcar reposição pelo app; avisos para o personal (treinos ficam para depois) | pronta (17/10) |

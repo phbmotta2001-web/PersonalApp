@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AbasAluno } from "@/components/aluno/AbasAluno";
+import { InstalarApp } from "@/components/InstalarApp";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
@@ -36,6 +37,8 @@ async function Conteudo() {
           <p className="text-[12.5px] text-ink-3">Minha área</p>
           <h1 className="text-[24px] font-extrabold">Olá, {conta.perfil.nomeCompleto.split(" ")[0]}</h1>
         </header>
+
+        <InstalarApp />
 
         {!perfilCompleto(conta) && (
           <section className="rounded-[20px] bg-gold-soft p-4 text-[13.5px] text-gold">

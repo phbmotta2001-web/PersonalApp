@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1c5a42" />
+    <title>Sem internet · Pienel</title>
+    <style>
+      :root {
+        --app: #f3f6f4;
+        --ink: #13201b;
+        --ink-2: #4a5a53;
+        --brand: #1c5a42;
+        --brand-ink: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --app: #0d1512;
+          --ink: #e8efeb;
+          --ink-2: #a6b6ae;
+          --brand: #6fd09f;
+          --brand-ink: #0d1512;
+        }
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--app);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      main {
+        max-width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      img {
+        width: 72px;
+        height: 72px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 4px 0 0;
+      }
+      p {
+        margin: 0;
+        color: var(--ink-2);
+        line-height: 1.45;
+      }
+      button {
+        margin-top: 8px;
+        min-height: 50px;
+        width: 100%;
+        border: 0;
+        border-radius: 15px;
+        background: var(--brand);
+        color: var(--brand-ink);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icones/icone-192.png" alt="" />
+      <h1>Você está sem internet</h1>
+      <p>Confira o Wi-Fi ou os dados móveis. Quando a conexão voltar, toque em “Tentar de novo”.</p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+    </main>
+  </body>
+</html>

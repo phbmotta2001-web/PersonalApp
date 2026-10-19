@@ -50,6 +50,12 @@ const CAMINHOS = {
     </>
   ),
   mais: <path d="M12 5v14M5 12h14" />,
+  compartilhar: (
+    <>
+      <path d="M12 3v12M8 7l4-4 4 4" />
+      <path d="M6 11H5v10h14V11h-1" />
+    </>
+  ),
   sino: (
     <>
       <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z" />
