@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarPix } from "@/data/cobrancas";
 import { frase } from "@/lib/formato";
@@ -9,6 +10,7 @@ import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulari
 
 /** Chave Pix do personal: vai nas cobranças como Pix copia e cola e QR Code. */
 export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; nomeSugerido: string }) {
+  const router = useRouter();
   const [pix, setPix] = useState<DadosPix>(
     inicial ?? { tipo: "cpf", chave: "", nome: nomeSugerido.slice(0, 25), cidade: "" },
   );
@@ -31,7 +33,10 @@ export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; n
         iniciar(async () => {
           try {
             const r = await salvarPix(pix);
-            setAviso(r.ok ? { tipo: "ok", texto: "Chave Pix salva." } : { tipo: "erro", texto: r.erro });
+            if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+            // Volta para Cobranças já com a chave (sem mostrar a tela antiga guardada).
+            router.replace("/agenda/cobrancas");
+            router.refresh();
           } catch {
             setAviso({ tipo: "erro", texto: "Não foi possível salvar agora. Confira sua internet." });
           }
