@@ -116,7 +116,7 @@ recusada · proposta expirada.
 ## Como testar
 
 Você cria uma conta de personal com outro apelido do seu e-mail
-(ex.: `phbmotta2001+personal@gmail.com`), aprova pelo SQL Editor e faz pedidos para
+(ex.: `seuemail+personal@gmail.com`), aprova pelo SQL Editor e faz pedidos para
 ela com a sua conta de aluno. Assim vê os dois lados de verdade. **Só dados de
 exemplo**, porque o projeto do Supabase ainda é o provisório nos EUA.
 
