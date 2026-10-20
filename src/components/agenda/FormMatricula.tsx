@@ -12,6 +12,7 @@ import {
   choquesComOutros,
   diaDoMes,
   foraDoExpediente,
+  INTERVALO_MAXIMO,
   LIMITE_LOCAL,
   MODALIDADES,
   ordenarHorarios,
@@ -182,7 +183,28 @@ export function FormMatricula({
           <Chip ativo={dados.intervaloSemanas === 2} onClick={() => mudar({ intervaloSemanas: 2 })}>
             A cada 15 dias
           </Chip>
+          <Chip ativo={dados.intervaloSemanas > 2} onClick={() => mudar({ intervaloSemanas: 3 })}>
+            Personalizada
+          </Chip>
         </div>
+        {dados.intervaloSemanas > 2 && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="mat-intervalo" className="text-sm font-semibold">
+              Uma vez a cada
+            </label>
+            <select
+              id="mat-intervalo"
+              value={dados.intervaloSemanas}
+              onChange={(e) => mudar({ intervaloSemanas: Number(e.target.value) })}
+              className={estiloSelect}
+            >
+              {Array.from({ length: INTERVALO_MAXIMO - 2 }, (_, i) => i + 3).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <span className="text-sm text-ink-2">semanas</span>
+          </div>
+        )}
         <div className="grid grid-cols-7 gap-1">
           {DIAS.map((d) => {
             const ativo = marcado(d.valor);

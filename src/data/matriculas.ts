@@ -41,7 +41,7 @@ const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
   vinculoId: l.vinculo_id,
   modalidade: l.modalidade,
-  intervaloSemanas: l.intervalo_semanas as Matricula["intervaloSemanas"],
+  intervaloSemanas: l.intervalo_semanas,
   cicloMeses: l.ciclo_meses as Matricula["cicloMeses"],
   horarios: l.matricula_horarios.map((h) => ({ dia: h.dia_semana, inicioMin: h.inicio_min })),
   duracao: l.duracao_min as Duracao,

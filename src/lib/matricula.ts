@@ -27,8 +27,8 @@ export const MODALIDADES: { valor: Modalidade; rotulo: string; texto: string }[]
 
 export interface DadosMatricula {
   modalidade: Modalidade;
-  /** Aulas fixas toda semana (1) ou a cada 15 dias (2). */
-  intervaloSemanas: 1 | 2;
+  /** Aulas fixas a cada N semanas: 1 = toda semana, 2 = a cada 15 dias, até 8. */
+  intervaloSemanas: number;
   /** Planos online: cobrança a cada 1, 3, 6 ou 12 meses. Presencial: sempre 1. */
   cicloMeses: 1 | 3 | 6 | 12;
   horarios: HorarioFixo[];
@@ -50,7 +50,7 @@ export interface Matricula {
   id: string;
   vinculoId: string;
   modalidade: Modalidade;
-  intervaloSemanas: 1 | 2;
+  intervaloSemanas: number;
   cicloMeses: 1 | 3 | 6 | 12;
   horarios: HorarioFixo[];
   duracao: Duracao;
@@ -131,14 +131,23 @@ export function foraDoExpediente(horarios: HorarioFixo[], duracao: number, faixa
   );
 }
 
+/** Frequência personalizada: de 1 a 8 semanas entre as aulas. */
+export const INTERVALO_MAXIMO = 8;
+
+/** ", a cada 15 dias", ", a cada 3 semanas"; vazio quando é toda semana. */
+export function textoDoIntervalo(intervaloSemanas: number): string {
+  if (intervaloSemanas <= 1) return "";
+  return intervaloSemanas === 2 ? ", a cada 15 dias" : `, a cada ${intervaloSemanas} semanas`;
+}
+
 /**
  * Resumo para a tela: "Seg e Qui às 07:00" quando todos têm a mesma hora,
  * senão "Seg 07:00, Qua 18:30 e Sex 07:00".
  */
-export function resumoDosHorarios(horarios: HorarioFixo[], intervaloSemanas: 1 | 2 = 1): string {
+export function resumoDosHorarios(horarios: HorarioFixo[], intervaloSemanas = 1): string {
   const h = ordenarHorarios(horarios);
   if (h.length === 0) return "";
-  const quinzenal = intervaloSemanas === 2 ? ", a cada 15 dias" : "";
+  const quinzenal = textoDoIntervalo(intervaloSemanas);
   if (h.every((x) => x.inicioMin === h[0].inicioMin))
     return `${juntarComE(h.map((x) => curtoDoDia(x.dia)))} às ${minParaHora(h[0].inicioMin)}${quinzenal}`;
   return juntarComE(h.map((x) => `${curtoDoDia(x.dia)} ${minParaHora(x.inicioMin)}`)) + quinzenal;
