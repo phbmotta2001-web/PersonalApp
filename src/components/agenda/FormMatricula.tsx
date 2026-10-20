@@ -72,7 +72,6 @@ export function FormMatricula({
   }));
   // Marcar um dia já traz a hora do último dia mexido (ou 07:00).
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
-  const [aPartir, setAPartir] = useState(hoje);
   const [vencimentoMexido, setVencimentoMexido] = useState(!!atual);
   // Data mostrada no campo; no banco fica o dia do mês (diaVencimento).
   const [vencimento, setVencimento] = useState(() =>
@@ -133,7 +132,7 @@ export function FormMatricula({
     if (problemas.length > 0 || choques.length > 0) return;
     iniciar(async () => {
       try {
-        const r = await salvarMatricula(vinculoId, dados, atual ? aPartir : undefined);
+        const r = await salvarMatricula(vinculoId, dados);
         if (!r.ok) return setErro(r.erro);
         router.replace(`/agenda/alunos/${vinculoId}`);
         router.refresh();
@@ -436,23 +435,6 @@ export function FormMatricula({
           />
         </Campo>
       </section>
-
-      {atual && (
-        <Campo
-          id="mat-apartir"
-          rotulo="As mudanças nos horários valem a partir de"
-          ajuda="As aulas antes dessa data ficam como estão."
-        >
-          <input
-            id="mat-apartir"
-            type="date"
-            value={aPartir}
-            min={hoje}
-            onChange={(e) => setAPartir(e.target.value || hoje)}
-            className={ESTILO_CAIXA}
-          />
-        </Campo>
-      )}
 
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
       <button type="submit" disabled={ocupado || choques.length > 0} className={ESTILO_BOTAO_PRINCIPAL}>

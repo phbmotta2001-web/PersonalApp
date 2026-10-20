@@ -95,9 +95,9 @@ function erroDoBanco(mensagem: string | undefined, padrao: string): string {
 
 /**
  * Cria a matrícula ou altera a ativa. Ao alterar, os horários novos valem a partir
- * de `aPartir` ("AAAA-MM-DD"); as aulas anteriores ficam como estão.
+ * de agora: só as aulas futuras ainda agendadas são refeitas; o histórico fica como está.
  */
-export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, aPartir?: string): Promise<Resposta> {
+export async function salvarMatricula(vinculoId: string, dados: DadosMatricula): Promise<Resposta> {
   const problemas = problemasDaMatricula(dados);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
@@ -118,7 +118,6 @@ export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, 
       dia_vencimento: dados.diaVencimento,
       inicio: dados.inicio,
       fim: dados.fim || null,
-      a_partir: aPartir || null,
     },
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível salvar a matrícula.") } : { ok: true };
