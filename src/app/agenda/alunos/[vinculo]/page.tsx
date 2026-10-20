@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
+import { SuspensaoAutomatica } from "@/components/agenda/SuspensaoAutomatica";
 import { Avatar } from "@/components/Avatar";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
@@ -10,7 +11,7 @@ import { aulasDoMes, reposicoesDisponiveis } from "@/data/aulas";
 import { listarCobrancas } from "@/data/cobrancas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { lerMatricula, proximaAulaPorAluno } from "@/data/matriculas";
+import { lerMatricula, matriculasSuspensas, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { resumoDoMes } from "@/lib/aula";
 import { linkWhatsapp } from "@/lib/convite";
@@ -39,14 +40,16 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
     reposicoesDisponiveis(vinculo),
     aulasDoMes(vinculo),
     listarCobrancas(vinculo),
+    matriculasSuspensas(),
   ]);
+  const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
   const atrasado = cobrancas.some((c) => situacaoDaCobranca(c, hoje) === "atrasada");
   const resumo = resumoDoMes(doMes);
@@ -69,7 +72,14 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       <div className="flex flex-col items-center gap-1 text-center">
         <Avatar nome={a.nomeCompleto} cor="av6" tamanho="grande" />
         <h2 className={`mt-1 text-[20px] font-extrabold ${atrasado ? "text-bad" : ""}`}>{a.nomeCompleto}</h2>
-        {atrasado && <p className="text-xs font-bold text-bad">Mensalidade atrasada</p>}
+        {suspensaDesde ? (
+          <p className="text-xs font-bold text-bad">
+            Matrícula suspensa desde {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR")} · marque a
+            mensalidade como paga para liberar
+          </p>
+        ) : (
+          atrasado && <p className="text-xs font-bold text-bad">Mensalidade atrasada</p>
+        )}
         <p className="text-[13px] text-ink-3">
           {a.idade} anos · {rotuloGenero(a.genero)} · aluno desde {new Date(a.aceitoEm).toLocaleDateString("pt-BR")}
         </p>
@@ -131,6 +141,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
             Desde {new Date(`${matricula.inicio}T12:00:00`).toLocaleDateString("pt-BR")}
             {matricula.fim && ` até ${new Date(`${matricula.fim}T12:00:00`).toLocaleDateString("pt-BR")}`}
           </p>
+          <SuspensaoAutomatica vinculoId={vinculo} ligada={matricula.suspenderSeAtrasar} />
         </section>
       ) : (
         <Link

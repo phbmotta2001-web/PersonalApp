@@ -24,6 +24,7 @@ export function Alunos({
   origem,
   proximas,
   comAtraso = [],
+  suspensos = [],
 }: {
   alunos: AlunoDaLista[];
   origem: string;
@@ -31,6 +32,8 @@ export function Alunos({
   proximas: Record<string, { inicio: string; local: string | null }>;
   /** Vínculos com cobrança atrasada: o nome fica em vermelho. */
   comAtraso?: string[];
+  /** Vínculos com a matrícula suspensa por falta de pagamento. */
+  suspensos?: string[];
 }) {
   const router = useRouter();
   const [abrindo, setAbrindo] = useState(alunos.length === 0);
@@ -141,7 +144,11 @@ export function Alunos({
                     <span className="min-w-0 flex-1">
                       <span className={`block truncate font-bold ${comAtraso.includes(a.vinculoId) ? "text-bad" : ""}`}>
                         {a.nome}
-                        {comAtraso.includes(a.vinculoId) && <span className="ml-1.5 text-[11px] font-bold">· mensalidade atrasada</span>}
+                        {comAtraso.includes(a.vinculoId) && (
+                          <span className="ml-1.5 text-[11px] font-bold">
+                            · {suspensos.includes(a.vinculoId) ? "matrícula suspensa" : "mensalidade atrasada"}
+                          </span>
+                        )}
                       </span>
                       <span className="block text-[12.5px] text-ink-3">
                         Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}

@@ -24,7 +24,7 @@ function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
   // Erro técnico do banco (em inglês) nunca vai para a tela.
   if (TECNICO.test(m)) return padrao;
-  return /questionário|pergunta|responda|resposta|aluno|frequência|programação|início|nome/i.test(m) ? m : padrao;
+  return /questionário|pergunta|responda|resposta|aluno|frequência|programação|início|nome|suspensa/i.test(m) ? m : padrao;
 }
 
 export interface Questionario {

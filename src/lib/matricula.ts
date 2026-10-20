@@ -55,6 +55,8 @@ export interface Matricula {
   horarios: HorarioFixo[];
   duracao: Duracao;
   local: string | null;
+  /** Suspende no dia seguinte ao vencimento de uma mensalidade em aberto. */
+  suspenderSeAtrasar: boolean;
   valorCentavos: number | null;
   valorForaDoPadrao: boolean;
   diaVencimento: number | null;

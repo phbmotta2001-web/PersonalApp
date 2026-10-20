@@ -37,7 +37,7 @@ export function CobrancasDoAluno({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs font-semibold text-ink-3">Mensalidades e cobranças</p>
+      <p className="text-xs font-semibold text-ink-3">Matrícula e pagamentos</p>
       {abertas.length === 0 && <p className="text-[13px] text-ink-3">Nada em aberto. Tudo em dia!</p>}
       {abertas.map((c) => {
         const s = situacaoDaCobranca(c, hoje);
@@ -48,7 +48,7 @@ export function CobrancasDoAluno({
           >
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-bold ${s === "atrasada" ? "text-bad" : ""}`}>{descricaoDaCobranca(c)}</p>
+                <p className={`text-sm font-bold ${s === "atrasada" ? "text-bad" : ""}`}>{descricaoDaCobranca(c, true)}</p>
                 <p className={`text-xs ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
                   {textoDoVencimento(c.vencimento, hoje)}
                 </p>
@@ -100,7 +100,7 @@ export function CobrancasDoAluno({
         <ul className="flex flex-col gap-1 text-xs text-ink-3">
           {pagas.map((c) => (
             <li key={c.id} className="flex gap-2">
-              <span className="flex-1">{descricaoDaCobranca(c)}</span>
+              <span className="flex-1">{descricaoDaCobranca(c, true)}</span>
               <span className="tabular-nums">{centavosParaReais(c.valorPagoCentavos ?? c.valorCentavos)}</span>
               <span className="font-bold text-ok">Paga</span>
             </li>

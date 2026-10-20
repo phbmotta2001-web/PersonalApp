@@ -7,6 +7,7 @@ import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
+import { matriculasSuspensas } from "@/data/matriculas";
 import { faltaNoPerfil, perfilCompleto } from "@/lib/aluno";
 import { juntarComE } from "@/lib/formato";
 
@@ -27,7 +28,7 @@ export default function PaginaAluno() {
 // Aba "Treinos": junta os treinos de todos os personais (a agenda chega nas etapas 3 e 6).
 async function Conteudo() {
   const conta = await exigirAluno("/aluno");
-  const personais = await listarMeusPersonais();
+  const [personais, suspensas] = await Promise.all([listarMeusPersonais(), matriculasSuspensas()]);
 
   return (
     <>
@@ -37,6 +38,26 @@ async function Conteudo() {
           <p className="text-[12.5px] text-ink-3">Minha área</p>
           <h1 className="text-[24px] font-extrabold">Olá, {conta.perfil.nomeCompleto.split(" ")[0]}</h1>
         </header>
+
+        {personais
+          .filter((p) => suspensas[p.vinculoId])
+          .map((p) => (
+            <Link
+              key={p.vinculoId}
+              href={`/aluno/personal/${p.vinculoId}`}
+              role="alert"
+              className="flex items-center gap-3 rounded-[20px] border-2 border-bad bg-bad/5 p-4"
+            >
+              <Icone nome="cadeado" className="size-6 shrink-0 text-bad" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[15px] font-extrabold text-bad">Matrícula suspensa</span>
+                <span className="block text-[13px] text-ink-2">
+                  Sua matrícula com {p.nome.split(" ")[0]} venceu sem pagamento. Pague para liberar suas aulas.
+                </span>
+              </span>
+              <span className="rounded-[11px] bg-bad px-3 py-2 text-[13px] font-bold text-white">Pagar</span>
+            </Link>
+          ))}
 
         <InstalarApp />
 

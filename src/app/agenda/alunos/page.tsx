@@ -6,7 +6,7 @@ import { Cabecalho, Carregando } from "@/components/Formulario";
 import { listarMeusAlunos } from "@/data/convites";
 import { alunosComAtraso } from "@/data/cobrancas";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { proximaAulaPorAluno } from "@/data/matriculas";
+import { matriculasSuspensas, proximaAulaPorAluno } from "@/data/matriculas";
 import { agoraEmBrasilia } from "@/lib/expediente";
 import { origemDoSite } from "@/lib/supabase/servidor";
 
@@ -29,11 +29,12 @@ export default function PaginaAlunos() {
 
 async function Conteudo() {
   await exigirPersonal("/agenda/alunos");
-  const [alunos, origem, proximas, comAtraso] = await Promise.all([
+  const [alunos, origem, proximas, comAtraso, suspensas] = await Promise.all([
     listarMeusAlunos(),
     origemDoSite(),
     proximaAulaPorAluno(),
     alunosComAtraso(agoraEmBrasilia().data),
+    matriculasSuspensas(),
   ]);
-  return <Alunos alunos={alunos} origem={origem} proximas={proximas} comAtraso={comAtraso} />;
+  return <Alunos alunos={alunos} origem={origem} proximas={proximas} comAtraso={comAtraso} suspensos={Object.keys(suspensas)} />;
 }

@@ -7,6 +7,7 @@ import { Cabecalho, Carregando } from "@/components/Formulario";
 import { lerCobranca, lerPix, pixDaCobranca } from "@/data/cobrancas";
 import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { lerMatricula } from "@/data/matriculas";
 import {
   COR_COBRANCA,
   descricaoDaCobranca,
@@ -54,10 +55,11 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/cobrancas/[cobr
   const s = situacaoDaCobranca(c, hoje);
   const pix = c.situacao === "aberta" ? await pixDaCobranca(pixDados, c) : null;
   const whatsapp = alunos.find((a) => a.vinculoId === c.vinculoId)?.whatsapp ?? null;
+  const matricula = c.situacao === "aberta" && c.tipo === "mensalidade" ? await lerMatricula(c.vinculoId) : null;
   // Sem WhatsApp do aluno, o link abre o WhatsApp para o personal escolher o contato.
   const conversa =
     c.situacao === "aberta"
-      ? linkWhatsapp(whatsapp, mensagemDeCobranca(c.nome.split(" ")[0], c, hoje, pix?.codigo ?? null))
+      ? linkWhatsapp(whatsapp, mensagemDeCobranca(c.nome.split(" ")[0], c, hoje, pix?.codigo ?? null, matricula?.suspenderSeAtrasar ?? false))
       : null;
 
   return (

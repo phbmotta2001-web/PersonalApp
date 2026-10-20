@@ -63,12 +63,17 @@ export const COR_COBRANCA: Record<SituacaoCobranca, string> = {
 
 const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 
-/** "Mensalidade 18/10 a 17/11" ou a descrição da cobrança avulsa. */
-export function descricaoDaCobranca(c: Pick<Cobranca, "tipo" | "descricao" | "periodoInicio" | "periodoFim">): string {
+/**
+ * "Mensalidade 18/10 a 17/11" ou a descrição da cobrança avulsa. Para o aluno, a
+ * mensalidade é o vencimento da matrícula: "Matrícula 18/10 a 17/11".
+ */
+export function descricaoDaCobranca(
+  c: Pick<Cobranca, "tipo" | "descricao" | "periodoInicio" | "periodoFim">,
+  paraAluno = false,
+): string {
   if (c.tipo === "avulsa") return c.descricao ?? "Cobrança avulsa";
-  return c.periodoInicio && c.periodoFim
-    ? `Mensalidade ${dataBr(c.periodoInicio)} a ${dataBr(c.periodoFim)}`
-    : "Mensalidade";
+  const nome = paraAluno ? "Matrícula" : "Mensalidade";
+  return c.periodoInicio && c.periodoFim ? `${nome} ${dataBr(c.periodoInicio)} a ${dataBr(c.periodoFim)}` : nome;
 }
 
 /** Dias até o vencimento (negativo = atrasada há N dias). */
@@ -92,11 +97,19 @@ export function mensagemDeCobranca(
   c: Pick<Cobranca, "tipo" | "descricao" | "periodoInicio" | "periodoFim" | "valorCentavos" | "vencimento">,
   hoje: string,
   pixCopiaECola: string | null,
+  /** A matrícula do aluno é suspensa se a mensalidade vencer sem pagamento. */
+  suspende = false,
 ): string {
   const atrasada = c.vencimento < hoje;
   const linhas = [
-    `Oi, ${primeiroNome}! ${atrasada ? "Passando para lembrar" : "Lembrete"}: ${descricaoDaCobranca(c).toLowerCase()}, ${centavosParaReais(c.valorCentavos)}, ${textoDoVencimento(c.vencimento, hoje)}.`,
+    `Oi, ${primeiroNome}! ${atrasada ? "Passando para lembrar" : "Lembrete"}: ${descricaoDaCobranca(c, true).toLowerCase()}, ${centavosParaReais(c.valorCentavos)}, ${textoDoVencimento(c.vencimento, hoje)}.`,
   ];
+  if (suspende && c.tipo === "mensalidade")
+    linhas.push(
+      atrasada
+        ? "Sua matrícula está suspensa até o pagamento."
+        : "Se não for paga até o vencimento, a matrícula fica suspensa até o pagamento.",
+    );
   if (pixCopiaECola) linhas.push("", "Pix copia e cola:", pixCopiaECola);
   linhas.push("", "Depois de pagar, toque em \"Já paguei\" no Pienel. Obrigado!");
   return linhas.join("\n");

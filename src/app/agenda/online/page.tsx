@@ -8,7 +8,7 @@ import { Icone } from "@/components/Icone";
 import { LinkWhatsappQuestionario } from "@/components/online/LinkWhatsappQuestionario";
 import { alunosComAtraso } from "@/data/cobrancas";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { listarAlunosOnline } from "@/data/matriculas";
+import { listarAlunosOnline, matriculasSuspensas } from "@/data/matriculas";
 import { checkinsRecentes } from "@/data/questionarios";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia, emBrasilia } from "@/lib/expediente";
@@ -40,11 +40,12 @@ const diaMes = (iso: string) => {
 
 async function Conteudo() {
   await exigirPersonal("/agenda/online");
-  const [alunos, comAtraso, checkins, origem] = await Promise.all([
+  const [alunos, comAtraso, checkins, origem, suspensas] = await Promise.all([
     listarAlunosOnline(),
     alunosComAtraso(agoraEmBrasilia().data),
     checkinsRecentes(),
     origemDoSite(),
+    matriculasSuspensas(),
   ]);
   const ids = new Set(alunos.map((a) => a.vinculoId));
   // Questionários que chegaram na data e ainda não tiveram o link enviado.
@@ -127,7 +128,9 @@ async function Conteudo() {
                     <span className="mt-1 flex flex-wrap gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${situacao.cor}`}>{situacao.texto}</span>
                       {atrasado && (
-                        <span className="rounded-full bg-bad/10 px-2 py-0.5 text-[11px] font-bold text-bad">Mensalidade atrasada</span>
+                        <span className="rounded-full bg-bad/10 px-2 py-0.5 text-[11px] font-bold text-bad">
+                          {suspensas[a.vinculoId] ? "Matrícula suspensa" : "Mensalidade atrasada"}
+                        </span>
                       )}
                     </span>
                   </span>

@@ -11,7 +11,7 @@ import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { lerAntecedencia, pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { resumoDasCobrancas } from "@/data/cobrancas";
-import { listarAlunosOnline, listarAulas } from "@/data/matriculas";
+import { listarAlunosOnline, listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
 import {
   COR_SITUACAO,
@@ -68,7 +68,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas, online] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas, online, suspensas] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
@@ -80,6 +80,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     pedidosPendentes(),
     resumoDasCobrancas(hoje),
     listarAlunosOnline(),
+    matriculasSuspensas(),
   ]);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
@@ -253,6 +254,9 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
                           <span className="block text-xs text-ink-3">{ROTULO_ORIGEM[a.origem as OrigemAula]}</span>
                         )}
                         {!riscada && caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
+                        {!riscada && a.vinculoId && suspensas[a.vinculoId] && (
+                          <span className="block text-xs font-semibold text-bad">Matrícula suspensa (mensalidade vencida)</span>
+                        )}
                       </span>
                       {s !== "agendada" && s !== "confirmada" && (
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>

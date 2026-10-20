@@ -31,11 +31,12 @@ interface LinhaMatricula {
   dia_vencimento: number | null;
   inicio: string;
   fim: string | null;
+  suspender_se_atrasar: boolean;
   matricula_horarios: { dia_semana: number; inicio_min: number }[];
 }
 
 const CAMPOS_MATRICULA =
-  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, matricula_horarios (dia_semana, inicio_min)";
+  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, suspender_se_atrasar, matricula_horarios (dia_semana, inicio_min)";
 
 const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
@@ -51,6 +52,7 @@ const paraMatricula = (l: LinhaMatricula): Matricula => ({
   diaVencimento: l.dia_vencimento,
   inicio: l.inicio,
   fim: l.fim,
+  suspenderSeAtrasar: l.suspender_se_atrasar,
 });
 
 /** Matrícula ativa de um vínculo (personal ou aluno daquele vínculo). */
@@ -283,4 +285,19 @@ export async function listarAlunosOnline(): Promise<AlunoOnline[]> {
       matricula: paraMatricula(l),
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+}
+
+// ─── Matrícula suspensa (mensalidade vencida sem pagamento) ───────────────
+
+/** Matrículas suspensas que o usuário logado vê (personal ou aluno): vínculo → desde ("AAAA-MM-DD"). */
+export async function matriculasSuspensas(): Promise<Record<string, string>> {
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase.rpc("matriculas_suspensas");
+  return Object.fromEntries(((data ?? []) as { vinculo_id: string; desde: string }[]).map((s) => [s.vinculo_id, s.desde]));
+}
+
+export async function definirSuspensaoAutomatica(vinculoId: string, ligada: boolean): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("definir_suspensao_automatica", { p_vinculo: vinculoId, p_ligada: ligada });
+  return error ? { ok: false, erro: "Não foi possível mudar agora." } : { ok: true };
 }

@@ -14,7 +14,7 @@ import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
-import { lerMatricula, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
+import { lerMatricula, matriculasSuspensas, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia } from "@/lib/expediente";
 import { resumoDaModalidade, resumoDosHorarios } from "@/lib/matricula";
@@ -55,7 +55,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -64,7 +64,9 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     cobrancasDoAluno(vinculo),
     pixParaAluno(vinculo),
     checkinsPendentesDoAluno(vinculo),
+    matriculasSuspensas(),
   ]);
+  const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
   const pixPorCobranca = Object.fromEntries(
     (
@@ -97,7 +99,23 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           <Icone nome="conversa" className="size-4" /> Mensagem no WhatsApp · {formatarWhatsapp(p.whatsapp)}
         </a>
 
-        {questionarios.map((q) => (
+        {suspensaDesde && (
+          <section className="flex flex-col gap-2 rounded-[20px] border-2 border-bad bg-bad/5 p-4" role="alert">
+            <p className="flex items-center gap-2 text-[16px] font-extrabold text-bad">
+              <Icone nome="cadeado" className="size-5" /> Matrícula suspensa
+            </p>
+            <p className="text-[13px] text-ink-2">
+              Sua matrícula venceu sem pagamento e está suspensa desde{" "}
+              {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR")}. Enquanto isso, você não consegue
+              cancelar, remarcar nem marcar aulas, nem responder questionários.
+            </p>
+            <p className="text-[13px] font-semibold">
+              Pague abaixo e toque em &quot;Já paguei&quot;. Quando {primeiro} confirmar, tudo volta ao normal.
+            </p>
+          </section>
+        )}
+
+        {!suspensaDesde && questionarios.map((q) => (
           <Link
             key={q.id}
             href={`/aluno/questionario/${q.id}`}
@@ -111,7 +129,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </Link>
         ))}
 
-        {matricula ? (
+        {suspensaDesde ? null : matricula ? (
           <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
             <div>
               <p className="text-xs font-semibold text-ink-3">{resumoDaModalidade(matricula)}</p>
@@ -135,7 +153,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </section>
         )}
 
-        {(aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
+        {!suspensaDesde && (aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
           <section className="rounded-[20px] border border-line bg-surface p-4">
             <AulasDoAluno
               vinculoId={vinculo}
