@@ -67,7 +67,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 34 | Alunos online e híbridos (20/10) | Tipo de acompanhamento na matrícula: **presencial, online ou híbrido**. Online não ocupa a agenda; híbrido tem aulas presenciais de rotina (ex.: **a cada 15 dias**) na agenda e aparece na lista de alunos online com a etiqueta "Híbrido". Cartão **Alunos online** na agenda. |
 | 35 | Planos online (20/10) | Tabela própria: **mensal, trimestral, semestral, anual**, valor total do período, cobrado uma vez por período (1ª cobrança proporcional). |
 | 36 | Questionários (20/10) | Questionário básico pronto e personalizável (frequência de treino, adesão e satisfação com o protocolo, sono, progressão de carga, aeróbico, alimentação); programável; envio pelo WhatsApp com um toque até a etapa 9. **Sem fotos** por enquanto. |
-| 37 | Frequência personalizada (20/10) | Além de "toda semana" e "a cada 15 dias", as aulas fixas podem ser "a cada N semanas" (3 a 8), útil para híbridos. |
+| 37 | Frequência personalizada (20/10) | Além de "toda semana" e "a cada 15 dias", as aulas fixas podem ser "a cada N semanas" (3 a 8), útil para híbridos. Mensalidade proporcional às aulas presenciais do mês (aula × vezes × 4 ÷ N); quem treina menos de 1x por semana usa o valor de 1x. **Híbrido paga só as aulas presenciais** (o online está incluído), vezes os meses do plano. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do

@@ -5,6 +5,10 @@
 -- escolher "a cada N semanas" (até 8), por exemplo para alunos híbridos que treinam
 -- presencialmente a cada 3 ou 4 semanas.
 --
+-- A mensalidade fica proporcional às aulas presenciais do mês (÷ N semanas), também
+-- no híbrido, que passa a pagar só as aulas presenciais (o online já está incluído).
+-- O valor de cada aula é o da tabela para as vezes por semana em que o aluno treina.
+--
 -- Como aplicar: Supabase > SQL Editor > New query > colar tudo > Run. UMA vez,
 -- depois de 20261020140000_questionarios.sql.
 -- Está dentro de begin/commit: se der erro em qualquer ponto, nada muda.
@@ -109,12 +113,13 @@ begin
     raise exception 'Para terminar antes de hoje, use "Encerrar matrícula".';
   end if;
 
-  -- Valor: presencial pela tabela por aula (aula × vezes × 4); online e híbrido pelo
-  -- plano online (total do período); ou o valor digitado (fora do padrão).
+  -- Valor: presencial e híbrido pelas aulas presenciais do mês (aula × vezes × 4 ÷ N
+  -- semanas), vezes os meses do plano; online pelo plano online (total do período);
+  -- ou o valor digitado (fora do padrão).
   if v_fora then
     v_valor := (p_dados ->> 'valor_centavos')::integer;
-  elsif v_mod = 'presencial' then
-    select p.valor_aula_centavos * v_n * 4 into v_valor
+  elsif v_mod in ('presencial', 'hibrido') then
+    select round(p.valor_aula_centavos * v_n * 4 / v_intervalo::numeric)::integer * v_ciclo into v_valor
       from public.precos_aula p where p.personal_id = v.personal_id and p.vezes_semana = v_n;
   else
     select p.valor_centavos into v_valor

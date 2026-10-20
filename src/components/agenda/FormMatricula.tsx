@@ -23,7 +23,7 @@ import {
   type HorarioOcupado,
   type Matricula,
 } from "@/lib/matricula";
-import { mensalidadeDaTabela, PLANOS_ONLINE, SEMANAS_POR_MES, type TabelaDeValores, type TabelaOnline } from "@/lib/precos";
+import { aulasNoMes, mensalidadeDaTabela, PLANOS_ONLINE, type TabelaDeValores, type TabelaOnline } from "@/lib/precos";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
@@ -98,7 +98,9 @@ export function FormMatricula({
   const nomeDoPlano = PLANOS_ONLINE.find((pl) => pl.meses === dados.cicloMeses)?.rotulo ?? "Mensal";
   const primeiro = nomeAluno.split(" ")[0];
   const vezes = dados.horarios.length;
-  const daTabela = mensalidadeDaTabela(tabela, vezes);
+  // Presencial e híbrido: pelas aulas presenciais do mês (o híbrido não paga o online à parte).
+  const daTabela = mensalidadeDaTabela(tabela, vezes, dados.intervaloSemanas);
+  const noMes = String(Math.round(aulasNoMes(vezes, dados.intervaloSemanas) * 10) / 10).replace(".", ",");
   const tabelaVazia = Object.keys(tabela).length === 0;
 
   const mudar = (parte: Partial<DadosMatricula>) => {
@@ -288,7 +290,7 @@ export function FormMatricula({
       )}
 
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Mensalidade">
-        <p className="text-[13px] font-bold text-ink-2">{presencial ? "Mensalidade" : "Plano online"}</p>
+        <p className="text-[13px] font-bold text-ink-2">{online ? "Plano online" : "Mensalidade"}</p>
         {!presencial && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Plano">
             {PLANOS_ONLINE.map((pl) => (
@@ -314,7 +316,7 @@ export function FormMatricula({
                 className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
               />
             </div>
-            {(presencial ? !tabelaVazia : !tabelaOnlineVazia) && (
+            {(online ? !tabelaOnlineVazia : !tabelaVazia) && (
               <button
                 type="button"
                 onClick={() => mudar({ valorForaDoPadrao: false })}
@@ -326,7 +328,7 @@ export function FormMatricula({
           </>
         ) : (
           <>
-            {!presencial ? (
+            {online ? (
               doPlano != null ? (
                 <div>
                   <p className="text-[20px] font-extrabold tabular-nums">
@@ -349,9 +351,14 @@ export function FormMatricula({
               <p className="text-[13px] text-ink-3">Marque os dias para ver o valor.</p>
             ) : daTabela != null ? (
               <div>
-                <p className="text-[20px] font-extrabold tabular-nums">{centavosParaReais(daTabela)} por mês</p>
+                <p className="text-[20px] font-extrabold tabular-nums">
+                  {centavosParaReais(daTabela * ciclo)}
+                  {ciclo === 1 ? " por mês" : ` a cada ${ciclo} meses`}
+                </p>
                 <p className="text-xs text-ink-3">
-                  {vezes}x por semana · {centavosParaReais(tabela[vezes] ?? 0)} por aula × {SEMANAS_POR_MES} semanas
+                  {centavosParaReais(tabela[vezes] ?? 0)} por aula × {noMes} aula{noMes === "1" ? "" : "s"} no mês
+                  {noMes.includes(",") && " (média)"}
+                  {ciclo > 1 && ` × ${ciclo} meses`}
                 </p>
               </div>
             ) : (
