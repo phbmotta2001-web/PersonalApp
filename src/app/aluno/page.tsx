@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AbasAluno } from "@/components/aluno/AbasAluno";
+import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { InstalarApp } from "@/components/InstalarApp";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
@@ -60,6 +61,7 @@ async function Conteudo() {
           ))}
 
         <InstalarApp />
+        <AtivarNotificacoes texto="Receba o lembrete 1 hora antes da aula, as respostas do seu personal e o aviso de vencimento da matrícula." />
 
         {!perfilCompleto(conta) && (
           <section className="rounded-[20px] bg-gold-soft p-4 text-[13.5px] text-gold">

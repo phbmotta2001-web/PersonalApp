@@ -70,6 +70,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 37 | Frequência personalizada (20/10) | Além de "toda semana" e "a cada 15 dias", as aulas fixas podem ser "a cada N semanas" (3 a 8), útil para híbridos. Mensalidade proporcional às aulas presenciais do mês (aula × vezes × 4 ÷ N); quem treina menos de 1x por semana usa o valor de 1x. **Híbrido paga só as aulas presenciais** (o online está incluído), vezes os meses do plano. |
 | 38 | Matrícula suspensa (20/10) | No dia seguinte ao vencimento de uma mensalidade em aberto, a **matrícula fica suspensa** (ligado por padrão; o personal desliga por aluno na ficha). O horário continua reservado e as aulas ficam na agenda do personal marcadas "Matrícula suspensa"; o aluno vê o alerta e o Pix e não cancela, remarca, marca reposição nem responde questionários. Volta sozinha quando o personal marca como paga. Para o aluno, a mensalidade aparece como "Matrícula" (vencimento da matrícula). |
 | 39 | Início do ciclo (20/10) | Ao alterar a matrícula de um aluno com aulas a cada 2 ou mais semanas, o campo de data vira "Próxima aula a partir de" (já sugerindo a próxima aula do ciclo atual, para não mudar nada sem querer). Trocar a data recomeça o ciclo dali; as aulas futuras só agendadas são refeitas e as passadas ficam como estão. Semanais: início continua travado. |
+| 40 | Notificações (20/10) | **Personal:** aluno avisou que pagou, questionário respondido, pedidos e avisos de aula (cancelar, remarcar, reposição) e "vence hoje a mensalidade de X". **Aluno:** resposta ao pedido (aceito, recusado, outro horário), matrícula vence em 2 dias, matrícula suspensa, questionário novo, aula cancelada pelo personal e lembrete 1 h antes da aula. **Silêncio das 22h às 7h** (o que cair ali sai às 7h; o lembrete de aula vai na véspera às 21h). |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -128,7 +129,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 2 | Convite e vínculo: o personal convida, o aluno se cadastra (ou só aceita, se já tem conta), abas por personal; excluir conta | pronta (15/10) |
 | 3 | Matrículas e aulas fixas na agenda da semana e do dia | pronta (16/10) |
 | 4 | App no celular (PWA): ícone, instalação (Android e iPhone), abre na área de cada um, tela sem internet | pronta (19/10) |
-| 4b | Notificações no celular (web push) | — |
+| 4b | Notificações no celular (web push): fila no banco, envio pelo site a cada minuto, silêncio 22h–7h, lembrete de aula 1 h antes (ou 21h na véspera) | pronta (20/10), falta configurar as chaves |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
 | 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
 | 6 | Área do aluno: cancelar, remarcar e marcar reposição pelo app; avisos para o personal (treinos ficam para depois) | pronta (17/10) |

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { CalendarioDoMes, mesValido, paraCalendario, somarMes } from "@/components/agenda/CalendarioDoMes";
 import { Icone, type NomeIcone } from "@/components/Icone";
+import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { InstalarApp } from "@/components/InstalarApp";
 import { sair } from "@/data/conta";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
@@ -143,6 +144,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
       </header>
 
       <InstalarApp />
+      <AtivarNotificacoes texto="Receba na hora os pedidos e avisos dos alunos, os pagamentos e as mensalidades que vencem hoje." />
 
       {pedidos.length > 0 && (
         <section className="flex flex-col gap-2 rounded-[20px] border-2 border-gold bg-gold-soft p-4" aria-label="Pedidos aguardando você">
