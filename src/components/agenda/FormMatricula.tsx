@@ -17,6 +17,7 @@ import {
   MODALIDADES,
   ordenarHorarios,
   problemasDaMatricula,
+  proximaAulaDoCiclo,
   proximaDataNoDia,
   proximoVencimento,
   type DadosMatricula,
@@ -73,6 +74,8 @@ export function FormMatricula({
   // Marcar um dia já traz a hora do último dia mexido (ou 07:00).
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
   const [vencimentoMexido, setVencimentoMexido] = useState(!!atual);
+  // Alterando aulas a cada N semanas: início do ciclo (sem mexer, segue o ciclo atual).
+  const [inicioCiclo, setInicioCiclo] = useState<string | null>(null);
   // Data mostrada no campo; no banco fica o dia do mês (diaVencimento).
   const [vencimento, setVencimento] = useState(() =>
     atual
@@ -98,6 +101,11 @@ export function FormMatricula({
   const nomeDoPlano = PLANOS_ONLINE.find((pl) => pl.meses === dados.cicloMeses)?.rotulo ?? "Mensal";
   const primeiro = nomeAluno.split(" ")[0];
   const vezes = dados.horarios.length;
+  // Só ao alterar aulas presenciais a cada 2+ semanas o personal escolhe onde o ciclo recomeça.
+  const mudaCiclo = !!atual && !online && dados.intervaloSemanas > 1;
+  const cicloAtual = atual
+    ? proximaAulaDoCiclo(atual.horariosDesde, dados.intervaloSemanas, dados.horarios.map((h) => h.dia), hoje)
+    : hoje;
   // Presencial e híbrido: pelas aulas presenciais do mês (o híbrido não paga o online à parte).
   const daTabela = mensalidadeDaTabela(tabela, vezes, dados.intervaloSemanas);
   const noMes = String(Math.round(aulasNoMes(vezes, dados.intervaloSemanas) * 10) / 10).replace(".", ",");
@@ -134,7 +142,7 @@ export function FormMatricula({
     if (problemas.length > 0 || choques.length > 0) return;
     iniciar(async () => {
       try {
-        const r = await salvarMatricula(vinculoId, dados);
+        const r = await salvarMatricula(vinculoId, dados, mudaCiclo ? (inicioCiclo ?? cicloAtual) : undefined);
         if (!r.ok) return setErro(r.erro);
         router.replace(`/agenda/alunos/${vinculoId}`);
         router.refresh();
@@ -385,6 +393,18 @@ export function FormMatricula({
 
       <section className="flex flex-col gap-3" aria-label="Datas">
         <div className="grid grid-cols-2 gap-3">
+          {mudaCiclo ? (
+          <Campo id="mat-inicio" rotulo="Próxima aula a partir de">
+            <input
+              id="mat-inicio"
+              type="date"
+              value={inicioCiclo ?? cicloAtual}
+              min={hoje}
+              onChange={(e) => setInicioCiclo(e.target.value || null)}
+              className={ESTILO_CAIXA}
+            />
+          </Campo>
+          ) : (
           <Campo id="mat-inicio" rotulo={atual ? "Início" : "Início (1º pagamento)"}>
             <input
               id="mat-inicio"
@@ -406,6 +426,7 @@ export function FormMatricula({
               className={ESTILO_CAIXA}
             />
           </Campo>
+          )}
           <Campo id="mat-venc" rotulo={atual ? "Próximo vencimento" : "1º vencimento"}>
             <input
               id="mat-venc"
@@ -422,6 +443,12 @@ export function FormMatricula({
             />
           </Campo>
         </div>
+        {mudaCiclo && (
+          <p className="-mt-1 text-xs text-ink-3">
+            As aulas seguem {dados.intervaloSemanas === 2 ? "de 15 em 15 dias" : `a cada ${dados.intervaloSemanas} semanas`} a
+            partir da próxima aula. Trocar essa data muda o ciclo inteiro; as aulas que já passaram ficam como estão.
+          </p>
+        )}
         {dados.diaVencimento != null && (
           <p className="-mt-1 text-xs text-ink-3">
             {atual || vencimentoMexido

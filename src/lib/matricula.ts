@@ -6,7 +6,18 @@
 // - Horário fixo fora do expediente pode, só com aviso.
 // - Valor mensal e vencimento ficam anotados (opcionais); a cobrança é a etapa 7.
 
-import { DIAS, DURACOES, curtoDoDia, diaDaSemana, emBrasilia, minParaHora, nomeDoDia, type Duracao, type Faixa } from "./expediente";
+import {
+  DIAS,
+  DURACOES,
+  curtoDoDia,
+  diaDaSemana,
+  emBrasilia,
+  minParaHora,
+  nomeDoDia,
+  somarDias,
+  type Duracao,
+  type Faixa,
+} from "./expediente";
 import { juntarComE } from "./formato";
 import { PLANOS_ONLINE } from "./precos";
 
@@ -55,6 +66,8 @@ export interface Matricula {
   horarios: HorarioFixo[];
   duracao: Duracao;
   local: string | null;
+  /** Desde quando valem os horários atuais; a semana dessa data conta o ciclo "a cada N semanas". */
+  horariosDesde: string;
   /** Suspende no dia seguinte ao vencimento de uma mensalidade em aberto. */
   suspenderSeAtrasar: boolean;
   valorCentavos: number | null;
@@ -131,6 +144,25 @@ export function foraDoExpediente(horarios: HorarioFixo[], duracao: number, faixa
   return ordenarHorarios(horarios).filter(
     (h) => !faixas.some((f) => f.dia === h.dia && f.inicioMin <= h.inicioMin && h.inicioMin + duracao <= f.fimMin),
   );
+}
+
+/**
+ * Aulas a cada N semanas: data da próxima aula seguindo o ciclo que começou na semana
+ * de `desde` (a partir de hoje). Assim, alterar a matrícula não muda o ciclo sem querer.
+ */
+export function proximaAulaDoCiclo(desde: string, intervaloSemanas: number, dias: number[], hoje: string): string {
+  const segunda = (d: string) => somarDias(d, -((diaDaSemana(d) + 6) % 7));
+  const n = Math.max(1, intervaloSemanas);
+  const semanas = Math.round((Date.parse(segunda(hoje)) - Date.parse(segunda(desde))) / (7 * 86_400_000));
+  const primeira = somarDias(segunda(hoje), ((n - (((semanas % n) + n) % n)) % n) * 7);
+  let semana = primeira;
+  // Primeiro dia de aula da semana do ciclo (sem voltar antes de hoje); sem nenhum, a próxima do ciclo.
+  for (let volta = 0; volta < 2; volta++, semana = somarDias(semana, n * 7))
+    for (let i = 0; i < 7; i++) {
+      const d = somarDias(semana, i);
+      if (d >= hoje && dias.includes(diaDaSemana(d))) return d;
+    }
+  return primeira < hoje ? hoje : primeira;
 }
 
 /** Frequência personalizada: de 1 a 8 semanas entre as aulas. */

@@ -31,12 +31,13 @@ interface LinhaMatricula {
   dia_vencimento: number | null;
   inicio: string;
   fim: string | null;
+  horarios_desde: string;
   suspender_se_atrasar: boolean;
   matricula_horarios: { dia_semana: number; inicio_min: number }[];
 }
 
 const CAMPOS_MATRICULA =
-  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, suspender_se_atrasar, matricula_horarios (dia_semana, inicio_min)";
+  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, horarios_desde, suspender_se_atrasar, matricula_horarios (dia_semana, inicio_min)";
 
 const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
@@ -52,6 +53,7 @@ const paraMatricula = (l: LinhaMatricula): Matricula => ({
   diaVencimento: l.dia_vencimento,
   inicio: l.inicio,
   fim: l.fim,
+  horariosDesde: l.horarios_desde,
   suspenderSeAtrasar: l.suspender_se_atrasar,
 });
 
@@ -97,9 +99,10 @@ function erroDoBanco(mensagem: string | undefined, padrao: string): string {
 
 /**
  * Cria a matrícula ou altera a ativa. Ao alterar, os horários novos valem a partir
- * de agora: só as aulas futuras ainda agendadas são refeitas; o histórico fica como está.
+ * de agora (ou de `aPartir`, "AAAA-MM-DD", que nas aulas a cada N semanas marca o
+ * início do ciclo): só as aulas futuras ainda agendadas são refeitas; o histórico fica.
  */
-export async function salvarMatricula(vinculoId: string, dados: DadosMatricula): Promise<Resposta> {
+export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, aPartir?: string): Promise<Resposta> {
   const problemas = problemasDaMatricula(dados);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
@@ -120,6 +123,7 @@ export async function salvarMatricula(vinculoId: string, dados: DadosMatricula):
       dia_vencimento: dados.diaVencimento,
       inicio: dados.inicio,
       fim: dados.fim || null,
+      a_partir: aPartir || null,
     },
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível salvar a matrícula.") } : { ok: true };
