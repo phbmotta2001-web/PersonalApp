@@ -16,7 +16,7 @@ import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas"
 import { lerMatricula, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia } from "@/lib/expediente";
-import { resumoDosHorarios } from "@/lib/matricula";
+import { resumoDaModalidade, resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -98,11 +98,19 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         {matricula ? (
           <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
             <div>
-              <p className="text-xs font-semibold text-ink-3">Seus horários</p>
-              <p className="text-[17px] font-extrabold">{resumoDosHorarios(matricula.horarios)}</p>
-              <p className="text-[13px] text-ink-2">
-                {[`Aulas de ${matricula.duracao} min`, matricula.local].filter(Boolean).join(" · ")}
-              </p>
+              <p className="text-xs font-semibold text-ink-3">{resumoDaModalidade(matricula)}</p>
+              {matricula.modalidade === "online" ? (
+                <p className="text-[15px] font-bold">Acompanhamento online com {primeiro}</p>
+              ) : (
+                <>
+                  <p className="text-[17px] font-extrabold">
+                    {resumoDosHorarios(matricula.horarios, matricula.intervaloSemanas)}
+                  </p>
+                  <p className="text-[13px] text-ink-2">
+                    {[`Aulas de ${matricula.duracao} min`, matricula.local].filter(Boolean).join(" · ")}
+                  </p>
+                </>
+              )}
             </div>
           </section>
         ) : (

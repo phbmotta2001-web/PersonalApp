@@ -13,6 +13,7 @@ import {
   diaDoMes,
   foraDoExpediente,
   LIMITE_LOCAL,
+  MODALIDADES,
   ordenarHorarios,
   problemasDaMatricula,
   proximaDataNoDia,
@@ -21,7 +22,7 @@ import {
   type HorarioOcupado,
   type Matricula,
 } from "@/lib/matricula";
-import { mensalidadeDaTabela, SEMANAS_POR_MES, type TabelaDeValores } from "@/lib/precos";
+import { mensalidadeDaTabela, PLANOS_ONLINE, SEMANAS_POR_MES, type TabelaDeValores, type TabelaOnline } from "@/lib/precos";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
@@ -37,6 +38,7 @@ export function FormMatricula({
   faixas,
   ocupados,
   tabela,
+  tabelaOnline,
   hoje,
 }: {
   vinculoId: string;
@@ -47,11 +49,16 @@ export function FormMatricula({
   ocupados: HorarioOcupado[];
   /** Valor de cada aula por vezes na semana (tela Valores). */
   tabela: TabelaDeValores;
+  /** Valor total de cada plano online (mensal, trimestral, semestral, anual). */
+  tabelaOnline: TabelaOnline;
   /** "AAAA-MM-DD" em Brasília */
   hoje: string;
 }) {
   const router = useRouter();
   const [dados, setDados] = useState<DadosMatricula>(() => ({
+    modalidade: atual?.modalidade ?? "presencial",
+    intervaloSemanas: atual?.intervaloSemanas ?? 1,
+    cicloMeses: atual?.cicloMeses ?? 1,
     horarios: atual?.horarios.length ? ordenarHorarios(atual.horarios) : [],
     duracao: atual?.duracao ?? duracaoPadrao,
     local: atual?.local ?? "",
@@ -79,9 +86,16 @@ export function FormMatricula({
   const [encerrando, setEncerrando] = useState(false);
   const [ocupado, iniciar] = useTransition();
 
+  const online = dados.modalidade === "online";
+  const presencial = dados.modalidade === "presencial";
+  // Meses de cada cobrança: presencial é sempre mensal; online e híbrido seguem o plano.
+  const ciclo = presencial ? 1 : dados.cicloMeses;
   const problemas = problemasDaMatricula(dados);
-  const choques = choquesComOutros(dados.horarios, dados.duracao, ocupados);
-  const fora = faixas.length > 0 ? foraDoExpediente(dados.horarios, dados.duracao, faixas) : [];
+  const choques = online ? [] : choquesComOutros(dados.horarios, dados.duracao, ocupados);
+  const fora = !online && faixas.length > 0 ? foraDoExpediente(dados.horarios, dados.duracao, faixas) : [];
+  const doPlano = tabelaOnline[dados.cicloMeses];
+  const tabelaOnlineVazia = Object.keys(tabelaOnline).length === 0;
+  const nomeDoPlano = PLANOS_ONLINE.find((pl) => pl.meses === dados.cicloMeses)?.rotulo ?? "Mensal";
   const primeiro = nomeAluno.split(" ")[0];
   const vezes = dados.horarios.length;
   const daTabela = mensalidadeDaTabela(tabela, vezes);
@@ -90,6 +104,15 @@ export function FormMatricula({
   const mudar = (parte: Partial<DadosMatricula>) => {
     setErro(null);
     setDados({ ...dados, ...parte });
+  };
+  // Novo ciclo ou novo tipo: o 1º vencimento acompanha (se o personal não escolheu à mão).
+  const mudarCiclo = (parte: Partial<DadosMatricula>) => {
+    const novo = { ...dados, ...parte };
+    const novoCiclo = novo.modalidade === "presencial" ? 1 : novo.cicloMeses;
+    if (!vencimentoMexido && novo.inicio && novo.diaVencimento != null)
+      setVencimento(proximoVencimento(novo.inicio, novo.diaVencimento, novoCiclo));
+    setErro(null);
+    setDados(novo);
   };
   const marcado = (dia: number) => dados.horarios.some((h) => h.dia === dia);
   const marcarDia = (dia: number) =>
@@ -121,8 +144,45 @@ export function FormMatricula({
 
   return (
     <form onSubmit={salvar} className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-[13px] font-bold text-ink-2">Tipo de acompanhamento</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {MODALIDADES.map((m) => (
+            <button
+              key={m.valor}
+              type="button"
+              aria-pressed={dados.modalidade === m.valor}
+              onClick={() =>
+                mudarCiclo({
+                  modalidade: m.valor,
+                  // Híbrido costuma ser a cada 15 dias; presencial, toda semana.
+                  intervaloSemanas: m.valor === "hibrido" ? 2 : m.valor === "presencial" ? 1 : dados.intervaloSemanas,
+                })
+              }
+              className={`min-h-11 rounded-[13px] border text-sm font-bold ${
+                dados.modalidade === m.valor ? "border-ink bg-ink text-app" : "border-line bg-surface"
+              }`}
+            >
+              {m.rotulo}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-ink-3">{MODALIDADES.find((m) => m.valor === dados.modalidade)?.texto}</p>
+      </fieldset>
+
+      {!online && (
       <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-2 text-[13px] font-bold text-ink-2">Dias e horários fixos de {primeiro}</legend>
+        <legend className="mb-2 text-[13px] font-bold text-ink-2">
+          {presencial ? `Dias e horários fixos de ${primeiro}` : `Aulas presenciais de ${primeiro}`}
+        </legend>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Frequência">
+          <Chip ativo={dados.intervaloSemanas === 1} onClick={() => mudar({ intervaloSemanas: 1 })}>
+            Toda semana
+          </Chip>
+          <Chip ativo={dados.intervaloSemanas === 2} onClick={() => mudar({ intervaloSemanas: 2 })}>
+            A cada 15 dias
+          </Chip>
+        </div>
         <div className="grid grid-cols-7 gap-1">
           {DIAS.map((d) => {
             const ativo = marcado(d.valor);
@@ -179,7 +239,9 @@ export function FormMatricula({
           </p>
         )}
       </fieldset>
+      )}
 
+      {!online && (
       <fieldset className="flex flex-col gap-[7px]">
         <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Duração da aula</legend>
         <div className="flex flex-wrap gap-2">
@@ -190,7 +252,9 @@ export function FormMatricula({
           ))}
         </div>
       </fieldset>
+      )}
 
+      {!online && (
       <Campo id="mat-local" rotulo="Local" opcional ajuda="Ex.: Academia do Centro, casa do aluno, online.">
         <input
           id="mat-local"
@@ -200,9 +264,19 @@ export function FormMatricula({
           className={ESTILO_CAIXA}
         />
       </Campo>
+      )}
 
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Mensalidade">
-        <p className="text-[13px] font-bold text-ink-2">Mensalidade</p>
+        <p className="text-[13px] font-bold text-ink-2">{presencial ? "Mensalidade" : "Plano online"}</p>
+        {!presencial && (
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Plano">
+            {PLANOS_ONLINE.map((pl) => (
+              <Chip key={pl.meses} ativo={dados.cicloMeses === pl.meses} onClick={() => mudarCiclo({ cicloMeses: pl.meses })}>
+                {pl.rotulo}
+              </Chip>
+            ))}
+          </div>
+        )}
         {dados.valorForaDoPadrao ? (
           <>
             <label htmlFor="mat-valor" className="sr-only">
@@ -219,7 +293,7 @@ export function FormMatricula({
                 className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
               />
             </div>
-            {!tabelaVazia && (
+            {(presencial ? !tabelaVazia : !tabelaOnlineVazia) && (
               <button
                 type="button"
                 onClick={() => mudar({ valorForaDoPadrao: false })}
@@ -231,7 +305,26 @@ export function FormMatricula({
           </>
         ) : (
           <>
-            {vezes === 0 ? (
+            {!presencial ? (
+              doPlano != null ? (
+                <div>
+                  <p className="text-[20px] font-extrabold tabular-nums">
+                    {centavosParaReais(doPlano)}
+                    {ciclo === 1 ? " por mês" : ` a cada ${ciclo} meses`}
+                  </p>
+                  <p className="text-xs text-ink-3">Plano {nomeDoPlano.toLowerCase()} da sua tabela online</p>
+                </div>
+              ) : (
+                <p className="text-[13px] text-ink-2">
+                  {tabelaOnlineVazia
+                    ? "Cadastre seus planos online e o valor sai pronto."
+                    : `Sua tabela online não tem o plano ${nomeDoPlano.toLowerCase()}.`}{" "}
+                  <Link href="/agenda/valores" className="font-semibold text-brand">
+                    {tabelaOnlineVazia ? "Cadastrar planos" : "Completar a tabela"}
+                  </Link>
+                </p>
+              )
+            ) : vezes === 0 ? (
               <p className="text-[13px] text-ink-3">Marque os dias para ver o valor.</p>
             ) : daTabela != null ? (
               <div>
@@ -259,7 +352,7 @@ export function FormMatricula({
             </button>
           </>
         )}
-        <p className="text-xs text-ink-3">Por enquanto só fica anotado. As cobranças chegam numa próxima versão.</p>
+        <p className="text-xs text-ink-3">As cobranças saem sozinhas a partir daqui (tela Cobranças).</p>
       </section>
 
       <section className="flex flex-col gap-3" aria-label="Datas">
@@ -274,12 +367,12 @@ export function FormMatricula({
                 const inicio = e.target.value;
                 if (!inicio) return mudar({ inicio });
                 if (!vencimentoMexido) {
-                  setVencimento(proximoVencimento(inicio, diaDoMes(inicio)));
+                  setVencimento(proximoVencimento(inicio, diaDoMes(inicio), ciclo));
                   return mudar({ inicio, diaVencimento: diaDoMes(inicio) });
                 }
                 // Dia escolhido à mão: mantém o dia, mas o vencimento nunca fica antes do início.
                 if (vencimento <= inicio && dados.diaVencimento != null)
-                  setVencimento(proximoVencimento(inicio, dados.diaVencimento));
+                  setVencimento(proximoVencimento(inicio, dados.diaVencimento, ciclo));
                 mudar({ inicio });
               }}
               className={ESTILO_CAIXA}
@@ -303,7 +396,10 @@ export function FormMatricula({
         </div>
         {dados.diaVencimento != null && (
           <p className="-mt-1 text-xs text-ink-3">
-            {atual || vencimentoMexido ? "" : "Calculado sozinho: um mês depois do início. "}Depois, vence todo dia {dados.diaVencimento}
+            {atual || vencimentoMexido
+              ? ""
+              : `Calculado sozinho: ${ciclo === 1 ? "um mês" : `${ciclo} meses`} depois do início. `}
+            Depois, vence {ciclo === 1 ? "todo" : `a cada ${ciclo} meses, no`} dia {dados.diaVencimento}
             {dados.diaVencimento > 28 ? " (ou no último dia, nos meses mais curtos)" : ""}. Você pode mudar a data.
           </p>
         )}

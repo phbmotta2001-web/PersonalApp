@@ -11,7 +11,7 @@ import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { lerAntecedencia, pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { resumoDasCobrancas } from "@/data/cobrancas";
-import { listarAulas } from "@/data/matriculas";
+import { listarAlunosOnline, listarAulas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
 import {
   COR_SITUACAO,
@@ -68,7 +68,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
   const inicioSemana = somarDias(hoje, semanaN * 7);
   const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
-  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas] = await Promise.all([
+  const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas, online] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarMeusAlunos(),
@@ -79,6 +79,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     aniversariantesDoMes(dia),
     pedidosPendentes(),
     resumoDasCobrancas(hoje),
+    listarAlunosOnline(),
   ]);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
@@ -347,6 +348,24 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
           <span className="block text-xs text-ink-3">
             {ativos === 0 ? "Convide seus alunos por link" : `${ativos} ${ativos === 1 ? "aluno ativo" : "alunos ativos"}`}
             {aguardando > 0 && ` · ${aguardando} convite${aguardando > 1 ? "s" : ""} aguardando`}
+          </span>
+        </span>
+        <span className="text-ink-3" aria-hidden="true">›</span>
+      </Link>
+
+      <Link
+        href="/agenda/online"
+        className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-3.5 hover:border-brand"
+      >
+        <span className="grid size-9 place-items-center rounded-full bg-info-soft text-info">
+          <Icone nome="conversa" className="size-[18px]" />
+        </span>
+        <span className="flex-1">
+          <span className="block text-sm font-bold">Alunos online{online.length > 0 ? ` (${online.length})` : ""}</span>
+          <span className="block text-xs text-ink-3">
+            {online.length === 0
+              ? "Alunos sem horário na agenda e híbridos"
+              : `${online.filter((o) => o.modalidade === "hibrido").length} híbrido(s) · não ocupam a agenda`}
           </span>
         </span>
         <span className="text-ink-3" aria-hidden="true">›</span>

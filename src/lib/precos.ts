@@ -31,3 +31,16 @@ export function problemasDaTabela(tabela: TabelaDeValores): string[] {
     ? ["confira os valores (de R$ 1,00 a R$ 10.000,00 por aula)"]
     : [];
 }
+
+// ─── Planos online (decisão de 20/10/2026) ──────────────────────────────────
+// Valor TOTAL de cada período, cobrado uma vez por período.
+
+export const PLANOS_ONLINE = [
+  { meses: 1, rotulo: "Mensal" },
+  { meses: 3, rotulo: "Trimestral" },
+  { meses: 6, rotulo: "Semestral" },
+  { meses: 12, rotulo: "Anual" },
+] as const;
+
+/** Valor (centavos) de cada plano online, por meses (sem a chave = não oferece). */
+export type TabelaOnline = Partial<Record<number, number>>;

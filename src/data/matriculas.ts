@@ -21,6 +21,9 @@ import { listarMeusAlunos } from "./convites";
 interface LinhaMatricula {
   id: string;
   vinculo_id: string;
+  modalidade: Matricula["modalidade"];
+  intervalo_semanas: number;
+  ciclo_meses: number;
   duracao_min: number;
   local: string | null;
   valor_centavos: number | null;
@@ -32,11 +35,14 @@ interface LinhaMatricula {
 }
 
 const CAMPOS_MATRICULA =
-  "id, vinculo_id, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, matricula_horarios (dia_semana, inicio_min)";
+  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, matricula_horarios (dia_semana, inicio_min)";
 
 const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
   vinculoId: l.vinculo_id,
+  modalidade: l.modalidade,
+  intervaloSemanas: l.intervalo_semanas as Matricula["intervaloSemanas"],
+  cicloMeses: l.ciclo_meses as Matricula["cicloMeses"],
   horarios: l.matricula_horarios.map((h) => ({ dia: h.dia_semana, inicioMin: h.inicio_min })),
   duracao: l.duracao_min as Duracao,
   local: l.local,
@@ -96,15 +102,20 @@ export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, 
 
   const { error } = await supabase.rpc("salvar_matricula", {
     p_vinculo: vinculoId,
-    p_horarios: dados.horarios.map((h) => ({ dia: h.dia, inicio_min: h.inicioMin })),
-    p_duracao: dados.duracao,
-    p_local: dados.local.trim(),
-    p_valor_fora_do_padrao: dados.valorForaDoPadrao,
-    p_valor_centavos: dados.valorForaDoPadrao ? reaisParaCentavos(dados.valor) : null,
-    p_dia_vencimento: dados.diaVencimento,
-    p_inicio: dados.inicio,
-    p_fim: dados.fim || null,
-    p_a_partir: aPartir || null,
+    p_dados: {
+      modalidade: dados.modalidade,
+      horarios: dados.modalidade === "online" ? [] : dados.horarios.map((h) => ({ dia: h.dia, inicio_min: h.inicioMin })),
+      intervalo_semanas: dados.intervaloSemanas,
+      duracao: dados.duracao,
+      local: dados.local.trim(),
+      ciclo_meses: dados.modalidade === "presencial" ? 1 : dados.cicloMeses,
+      valor_fora_do_padrao: dados.valorForaDoPadrao,
+      valor_centavos: dados.valorForaDoPadrao ? reaisParaCentavos(dados.valor) : null,
+      dia_vencimento: dados.diaVencimento,
+      inicio: dados.inicio,
+      fim: dados.fim || null,
+      a_partir: aPartir || null,
+    },
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível salvar a matrícula.") } : { ok: true };
 }
@@ -238,4 +249,35 @@ export async function proximaAulaPorAluno(): Promise<Record<string, { inicio: st
   const proximas: Record<string, { inicio: string; local: string | null }> = {};
   for (const a of data ?? []) if (a.vinculo_id && !proximas[a.vinculo_id]) proximas[a.vinculo_id] = { inicio: a.inicio, local: a.local };
   return proximas;
+}
+
+export interface AlunoOnline {
+  vinculoId: string;
+  nome: string;
+  modalidade: "online" | "hibrido";
+  matricula: Matricula;
+}
+
+/** Alunos online e híbridos do personal logado (matrícula ativa). */
+export async function listarAlunosOnline(): Promise<AlunoOnline[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const [{ data }, alunos] = await Promise.all([
+    supabase
+      .from("matriculas")
+      .select(CAMPOS_MATRICULA)
+      .eq("personal_id", id)
+      .eq("situacao", "ativa")
+      .in("modalidade", ["online", "hibrido"]),
+    listarMeusAlunos(),
+  ]);
+  const nomes = new Map(alunos.map((a) => [a.vinculoId, a.nome]));
+  return ((data ?? []) as LinhaMatricula[])
+    .map((l) => ({
+      vinculoId: l.vinculo_id,
+      nome: nomes.get(l.vinculo_id) ?? "Aluno",
+      modalidade: l.modalidade as AlunoOnline["modalidade"],
+      matricula: paraMatricula(l),
+    }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
 }

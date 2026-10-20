@@ -8,6 +8,7 @@
 
 import { DIAS, DURACOES, curtoDoDia, diaDaSemana, emBrasilia, minParaHora, nomeDoDia, type Duracao, type Faixa } from "./expediente";
 import { juntarComE } from "./formato";
+import { PLANOS_ONLINE } from "./precos";
 
 export interface HorarioFixo {
   /** 0 = domingo */
@@ -15,7 +16,21 @@ export interface HorarioFixo {
   inicioMin: number;
 }
 
+/** Tipo de acompanhamento (decisão de 20/10/2026). */
+export type Modalidade = "presencial" | "online" | "hibrido";
+
+export const MODALIDADES: { valor: Modalidade; rotulo: string; texto: string }[] = [
+  { valor: "presencial", rotulo: "Presencial", texto: "Aulas com horário fixo na agenda." },
+  { valor: "online", rotulo: "Online", texto: "Sem horário na agenda. Acompanhamento e questionários pelo app." },
+  { valor: "hibrido", rotulo: "Híbrido", texto: "Online, com aulas presenciais de rotina na agenda (ex.: a cada 15 dias)." },
+];
+
 export interface DadosMatricula {
+  modalidade: Modalidade;
+  /** Aulas fixas toda semana (1) ou a cada 15 dias (2). */
+  intervaloSemanas: 1 | 2;
+  /** Planos online: cobrança a cada 1, 3, 6 ou 12 meses. Presencial: sempre 1. */
+  cicloMeses: 1 | 3 | 6 | 12;
   horarios: HorarioFixo[];
   duracao: Duracao;
   local: string;
@@ -34,6 +49,9 @@ export interface DadosMatricula {
 export interface Matricula {
   id: string;
   vinculoId: string;
+  modalidade: Modalidade;
+  intervaloSemanas: 1 | 2;
+  cicloMeses: 1 | 3 | 6 | 12;
   horarios: HorarioFixo[];
   duracao: Duracao;
   local: string | null;
@@ -81,7 +99,7 @@ const choca = (a: HorarioFixo, duracaoA: number, b: HorarioFixo, duracaoB: numbe
 /** Lista o que impede salvar a matrícula (vazia = pode salvar). */
 export function problemasDaMatricula(d: DadosMatricula): string[] {
   const p: string[] = [];
-  if (d.horarios.length === 0) p.push("escolha pelo menos um horário fixo");
+  if (d.horarios.length === 0 && d.modalidade !== "online") p.push("escolha pelo menos um horário fixo");
   if (d.horarios.length > MAX_HORARIOS) p.push(`use no máximo ${MAX_HORARIOS} horários`);
   if (!DURACOES.includes(d.duracao)) p.push("escolha a duração da aula");
   if (d.horarios.some((h) => h.inicioMin % 30 !== 0 || h.inicioMin < 0 || h.inicioMin + d.duracao > 1440))
@@ -117,12 +135,20 @@ export function foraDoExpediente(horarios: HorarioFixo[], duracao: number, faixa
  * Resumo para a tela: "Seg e Qui às 07:00" quando todos têm a mesma hora,
  * senão "Seg 07:00, Qua 18:30 e Sex 07:00".
  */
-export function resumoDosHorarios(horarios: HorarioFixo[]): string {
+export function resumoDosHorarios(horarios: HorarioFixo[], intervaloSemanas: 1 | 2 = 1): string {
   const h = ordenarHorarios(horarios);
   if (h.length === 0) return "";
+  const quinzenal = intervaloSemanas === 2 ? ", a cada 15 dias" : "";
   if (h.every((x) => x.inicioMin === h[0].inicioMin))
-    return `${juntarComE(h.map((x) => curtoDoDia(x.dia)))} às ${minParaHora(h[0].inicioMin)}`;
-  return juntarComE(h.map((x) => `${curtoDoDia(x.dia)} ${minParaHora(x.inicioMin)}`));
+    return `${juntarComE(h.map((x) => curtoDoDia(x.dia)))} às ${minParaHora(h[0].inicioMin)}${quinzenal}`;
+  return juntarComE(h.map((x) => `${curtoDoDia(x.dia)} ${minParaHora(x.inicioMin)}`)) + quinzenal;
+}
+
+/** "Online · plano trimestral", "Híbrido · plano mensal", "Presencial". */
+export function resumoDaModalidade(m: Pick<Matricula, "modalidade" | "cicloMeses">): string {
+  if (m.modalidade === "presencial") return "Presencial";
+  const plano = PLANOS_ONLINE.find((p) => p.meses === m.cicloMeses)?.rotulo.toLowerCase() ?? "mensal";
+  return `${m.modalidade === "online" ? "Online" : "Híbrido"} · plano ${plano}`;
 }
 
 // ─── Vencimento (decisão de 16/10/2026) ─────────────────────────────────────
@@ -133,10 +159,11 @@ export function resumoDosHorarios(horarios: HorarioFixo[]): string {
 export const diaDoMes = (data: string) => Number(data.slice(8, 10));
 
 /** Vencimento seguinte ao início: no mês seguinte, no dia escolhido (ou no último dia do mês, se não existir). */
-export function proximoVencimento(inicio: string, dia: number): string {
-  const [a, m] = inicio.split("-").map(Number);
-  const ano = m === 12 ? a + 1 : a;
-  const mes = m === 12 ? 1 : m + 1;
+export function proximoVencimento(inicio: string, dia: number, meses = 1): string {
+  const [a, m0] = inicio.split("-").map(Number);
+  const m = m0 - 1 + meses;
+  const ano = a + Math.floor(m / 12);
+  const mes = (m % 12) + 1;
   const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
   return `${ano}-${String(mes).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
 }

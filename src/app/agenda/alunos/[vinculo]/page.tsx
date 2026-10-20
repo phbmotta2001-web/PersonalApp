@@ -16,7 +16,7 @@ import { resumoDoMes } from "@/lib/aula";
 import { linkWhatsapp } from "@/lib/convite";
 import { COR_COBRANCA, descricaoDaCobranca, ROTULO_COBRANCA, situacaoDaCobranca } from "@/lib/cobranca";
 import { agoraEmBrasilia, dataCurta } from "@/lib/expediente";
-import { centavosParaReais, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
+import { centavosParaReais, resumoDaModalidade, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
 export const metadata: Metadata = {
@@ -110,12 +110,18 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
               Alterar
             </Link>
           </div>
-          <p className="text-[17px] font-extrabold">{resumoDosHorarios(matricula.horarios)}</p>
+          <p className="text-xs font-bold text-brand">{resumoDaModalidade(matricula)}</p>
+          <p className="text-[17px] font-extrabold">
+            {matricula.modalidade === "online"
+              ? "Sem horário na agenda"
+              : resumoDosHorarios(matricula.horarios, matricula.intervaloSemanas)}
+          </p>
           <p className="text-[13px] text-ink-2">
             {[
-              `Aulas de ${matricula.duracao} min`,
-              matricula.local,
-              matricula.valorCentavos != null && `${centavosParaReais(matricula.valorCentavos)} por mês${matricula.valorForaDoPadrao ? " (fora do padrão)" : ""}`,
+              matricula.modalidade !== "online" && `Aulas de ${matricula.duracao} min`,
+              matricula.modalidade !== "online" && matricula.local,
+              matricula.valorCentavos != null &&
+                `${centavosParaReais(matricula.valorCentavos)} ${matricula.cicloMeses === 1 ? "por mês" : `a cada ${matricula.cicloMeses} meses`}${matricula.valorForaDoPadrao ? " (fora do padrão)" : ""}`,
               matricula.diaVencimento != null && `vence dia ${matricula.diaVencimento}`,
             ]
               .filter(Boolean)
