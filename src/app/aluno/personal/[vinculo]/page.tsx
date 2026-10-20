@@ -13,6 +13,7 @@ import { CobrancasDoAluno } from "@/components/aluno/CobrancasDoAluno";
 import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
+import { checkinsPendentesDoAluno } from "@/data/questionarios";
 import { lerMatricula, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia } from "@/lib/expediente";
@@ -54,7 +55,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -62,6 +63,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     pedidosRecusadosDoAluno(vinculo),
     cobrancasDoAluno(vinculo),
     pixParaAluno(vinculo),
+    checkinsPendentesDoAluno(vinculo),
   ]);
   const hoje = agoraEmBrasilia().data;
   const pixPorCobranca = Object.fromEntries(
@@ -94,6 +96,20 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         >
           <Icone nome="conversa" className="size-4" /> Mensagem no WhatsApp · {formatarWhatsapp(p.whatsapp)}
         </a>
+
+        {questionarios.map((q) => (
+          <Link
+            key={q.id}
+            href={`/aluno/questionario/${q.id}`}
+            className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
+          >
+            <span className="flex-1">
+              <span className="block text-sm font-bold text-gold">{q.titulo}</span>
+              <span className="block text-xs text-ink-2">{primeiro} está esperando suas respostas. Leva uns 2 minutos.</span>
+            </span>
+            <span className="rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink">Responder</span>
+          </Link>
+        ))}
 
         {matricula ? (
           <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">

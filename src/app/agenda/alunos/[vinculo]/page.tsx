@@ -180,6 +180,16 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         </section>
       )}
 
+      {matricula && matricula.modalidade !== "presencial" && (
+        <Link
+          href={`/agenda/online/${vinculo}`}
+          className="flex items-center gap-3 rounded-[18px] border border-info/40 bg-info-soft p-3.5 text-info"
+        >
+          <span className="flex-1 text-sm font-bold">Questionários e acompanhamento online</span>
+          <span aria-hidden="true">›</span>
+        </Link>
+      )}
+
       <Link href={`/agenda/historico?aluno=${vinculo}`} className="-mt-2 self-end text-[13px] font-semibold text-brand">
         Ver calendário de aulas ›
       </Link>

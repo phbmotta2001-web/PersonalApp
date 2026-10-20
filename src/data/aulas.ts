@@ -11,9 +11,13 @@ import type { Resposta } from "./conta";
 import { listarMeusAlunos } from "./convites";
 import { lerExpediente, listarBloqueios } from "./expediente";
 
+const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value/i;
+
 /** Mensagens que o próprio banco escreve em português e podem ir direto para a tela. */
 function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
+  // Erro técnico do banco (em inglês) nunca vai para a tela.
+  if (TECNICO.test(m)) return padrao;
   return /aula|horário|reposição|aluno|cancelou|duração|antecedência|nome|local|situação|pedido|sugest/i.test(m) ? m : padrao;
 }
 

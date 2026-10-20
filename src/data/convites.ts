@@ -11,9 +11,13 @@ import { frase } from "@/lib/formato";
 import { criarClienteSupabase, usuarioAtual } from "@/lib/supabase/servidor";
 import type { Resposta } from "./conta";
 
+const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value/i;
+
 /** Mensagens que o próprio banco escreve em português e podem ir direto para a tela. */
 function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
+  // Erro técnico do banco (em inglês) nunca vai para a tela.
+  if (TECNICO.test(m)) return padrao;
   return /convite|perfil|conta de aluno|vínculo|personais/i.test(m) ? m : padrao;
 }
 

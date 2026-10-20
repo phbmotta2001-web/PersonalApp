@@ -47,9 +47,13 @@ const paraCobranca = (l: Linha): Cobranca => ({
   alunoAvisouEm: l.aluno_avisou_em,
 });
 
+const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value/i;
+
 /** Mensagens que o próprio banco escreve em português e podem ir direto para a tela. */
 function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
+  // Erro técnico do banco (em inglês) nunca vai para a tela.
+  if (TECNICO.test(m)) return padrao;
   return /cobrança|valor|data|pagamento|aluno|vencimento|cobrado|avisou/i.test(m) ? m : padrao;
 }
 

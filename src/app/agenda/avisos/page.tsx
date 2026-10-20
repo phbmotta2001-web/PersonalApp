@@ -49,6 +49,8 @@ function texto(a: Aviso): string {
       return `${nome} aceitou o horário que você sugeriu: ${nova}.`;
     case "recusou_sugestao":
       return `${nome} recusou o horário que você sugeriu (${nova}).`;
+    case "respondeu_checkin":
+      return `${nome} respondeu o questionário de acompanhamento.`;
     case "avisou_pagamento":
       return `${nome} avisou que pagou uma cobrança. Confira no seu banco e confirme.`;
   }
@@ -73,7 +75,13 @@ async function Conteudo() {
       <MarcarAvisosLidos haNaoLidos={haNaoLidos} />
       {avisos.map((a) => {
         const alvo = a.cobrancaId ? null : (a.aulaNova?.id ?? a.aula?.id);
-        const destino = a.cobrancaId ? `/agenda/cobrancas/${a.cobrancaId}` : alvo ? `/agenda/aula/${alvo}` : null;
+        const destino = a.cobrancaId
+          ? `/agenda/cobrancas/${a.cobrancaId}`
+          : a.checkinId && a.vinculoId
+            ? `/agenda/online/${a.vinculoId}`
+            : alvo
+              ? `/agenda/aula/${alvo}`
+              : null;
         const quando = emBrasilia(a.criadoEm);
         const conteudo = (
           <>

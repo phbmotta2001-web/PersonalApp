@@ -14,7 +14,8 @@ export type TipoAviso =
   | "pediu_remarcacao"
   | "aceitou_sugestao"
   | "recusou_sugestao"
-  | "avisou_pagamento";
+  | "avisou_pagamento"
+  | "respondeu_checkin";
 
 export interface Aviso {
   id: string;
@@ -26,6 +27,8 @@ export interface Aviso {
   aulaNova: { id: string; inicio: string } | null;
   /** Aviso de pagamento: a cobrança. */
   cobrancaId: string | null;
+  /** Questionário respondido. */
+  checkinId: string | null;
   criadoEm: string;
   lido: boolean;
 }
@@ -48,7 +51,7 @@ export async function listarAvisos(): Promise<Aviso[]> {
   const [{ data }, alunos] = await Promise.all([
     supabase
       .from("avisos")
-      .select("id, tipo, vinculo_id, criado_em, lido_em, aula_id, aula_nova_id, cobranca_id")
+      .select("id, tipo, vinculo_id, criado_em, lido_em, aula_id, aula_nova_id, cobranca_id, checkin_id")
       .eq("personal_id", id)
       .order("criado_em", { ascending: false })
       .limit(50),
@@ -70,6 +73,7 @@ export async function listarAvisos(): Promise<Aviso[]> {
     aula: aula(a.aula_id),
     aulaNova: aula(a.aula_nova_id),
     cobrancaId: a.cobranca_id,
+    checkinId: a.checkin_id,
     criadoEm: a.criado_em,
     lido: a.lido_em != null,
   }));
