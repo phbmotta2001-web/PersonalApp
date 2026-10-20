@@ -1,21 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CalendarioDoMes, mesValido, paraCalendario, somarMes } from "@/components/agenda/CalendarioDoMes";
 import { FiltroAluno } from "@/components/agenda/FiltroAluno";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { listarAulas, type AulaDaAgenda } from "@/data/matriculas";
-import {
-  CATEGORIAS_HISTORICO,
-  categoriaDoHistorico,
-  ROTULO_ORIGEM,
-  type CategoriaHistorico,
-  type OrigemAula,
-} from "@/lib/aula";
+import { listarAulas } from "@/data/matriculas";
+import { CATEGORIAS_HISTORICO, ROTULO_ORIGEM, type OrigemAula } from "@/lib/aula";
 import { maiuscula } from "@/lib/formato";
-import { agoraEmBrasilia, DIAS, diaDaSemana, emBrasilia, instante, nomeDoDia, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, diaDaSemana, emBrasilia, instante, nomeDoDia } from "@/lib/expediente";
 
 export const metadata: Metadata = {
   title: "Calendário de aulas",
@@ -23,15 +18,7 @@ export const metadata: Metadata = {
 
 // Até quantos meses à frente dá para ver (as aulas fixas existem por 8 semanas).
 const MESES_A_FRENTE = 2;
-const mesValido = (m: unknown): m is string => typeof m === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(m);
 const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
-const somarMes = (mes: string, n: number) => {
-  const [a, m] = mes.split("-").map(Number);
-  const d = new Date(Date.UTC(a, m - 1 + n, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-};
-
-type AulaDoCalendario = AulaDaAgenda & { categoria: CategoriaHistorico | null; passou: boolean };
 
 export default function PaginaCalendario({ searchParams }: PageProps<"/agenda/historico">) {
   return (
@@ -56,7 +43,6 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
   const filtro = typeof aluno === "string" ? aluno : "";
   const primeiroDia = `${mes}-01`;
   const proximoMes = `${somarMes(mes, 1)}-01`;
-  const diasNoMes = Math.round((Date.parse(proximoMes) - Date.parse(primeiroDia)) / 86_400_000);
   const dia =
     dataValida(diaPedido) && diaPedido.startsWith(mes) ? diaPedido : hoje.startsWith(mes) ? hoje : primeiroDia;
 
@@ -64,18 +50,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
     listarAulas(instante(primeiroDia, 0).toISOString(), instante(proximoMes, 0).toISOString()),
     listarMeusAlunos(),
   ]);
-  const agora = new Date();
-  // Passadas entram com a cor do tipo; futuras, como aulas marcadas (ou pedidos aguardando).
-  const doCalendario: AulaDoCalendario[] = aulas
-    .filter((a) => (!filtro || a.vinculoId === filtro) && a.situacao !== "recusada" && a.situacao !== "remarcada")
-    .map((a) => ({
-      ...a,
-      categoria: categoriaDoHistorico(a.situacao, a.origem, a.fim, agora),
-      passou: Date.parse(a.fim) <= agora.getTime(),
-    }))
-    // Canceladas (mesmo as futuras, avisadas antes) entram com a cor de cancelada ou perdida.
-    .filter((a) => a.categoria !== null || !a.passou)
-    .sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio));
+  const doCalendario = paraCalendario(aulas, new Date(), filtro);
 
   const doDia = (d: string) => doCalendario.filter((a) => emBrasilia(a.inicio).data === d);
   const contagem = Object.fromEntries(
@@ -83,13 +58,6 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
   );
   const marcadas = doCalendario.filter((a) => !a.passou && a.categoria === null).length;
 
-  // Grade de segunda a domingo; os dias antes do dia 1 ficam vazios.
-  const recuo = (diaDaSemana(primeiroDia) + 6) % 7;
-  const casas: (string | null)[] = [
-    ...Array.from({ length: recuo }, () => null),
-    ...Array.from({ length: diasNoMes }, (_, i) => somarDias(primeiroDia, i)),
-  ];
-  while (casas.length % 7) casas.push(null);
 
   const alunos = todos.filter((a) => a.situacao === "ativo" || a.vinculoId === filtro);
   const nomeDoMes = new Date(`${mes}-15T12:00:00Z`).toLocaleDateString("pt-BR", {
@@ -127,50 +95,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
 
       <FiltroAluno alunos={alunos.map((a) => ({ vinculoId: a.vinculoId, nome: a.nome }))} atual={filtro} mes={mes} />
 
-      <section aria-label="Calendário do mês" className="rounded-[20px] border border-line bg-surface p-2">
-        <div className="grid grid-cols-7 pb-1 text-center text-[11px] font-semibold text-ink-3">
-          {DIAS.map((d) => (
-            <span key={d.valor}>{d.curto}</span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {casas.map((d, i) => {
-            if (!d) return <span key={`v${i}`} />;
-            const lista = doDia(d);
-            const escolhido = d === dia;
-            const ehHoje = d === hoje;
-            return (
-              <Link
-                key={d}
-                href={link(mes, d)}
-                scroll={false}
-                aria-label={`${nomeDoDia(diaDaSemana(d))} ${Number(d.slice(8))}: ${lista.length} aula${lista.length === 1 ? "" : "s"}`}
-                aria-current={escolhido ? "date" : undefined}
-                className={`flex min-h-[54px] flex-col items-center gap-1 rounded-[12px] pt-1.5 pb-1 ${
-                  escolhido ? "bg-ink text-app" : ehHoje ? "bg-brand-soft" : "hover:bg-surface-2"
-                } ${d < hoje && !escolhido ? "text-ink-2" : ""}`}
-              >
-                <span className={`text-[13px] tabular-nums ${ehHoje ? "font-extrabold" : "font-semibold"}`}>
-                  {Number(d.slice(8))}
-                </span>
-                <span className="flex max-w-full flex-wrap justify-center gap-0.5 px-0.5">
-                  {lista.slice(0, 4).map((a) => (
-                    <span
-                      key={a.id}
-                      className={`size-[7px] rounded-full ${
-                        a.categoria
-                          ? CATEGORIAS_HISTORICO.find((c) => c.valor === a.categoria)!.ponto
-                          : `border ${escolhido ? "border-app" : "border-brand"}`
-                      }`}
-                    />
-                  ))}
-                  {lista.length > 4 && <span className="text-[9px] leading-[7px] font-bold">+</span>}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+      <CalendarioDoMes mes={mes} dia={dia} hoje={hoje} aulas={doCalendario} linkDoDia={(d) => link(mes, d)} />
 
       <section className="flex flex-wrap gap-x-3 gap-y-1.5 text-[11.5px] text-ink-2" aria-label="Legenda">
         {CATEGORIAS_HISTORICO.map((c) => (

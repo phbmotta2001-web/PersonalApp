@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
+import { CalendarioDoMes, mesValido, paraCalendario, somarMes } from "@/components/agenda/CalendarioDoMes";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { InstalarApp } from "@/components/InstalarApp";
 import { sair } from "@/data/conta";
@@ -14,6 +15,7 @@ import { resumoDasCobrancas } from "@/data/cobrancas";
 import { listarAlunosOnline, listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import { lerTabelaDeValores } from "@/data/precos";
 import {
+  CATEGORIAS_HISTORICO,
   COR_SITUACAO,
   naoAcontece,
   ROTULO_ORIGEM,
@@ -35,6 +37,7 @@ import {
   nomeDoDia,
   somarDias,
 } from "@/lib/expediente";
+import { maiuscula } from "@/lib/formato";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 import { aPartirDe } from "@/lib/precos";
@@ -44,7 +47,8 @@ export const metadata: Metadata = {
 };
 
 // Até quantas semanas à frente dá para ver (as aulas fixas existem por 8 semanas).
-const SEMANAS = 8;
+// No calendário expandido dá para ver até 2 meses à frente (as aulas fixas existem por 8 semanas).
+const MESES_A_FRENTE = 2;
 const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 export default function PaginaAgenda({ searchParams }: PageProps<"/agenda">) {
@@ -59,14 +63,22 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/agenda">) {
 
 async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["searchParams"] }) {
   const personal = await exigirPersonal("/agenda");
-  const { dia: pedido } = await searchParams;
-
-  // A semana mostrada começa hoje (ou 7, 14… dias depois) e o dia escolhido fica nela.
+  const { dia: pedido, ver, mes: mesPedido } = await searchParams;
   const hoje = agoraEmBrasilia().data;
-  const distancia = dataValida(pedido) ? Math.round((Date.parse(pedido) - Date.parse(hoje)) / 86_400_000) : 0;
-  const semanaN = Math.min(Math.max(Math.floor(distancia / 7), 0), SEMANAS - 1);
+
+  // Recolhida: os 7 dias a partir de hoje. Expandida (?ver=mes): o mês inteiro, com setas.
+  const expandida = ver === "mes";
+  const ultimoMes = somarMes(hoje.slice(0, 7), MESES_A_FRENTE);
+  const mes = mesValido(mesPedido)
+    ? mesPedido > ultimoMes ? ultimoMes : mesPedido
+    : dataValida(pedido) && pedido.slice(0, 7) <= ultimoMes ? pedido.slice(0, 7) : hoje.slice(0, 7);
+  const dia = dataValida(pedido) && (!expandida || pedido.startsWith(mes))
+    ? pedido
+    : expandida && !hoje.startsWith(mes) ? `${mes}-01` : hoje;
+  // O bloco de 7 dias (contado a partir de hoje) em que o dia escolhido cai.
+  const distancia = Math.round((Date.parse(dia) - Date.parse(hoje)) / 86_400_000);
+  const semanaN = Math.floor(distancia / 7);
   const inicioSemana = somarDias(hoje, semanaN * 7);
-  const dia = dataValida(pedido) && distancia >= semanaN * 7 && distancia < semanaN * 7 + 7 ? pedido : inicioSemana;
 
   const [expediente, bloqueios, alunos, aulas, tabela, antecedencia, naoLidos, aniversarios, pedidos, cobrancas, online, suspensas] = await Promise.all([
     lerExpediente(),
@@ -82,6 +94,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
     listarAlunosOnline(),
     matriculasSuspensas(),
   ]);
+  const doMes = expandida
+    ? paraCalendario(
+        await listarAulas(instante(`${mes}-01`, 0).toISOString(), instante(`${somarMes(mes, 1)}-01`, 0).toISOString()),
+        new Date(),
+      )
+    : [];
+  const nomeDoMes = new Date(`${mes}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const mesDoDia = new Date(`${dia}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
   const ativos = alunos.filter((a) => a.situacao === "ativo").length;
@@ -156,31 +175,67 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
 
       <section className="flex flex-col gap-3" aria-label="Agenda da semana">
         <div className="flex items-center gap-2">
-          <h2 className="flex-1 text-[17px] font-semibold">
-            {semanaN === 0 ? "Próximos 7 dias" : `${dataCurta(inicioSemana)} a ${dataCurta(somarDias(inicioSemana, 6))}`}
-          </h2>
-          {semanaN > 0 && (
-            <Link
-              href={`/agenda?dia=${somarDias(inicioSemana, -7)}`}
-              scroll={false}
-              aria-label="Semana anterior"
-              className="grid size-9 place-items-center rounded-full border border-line bg-surface"
-            >
-              ‹
-            </Link>
+          {expandida ? (
+            <>
+              <Link
+                href={`/agenda?ver=mes&mes=${somarMes(mes, -1)}`}
+                scroll={false}
+                aria-label="Mês anterior"
+                className="grid size-9 place-items-center rounded-full border border-line bg-surface"
+              >
+                ‹
+              </Link>
+              <h2 className="flex-1 text-center text-[17px] font-semibold">{maiuscula(nomeDoMes)}</h2>
+              {mes < ultimoMes ? (
+                <Link
+                  href={`/agenda?ver=mes&mes=${somarMes(mes, 1)}`}
+                  scroll={false}
+                  aria-label="Próximo mês"
+                  className="grid size-9 place-items-center rounded-full border border-line bg-surface"
+                >
+                  ›
+                </Link>
+              ) : (
+                <span className="size-9" />
+              )}
+            </>
+          ) : (
+            <h2 className="flex-1 text-[17px] font-semibold">
+              {semanaN === 0 ? "Próximos 7 dias" : `${dataCurta(inicioSemana)} a ${dataCurta(somarDias(inicioSemana, 6))}`}
+            </h2>
           )}
-          {semanaN < SEMANAS - 1 && (
-            <Link
-              href={`/agenda?dia=${somarDias(inicioSemana, 7)}`}
-              scroll={false}
-              aria-label="Próxima semana"
-              className="grid size-9 place-items-center rounded-full border border-line bg-surface"
-            >
-              ›
-            </Link>
-          )}
+          <Link
+            href={expandida ? `/agenda?dia=${dia}` : `/agenda?ver=mes&dia=${dia}`}
+            scroll={false}
+            className="rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] font-semibold"
+          >
+            {expandida ? "Recolher" : "Expandir"}
+          </Link>
         </div>
 
+        {expandida ? (
+          <>
+            <CalendarioDoMes
+              mes={mes}
+              dia={dia}
+              hoje={hoje}
+              aulas={doMes}
+              linkDoDia={(d) => `/agenda?ver=mes&mes=${mes}&dia=${d}`}
+            />
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-ink-2" aria-label="Legenda">
+              {CATEGORIAS_HISTORICO.map((c) => (
+                <span key={c.valor} className="flex items-center gap-1.5">
+                  <span className={`size-2.5 rounded-full ${c.ponto}`} aria-hidden="true" />
+                  {c.rotulo}
+                </span>
+              ))}
+              <span className="flex items-center gap-1.5">
+                <span className="size-2.5 rounded-full border border-brand" aria-hidden="true" />
+                Marcada
+              </span>
+            </p>
+          </>
+        ) : (
         <nav className="grid grid-cols-7 gap-1" aria-label="Dias da semana">
           {semana.map((d) => {
             const n = aulasDe(d.data).length;
@@ -204,6 +259,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
             );
           })}
         </nav>
+        )}
 
         <div className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
           <div className="flex items-center gap-2">
@@ -298,22 +354,12 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda">["
             <p className="border-t border-line pt-2.5 text-xs text-ink-3">{doDia.trabalha ? "Sem horários livres." : "Folga."}</p>
           )}
         </div>
-        <Link
-          href="/agenda/historico"
-          className="flex items-center gap-2 self-start rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] font-semibold"
-        >
-          <span className="flex gap-0.5" aria-hidden="true">
-            <span className="size-2 rounded-full bg-ok" />
-            <span className="size-2 rounded-full bg-info" />
-            <span className="size-2 rounded-full bg-ink-3" />
-            <span className="size-2 rounded-full bg-bad" />
-          </span>
-          Calendário de aulas ›
-        </Link>
+        {!expandida && (
         <p className="text-xs text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.
         </p>
+        )}
       </section>
 
       {aniversarios.length > 0 && (
