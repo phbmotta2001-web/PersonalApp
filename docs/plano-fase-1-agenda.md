@@ -72,6 +72,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 39 | Início do ciclo (20/10) | Ao alterar a matrícula de um aluno com aulas a cada 2 ou mais semanas, o campo de data vira "Próxima aula a partir de" (já sugerindo a próxima aula do ciclo atual, para não mudar nada sem querer). Trocar a data recomeça o ciclo dali; as aulas futuras só agendadas são refeitas e as passadas ficam como estão. Semanais: início continua travado. |
 | 40 | Notificações (20/10) | **Personal:** aluno avisou que pagou, questionário respondido, pedidos e avisos de aula (cancelar, remarcar, reposição) e "vence hoje a mensalidade de X". **Aluno:** resposta ao pedido (aceito, recusado, outro horário), matrícula vence em 2 dias, matrícula suspensa, questionário novo, aula cancelada pelo personal e lembrete 1 h antes da aula. **Silêncio das 22h às 7h** (o que cair ali sai às 7h; o lembrete de aula vai na véspera às 21h). |
 | 41 | Abas do personal (21/10) | A área do personal fica em **quatro abas**, com barra fixa embaixo (como no Instagram): **Início** (pedidos, próximas aulas, recebido no mês, a receber, vencimentos dos próximos 7 dias, aniversários), **Alunos** (lista + alunos online), **Agenda** (semana, "Expandir" para o mês, horários e bloqueios) e **Minha conta** (dados, valores, chave Pix, regras, sair, excluir). |
+| 42 | Aluno sem app (21/10) | Vale para **qualquer aluno que não queira usar o app**. O personal cadastra nome, nascimento, WhatsApp (opcional) e observações. **Menor de 18:** nome e WhatsApp do responsável e a confirmação de que ele autorizou (LGPD, art. 14); cobranças e avisos pelo WhatsApp vão para o **responsável**. Matrícula, aulas, cobranças, calendário e aniversário funcionam igual; questionários não (precisa de conta). **"Convidar para ter conta"**: ao aceitar, matrícula, aulas, cobranças e histórico passam para a conta do aluno, e os dados do responsável são apagados. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -132,7 +133,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 4 | App no celular (PWA): ícone, instalação (Android e iPhone), abre na área de cada um, tela sem internet | pronta (19/10) |
 | 4b | Notificações no celular (web push): fila no banco, envio pelo site a cada minuto, silêncio 22h–7h, lembrete de aula 1 h antes (ou 21h na véspera) | pronta (20/10), funcionando no iPhone |
 | 5 | Dia a dia da agenda: realizada, falta, cancelar, remarcar, avulsa, reposição, experimental, regras | pronta (16/10) |
-| 5b | Alunos sem conta (menores) adicionados à mão, com matrícula | — |
+| 5b | Alunos sem conta (qualquer aluno sem app; menor com responsável), com matrícula, cobrança e convite para ter conta | pronta (21/10) |
 | 6 | Área do aluno: cancelar, remarcar e marcar reposição pelo app; avisos para o personal (treinos ficam para depois) | pronta (17/10) |
 | 7 | Cobranças registradas: mensalidades (1ª proporcional), atrasos, "marcar como recebido", Pix copia e cola + QR, "Já paguei" do aluno, cobrança avulsa | pronta (19/10) |
 | 8 | WhatsApp com um toque (texto pronto) | cobrança pronta (19/10, junto da 7) |

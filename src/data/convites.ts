@@ -6,7 +6,16 @@
 // que conferem quem está logado. Este arquivo só traduz para o site.
 
 import type { Genero, NivelAluno } from "@/lib/aluno";
-import { problemasDoConvite, type AlunoDaLista, type Convite, type SituacaoConvite } from "@/lib/convite";
+import {
+  problemasDoAlunoSemConta,
+  problemasDoConvite,
+  type AlunoDaLista,
+  type Convite,
+  type DadosAlunoSemConta,
+  type FichaSemConta,
+  type SituacaoConvite,
+} from "@/lib/convite";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { frase } from "@/lib/formato";
 import { criarClienteSupabase, usuarioAtual } from "@/lib/supabase/servidor";
 import type { Resposta } from "./conta";
@@ -18,7 +27,7 @@ function erroDoBanco(mensagem: string | undefined, padrao: string): string {
   const m = mensagem ?? "";
   // Erro técnico do banco (em inglês) nunca vai para a tela.
   if (TECNICO.test(m)) return padrao;
-  return /convite|perfil|conta de aluno|vínculo|personais/i.test(m) ? m : padrao;
+  return /convite|perfil|conta de aluno|vínculo|personais|aluno|nascimento|responsável|WhatsApp|observações/i.test(m) ? m : padrao;
 }
 
 // ─── Personal ──────────────────────────────────────────────────────────────
@@ -57,6 +66,9 @@ export async function listarMeusAlunos(): Promise<AlunoDaLista[]> {
     expiraEm: l.expira_em as string,
     aceitoEm: l.aceito_em,
     encerradoPor: l.encerrado_por as AlunoDaLista["encerradoPor"],
+    semConta: (l.sem_conta as unknown as boolean) === true,
+    menor: (l.menor as unknown as boolean) === true,
+    responsavelNome: l.responsavel_nome,
   }));
 }
 
@@ -82,13 +94,43 @@ export interface FichaDoAluno {
   outrasMedidas: string | null;
   /** Quando cada dado foi informado (o valor atual): peso_kg, altura_cm, outras_medidas, objetivo. */
   datas: Partial<Record<"peso_kg" | "altura_cm" | "outras_medidas" | "objetivo", string>>;
+  /** Aluno sem conta (etapa 5b): os dados que o personal cadastrou. */
+  semConta?: FichaSemConta;
 }
 
 /** Ficha completa do aluno. Só sai com vínculo ATIVO com o personal logado. */
 export async function lerFichaDoAluno(vinculoId: string): Promise<FichaDoAluno | null> {
   const supabase = await criarClienteSupabase();
   const { data } = await supabase.rpc("aluno_do_personal", { p_vinculo: vinculoId });
-  if (!data) return null;
+  if (!data) {
+    // Aluno sem conta: a ficha vem do que o personal cadastrou.
+    const s = await lerFichaSemConta(vinculoId);
+    return s
+      ? {
+          vinculoId: s.vinculoId,
+          aceitoEm: s.aceitoEm,
+          nomeCompleto: s.nome,
+          idade: s.idade,
+          genero: null,
+          whatsapp: s.menor ? s.responsavelWhatsapp : s.whatsapp,
+          avisosWhatsapp: true,
+          objetivo: "",
+          nivel: null,
+          bairro: null,
+          cep: null,
+          endereco: null,
+          cidade: null,
+          restricoes: s.observacoes,
+          semRestricoes: null,
+          restricoesDeclaradasEm: null,
+          pesoKg: null,
+          alturaCm: null,
+          outrasMedidas: null,
+          datas: {},
+          semConta: s,
+        }
+      : null;
+  }
   const f = data as Record<string, unknown>;
   return {
     vinculoId: f.vinculo_id as string,
@@ -185,4 +227,65 @@ export async function aniversariantesDoMes(data?: string): Promise<Aniversariant
     dia: l.dia,
     fazAnos: l.faz_anos,
   }));
+}
+
+// ─── Aluno sem conta (etapa 5b) ────────────────────────────────────────────
+
+/** Cria (vinculoId nulo) ou altera o aluno sem conta. */
+export async function salvarAlunoSemConta(
+  vinculoId: string | null,
+  dados: DadosAlunoSemConta,
+): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
+  const problemas = problemasDoAlunoSemConta(dados, agoraEmBrasilia().data);
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("salvar_aluno_sem_conta", {
+    p_vinculo: vinculoId,
+    p_dados: {
+      nome: dados.nome.trim(),
+      data_nascimento: dados.dataNascimento,
+      whatsapp: dados.whatsapp,
+      responsavel_nome: dados.responsavelNome.trim(),
+      responsavel_whatsapp: dados.responsavelWhatsapp,
+      responsavel_autorizou: dados.responsavelAutorizou,
+      observacoes: dados.observacoes.trim(),
+    },
+  });
+  return error || !data
+    ? { ok: false, erro: erroDoBanco(error?.message, "Não foi possível salvar o aluno.") }
+    : { ok: true, id: data as string };
+}
+
+/** Ficha do aluno sem conta (só o personal dele); null se não for aluno sem conta. */
+export async function lerFichaSemConta(vinculoId: string): Promise<FichaSemConta | null> {
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase.rpc("ficha_sem_conta", { p_vinculo: vinculoId });
+  if (!data) return null;
+  const f = data as Record<string, unknown>;
+  return {
+    vinculoId: f.vinculo_id as string,
+    aceitoEm: f.aceito_em as string,
+    nome: f.nome as string,
+    whatsapp: (f.whatsapp as string | null) ?? null,
+    dataNascimento: f.data_nascimento as string,
+    idade: f.idade as number,
+    menor: f.menor === true,
+    responsavelNome: (f.responsavel_nome as string | null) ?? null,
+    responsavelWhatsapp: (f.responsavel_whatsapp as string | null) ?? null,
+    observacoes: (f.observacoes as string | null) ?? null,
+    consentimentoEm: (f.consentimento_responsavel_em as string | null) ?? null,
+    conviteCodigo: (f.convite_codigo as string | null) ?? null,
+    conviteExpiraEm: (f.convite_expira_em as string | null) ?? null,
+  };
+}
+
+/** "Convidar para ter conta": link novo, válido por 14 dias. */
+export async function convidarAlunoSemConta(
+  vinculoId: string,
+): Promise<{ ok: true; codigo: string } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("convidar_aluno_sem_conta", { p_vinculo: vinculoId });
+  return error || !data
+    ? { ok: false, erro: erroDoBanco(error?.message, "Não foi possível criar o convite.") }
+    : { ok: true, codigo: (data as { codigo: string }).codigo };
 }

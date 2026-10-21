@@ -54,12 +54,22 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/cobrancas/[cobr
 
   const s = situacaoDaCobranca(c, hoje);
   const pix = c.situacao === "aberta" ? await pixDaCobranca(pixDados, c) : null;
-  const whatsapp = alunos.find((a) => a.vinculoId === c.vinculoId)?.whatsapp ?? null;
+  const doAluno = alunos.find((a) => a.vinculoId === c.vinculoId);
+  const whatsapp = doAluno?.whatsapp ?? null;
+  // Menor sem app: a conversa é com o responsável.
+  const responsavel = doAluno?.menor && doAluno.responsavelNome ? doAluno.responsavelNome : null;
   const matricula = c.situacao === "aberta" && c.tipo === "mensalidade" ? await lerMatricula(c.vinculoId) : null;
   // Sem WhatsApp do aluno, o link abre o WhatsApp para o personal escolher o contato.
   const conversa =
     c.situacao === "aberta"
-      ? linkWhatsapp(whatsapp, mensagemDeCobranca(c.nome.split(" ")[0], c, hoje, pix?.codigo ?? null, matricula?.suspenderSeAtrasar ?? false))
+      ? linkWhatsapp(whatsapp, mensagemDeCobranca(
+          (responsavel ?? c.nome).split(" ")[0],
+          c,
+          hoje,
+          pix?.codigo ?? null,
+          matricula?.suspenderSeAtrasar ?? false,
+          responsavel ? c.nome.split(" ")[0] : undefined,
+        ))
       : null;
 
   return (

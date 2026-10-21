@@ -99,10 +99,13 @@ export function mensagemDeCobranca(
   pixCopiaECola: string | null,
   /** A matrícula do aluno é suspensa se a mensalidade vencer sem pagamento. */
   suspende = false,
+  /** Aluno menor sem app: a mensagem vai para o responsável e cita o aluno. */
+  doAluno?: string,
 ): string {
   const atrasada = c.vencimento < hoje;
+  const descricao = descricaoDaCobranca(c, true).toLowerCase() + (doAluno ? ` de ${doAluno}` : "");
   const linhas = [
-    `Oi, ${primeiroNome}! ${atrasada ? "Passando para lembrar" : "Lembrete"}: ${descricaoDaCobranca(c, true).toLowerCase()}, ${centavosParaReais(c.valorCentavos)}, ${textoDoVencimento(c.vencimento, hoje)}.`,
+    `Oi, ${primeiroNome}! ${atrasada ? "Passando para lembrar" : "Lembrete"}: ${descricao}, ${centavosParaReais(c.valorCentavos)}, ${textoDoVencimento(c.vencimento, hoje)}.`,
   ];
   if (suspende && c.tipo === "mensalidade")
     linhas.push(

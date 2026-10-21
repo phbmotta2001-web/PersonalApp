@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { ConvidarParaConta } from "@/components/agenda/ConvidarParaConta";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
 import { SuspensaoAutomatica } from "@/components/agenda/SuspensaoAutomatica";
 import { Avatar } from "@/components/Avatar";
@@ -19,6 +20,7 @@ import { COR_COBRANCA, descricaoDaCobranca, ROTULO_COBRANCA, situacaoDaCobranca 
 import { agoraEmBrasilia, dataCurta } from "@/lib/expediente";
 import { centavosParaReais, resumoDaModalidade, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
+import { origemDoSite } from "@/lib/supabase/servidor";
 
 export const metadata: Metadata = {
   title: "Ficha do aluno",
@@ -40,7 +42,7 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -48,6 +50,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     aulasDoMes(vinculo),
     listarCobrancas(vinculo),
     matriculasSuspensas(),
+    origemDoSite(),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -81,7 +84,9 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           atrasado && <p className="text-xs font-bold text-bad">Mensalidade atrasada</p>
         )}
         <p className="text-[13px] text-ink-3">
-          {a.idade} anos · {rotuloGenero(a.genero)} · aluno desde {new Date(a.aceitoEm).toLocaleDateString("pt-BR")}
+          {a.semConta
+            ? `${a.idade} anos${a.semConta.menor ? " (menor)" : ""} · não usa o app · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR")}`
+            : `${a.idade} anos · ${rotuloGenero(a.genero)} · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR")}`}
         </p>
       </div>
 
@@ -91,7 +96,11 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       >
         <Icone nome="escudo" className="mt-0.5 size-5" />
         <div className="text-[13.5px]">
-          <p className="font-bold">{a.restricoes ? "Restrições e limitações" : "Sem restrições declaradas"}</p>
+          <p className="font-bold">
+            {a.semConta
+              ? a.restricoes ? "Observações" : "Sem observações"
+              : a.restricoes ? "Restrições e limitações" : "Sem restrições declaradas"}
+          </p>
           {a.restricoes && <p className="mt-1 whitespace-pre-line text-ink">{a.restricoes}</p>}
           {a.restricoesDeclaradasEm && (
             <p className="mt-1 text-xs opacity-80">
@@ -100,6 +109,32 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           )}
         </div>
       </section>
+
+      {a.semConta && (
+        <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Aluno sem app">
+          <div className="flex items-center gap-2">
+            <h3 className="flex-1 text-[15px] font-bold">Não usa o app</h3>
+            <Link href={`/agenda/alunos/${vinculo}/editar`} className="text-[13px] font-semibold text-brand">
+              Editar dados
+            </Link>
+          </div>
+          {a.semConta.menor && a.semConta.responsavelNome && (
+            <p className="text-[13px] text-ink-2">
+              Responsável: <strong>{a.semConta.responsavelNome}</strong>
+              {a.semConta.responsavelWhatsapp && ` · ${formatarWhatsapp(a.semConta.responsavelWhatsapp)}`}. Cobranças e
+              avisos pelo WhatsApp vão para o responsável.
+            </p>
+          )}
+          <ConvidarParaConta
+            vinculoId={vinculo}
+            nome={a.nomeCompleto}
+            whatsapp={a.semConta.whatsapp}
+            origem={origem}
+            codigo={a.semConta.conviteCodigo}
+            expiraEm={a.semConta.conviteExpiraEm}
+          />
+        </section>
+      )}
 
       {proxima && (
         <section className="flex items-start gap-3 rounded-[20px] bg-brand p-4 text-brand-ink">
@@ -205,6 +240,18 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         Ver calendário de aulas ›
       </Link>
 
+      {a.semConta ? (
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-sm">
+        <Linha nome="Nascimento" valor={new Date(`${a.semConta.dataNascimento}T12:00:00`).toLocaleDateString("pt-BR")} />
+        <Linha nome="WhatsApp do aluno" valor={a.semConta.whatsapp ? formatarWhatsapp(a.semConta.whatsapp) : null} />
+        {a.semConta.menor && (
+          <Linha
+            nome="Responsável"
+            valor={[a.semConta.responsavelNome, a.semConta.responsavelWhatsapp && formatarWhatsapp(a.semConta.responsavelWhatsapp)].filter(Boolean).join(" · ") || null}
+          />
+        )}
+      </dl>
+      ) : (
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-sm">
         <Linha nome="Objetivo" valor={a.objetivo} desde={a.datas.objetivo} />
         <Linha nome="Nível" valor={rotuloNivel(a.nivel)} />
@@ -217,22 +264,27 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           valor={a.whatsapp ? `${formatarWhatsapp(a.whatsapp)}${a.avisosWhatsapp ? "" : " (não quer avisos)"}` : "Não informado"}
         />
       </dl>
+      )}
 
       {a.whatsapp && (
         <a
-          href={linkWhatsapp(a.whatsapp, `Oi, ${a.nomeCompleto.split(" ")[0]}!`)}
+          href={linkWhatsapp(a.whatsapp, `Oi, ${(a.semConta?.menor && a.semConta.responsavelNome ? a.semConta.responsavelNome : a.nomeCompleto).split(" ")[0]}!`)}
           target="_blank"
           rel="noopener noreferrer"
           className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] border border-line bg-surface px-3 text-[13px] font-bold"
         >
-          <Icone nome="conversa" className="size-4" /> Abrir conversa no WhatsApp
+          <Icone nome="conversa" className="size-4" /> {a.semConta?.menor ? "Conversar com o responsável" : "Abrir conversa no WhatsApp"}
         </a>
       )}
 
       <EncerrarVinculo
         vinculoId={a.vinculoId}
         depois="/agenda/alunos"
-        aviso={`Ao encerrar, ${a.nomeCompleto.split(" ")[0]} sai da sua lista de alunos, as aulas futuras saem da agenda e você deixa de ver o cadastro dele. A conta do aluno continua existindo.`}
+        aviso={
+          a.semConta
+            ? `Ao encerrar, ${a.nomeCompleto.split(" ")[0]} sai da sua lista de alunos e as aulas futuras saem da agenda.`
+            : `Ao encerrar, ${a.nomeCompleto.split(" ")[0]} sai da sua lista de alunos, as aulas futuras saem da agenda e você deixa de ver o cadastro dele. A conta do aluno continua existindo.`
+        }
       />
     </div>
   );

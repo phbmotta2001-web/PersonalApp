@@ -125,9 +125,14 @@ export function Alunos({
           )}
         </form>
       ) : (
-        <button type="button" onClick={() => setAbrindo(true)} className={ESTILO_BOTAO_PRINCIPAL}>
-          <Icone nome="mais" className="size-4" /> Convidar aluno
-        </button>
+        <div className="flex flex-col gap-2">
+          <button type="button" onClick={() => setAbrindo(true)} className={ESTILO_BOTAO_PRINCIPAL}>
+            <Icone nome="mais" className="size-4" /> Convidar aluno
+          </button>
+          <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[13px]"}>
+            Cadastrar aluno que não usa o app
+          </Link>
+        </div>
       )}
 
       <section className="flex flex-col gap-2.5">
@@ -152,6 +157,11 @@ export function Alunos({
                       </span>
                       <span className="block text-[12.5px] text-ink-3">
                         Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}
+                        {a.semConta && (
+                          <span className="ml-1.5 rounded-full bg-surface-2 px-1.5 py-px text-[11px] font-bold text-ink-2">
+                            {a.menor ? "Menor · sem app" : "Sem app"}
+                          </span>
+                        )}
                       </span>
                     </span>
                     <span className="text-ink-3" aria-hidden="true">›</span>
@@ -241,7 +251,7 @@ export function Alunos({
 }
 
 /** "Enviar pelo WhatsApp" e "Copiar link". */
-function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp: string; link: string }) {
+export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp: string; link: string }) {
   const [copiado, setCopiado] = useState(false);
   return (
     <div className="grid grid-cols-2 gap-2">

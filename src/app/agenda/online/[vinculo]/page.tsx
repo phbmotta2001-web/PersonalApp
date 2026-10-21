@@ -98,13 +98,20 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
         </section>
       )}
 
-      <ProgramacoesDoAluno
-        vinculoId={vinculo}
-        programacoes={programacoes}
-        questionarios={questionarios}
-        hoje={hoje}
-        diaSemanaHoje={diaDaSemana(hoje)}
-      />
+      {aluno.semConta ? (
+        // Sem conta, o aluno não tem como abrir o questionário (precisa entrar no Pienel).
+        <p className="rounded-[16px] border border-dashed border-line p-3 text-[13px] text-ink-3">
+          {primeiro} não usa o app, então não recebe questionários. Para isso, convide-o para ter conta (na ficha do aluno).
+        </p>
+      ) : (
+        <ProgramacoesDoAluno
+          vinculoId={vinculo}
+          programacoes={programacoes}
+          questionarios={questionarios}
+          hoje={hoje}
+          diaSemanaHoje={diaDaSemana(hoje)}
+        />
+      )}
 
       <Evolucao respondidos={respondidos} />
 
