@@ -102,8 +102,9 @@ export interface FichaDoAluno {
 export async function lerFichaDoAluno(vinculoId: string): Promise<FichaDoAluno | null> {
   const supabase = await criarClienteSupabase();
   const { data } = await supabase.rpc("aluno_do_personal", { p_vinculo: vinculoId });
-  if (!data) {
-    // Aluno sem conta: a ficha vem do que o personal cadastrou.
+  // Aluno sem conta: o banco devolve a ficha sem nome (não há perfil de aluno); os
+  // dados vêm do que o personal cadastrou.
+  if (!data || !(data as Record<string, unknown>).nome_completo) {
     const s = await lerFichaSemConta(vinculoId);
     return s
       ? {
