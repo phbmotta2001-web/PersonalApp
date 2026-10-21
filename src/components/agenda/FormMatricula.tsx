@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { encerrarMatricula, salvarMatricula } from "@/data/matriculas";
-import { DIAS, DURACOES, minParaHora, nomeDoDia, opcoesDeHora, type Duracao, type Faixa } from "@/lib/expediente";
+import { DIAS, DURACOES, minParaHora, nomeDoDia, opcoesDeHora, somarDias, type Duracao, type Faixa } from "@/lib/expediente";
 import { frase, juntarComE } from "@/lib/formato";
 import {
   centavosParaCampo,
@@ -73,17 +73,10 @@ export function FormMatricula({
   }));
   // Marcar um dia já traz a hora do último dia mexido (ou 07:00).
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
-  const [vencimentoMexido, setVencimentoMexido] = useState(!!atual);
+  // O banco guarda só o DIA do vencimento. Novo: o dia do início, até o personal escolher outro.
+  const [diaMexido, setDiaMexido] = useState(!!atual);
   // Alterando aulas a cada N semanas: início do ciclo (sem mexer, segue o ciclo atual).
   const [inicioCiclo, setInicioCiclo] = useState<string | null>(null);
-  // Data mostrada no campo; no banco fica o dia do mês (diaVencimento).
-  const [vencimento, setVencimento] = useState(() =>
-    atual
-      ? atual.diaVencimento != null
-        ? proximaDataNoDia(hoje, atual.diaVencimento)
-        : ""
-      : proximoVencimento(hoje, diaDoMes(hoje)),
-  );
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
@@ -115,15 +108,7 @@ export function FormMatricula({
     setErro(null);
     setDados({ ...dados, ...parte });
   };
-  // Novo ciclo ou novo tipo: o 1º vencimento acompanha (se o personal não escolheu à mão).
-  const mudarCiclo = (parte: Partial<DadosMatricula>) => {
-    const novo = { ...dados, ...parte };
-    const novoCiclo = novo.modalidade === "presencial" ? 1 : novo.cicloMeses;
-    if (!vencimentoMexido && novo.inicio && novo.diaVencimento != null)
-      setVencimento(proximoVencimento(novo.inicio, novo.diaVencimento, novoCiclo));
-    setErro(null);
-    setDados(novo);
-  };
+  const mudarCiclo = (parte: Partial<DadosMatricula>) => mudar(parte);
   const marcado = (dia: number) => dados.horarios.some((h) => h.dia === dia);
   const marcarDia = (dia: number) =>
     mudar({
@@ -413,34 +398,29 @@ export function FormMatricula({
               disabled={!!atual}
               onChange={(e) => {
                 const inicio = e.target.value;
-                if (!inicio) return mudar({ inicio });
-                if (!vencimentoMexido) {
-                  setVencimento(proximoVencimento(inicio, diaDoMes(inicio), ciclo));
-                  return mudar({ inicio, diaVencimento: diaDoMes(inicio) });
-                }
-                // Dia escolhido à mão: mantém o dia, mas o vencimento nunca fica antes do início.
-                if (vencimento <= inicio && dados.diaVencimento != null)
-                  setVencimento(proximoVencimento(inicio, dados.diaVencimento, ciclo));
-                mudar({ inicio });
+                // Sem escolha à mão, o vencimento acompanha o dia do início.
+                mudar(inicio && !diaMexido ? { inicio, diaVencimento: diaDoMes(inicio) } : { inicio });
               }}
               className={ESTILO_CAIXA}
             />
           </Campo>
           )}
-          <Campo id="mat-venc" rotulo={atual ? "Próximo vencimento" : "1º vencimento"}>
-            <input
+          <Campo id="mat-venc" rotulo="Dia do vencimento">
+            <select
               id="mat-venc"
-              type="date"
-              value={vencimento}
-              min={atual ? hoje : dados.inicio}
+              value={dados.diaVencimento ?? ""}
               onChange={(e) => {
-                const data = e.target.value;
-                setVencimentoMexido(true);
-                setVencimento(data);
-                mudar({ diaVencimento: data ? diaDoMes(data) : null });
+                setDiaMexido(true);
+                mudar({ diaVencimento: e.target.value ? Number(e.target.value) : null });
               }}
               className={ESTILO_CAIXA}
-            />
+            >
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <option key={d} value={d}>
+                  Todo dia {d}
+                </option>
+              ))}
+            </select>
           </Campo>
         </div>
         {mudaCiclo && (
@@ -450,12 +430,8 @@ export function FormMatricula({
           </p>
         )}
         {dados.diaVencimento != null && (
-          <p className="-mt-1 text-xs text-ink-3">
-            {atual || vencimentoMexido
-              ? ""
-              : `Calculado sozinho: ${ciclo === 1 ? "um mês" : `${ciclo} meses`} depois do início. `}
-            Depois, vence {ciclo === 1 ? "todo" : `a cada ${ciclo} meses, no`} dia {dados.diaVencimento}
-            {dados.diaVencimento > 28 ? " (ou no último dia, nos meses mais curtos)" : ""}. Você pode mudar a data.
+          <p className="-mt-1 rounded-[12px] bg-surface-2 px-3 py-2 text-xs text-ink-2">
+            {textoDosVencimentos(dados.inicio, dados.diaVencimento, ciclo, atual ? hoje : null)}
           </p>
         )}
         <Campo id="mat-fim" rotulo="Termina em" opcional ajuda="Deixe vazio se a matrícula não tem data para acabar.">
@@ -513,5 +489,26 @@ export function FormMatricula({
           </button>
         ))}
     </form>
+  );
+}
+
+const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+
+/**
+ * Explica as datas como o banco calcula (gerar_cobrancas): a 1ª mensalidade vence no
+ * início e cobre até o 1º vencimento normal (proporcional, se o dia for outro); depois,
+ * vence a cada ciclo no dia escolhido. Alterando (hoje informado): só o próximo vencimento.
+ */
+function textoDosVencimentos(inicio: string, dia: number, ciclo: number, hoje: string | null): string {
+  const quando = ciclo === 1 ? `todo dia ${dia}` : `a cada ${ciclo} meses, no dia ${dia}`;
+  const curto = dia > 28 ? " (ou no último dia, nos meses mais curtos)" : "";
+  if (hoje) return `Vence ${quando}${curto}. Próximo vencimento: ${dataBr(proximaDataNoDia(somarDias(hoje, -1), dia))}.`;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio)) return `Vence ${quando}${curto}.`;
+  const desde = ciclo > 1 ? proximoVencimento(inicio, diaDoMes(inicio), ciclo - 1) : inicio;
+  const primeiro = proximaDataNoDia(desde, dia);
+  const cheio = proximoVencimento(inicio, diaDoMes(inicio), ciclo) === primeiro;
+  return (
+    `1ª mensalidade: vence no início (${dataBr(inicio)})${cheio ? "" : `, proporcional até ${dataBr(somarDias(primeiro, -1))}`}. ` +
+    `Depois, vence ${quando}${curto}, a partir de ${dataBr(primeiro)}.`
   );
 }

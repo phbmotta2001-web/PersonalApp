@@ -19,7 +19,7 @@ export interface Pausa {
 
 const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value/i;
 const erroDoBanco = (m: string | undefined, padrao: string) =>
-  m && !TECNICO.test(m) && /pausa|datas|matrícula|limite/i.test(m) ? m : padrao;
+  m && !TECNICO.test(m) && /pausa|datas|matrícula|limite|desconto/i.test(m) ? m : padrao;
 
 /** Pausas do aluno que ainda não acabaram (e as deste ano, para o limite de desconto). */
 export async function listarPausas(vinculoId: string, hoje: string): Promise<{ atuais: Pausa[]; diasComDescontoNoAno: number }> {
@@ -59,6 +59,8 @@ export async function registrarPausa(
   fim: string,
   comDesconto: boolean,
   motivo: string,
+  /** Valor escolhido pelo personal; null usa a sugestão do Pienel. */
+  descontoCentavos: number | null = null,
 ): Promise<ResultadoPausa> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fim) || fim < inicio)
     return { ok: false, erro: "Confira as datas da pausa." };
@@ -69,6 +71,7 @@ export async function registrarPausa(
     p_fim: fim,
     p_com_desconto: comDesconto,
     p_motivo: motivo.trim(),
+    p_desconto_centavos: comDesconto ? descontoCentavos : null,
   });
   if (error || !data) return { ok: false, erro: erroDoBanco(error?.message, "Não foi possível registrar a pausa.") };
   const r = data as { aulas: number; dias_com_desconto: number; desconto_centavos: number };

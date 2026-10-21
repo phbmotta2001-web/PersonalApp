@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cancelarPausa, registrarPausa, type Pausa } from "@/data/pausas";
 import { somarDias } from "@/lib/expediente";
-import { centavosParaReais } from "@/lib/matricula";
+import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/matricula";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
@@ -38,6 +38,8 @@ export function PausasDoAluno({
   const [ate, setAte] = useState(somarDias(hoje, 7));
   const [comDesconto, setComDesconto] = useState(true);
   const [motivo, setMotivo] = useState("");
+  // Desconto escolhido à mão (vazio: usa a sugestão, que acompanha as datas).
+  const [descontoTexto, setDescontoTexto] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
   const primeiro = nome.split(" ")[0];
@@ -45,6 +47,8 @@ export function PausasDoAluno({
   const restam = Math.max(0, limite - diasUsados);
   const diasDesconto = comDesconto ? Math.min(dias, restam) : 0;
   const estimativa = valorMensalCentavos != null ? Math.round((valorMensalCentavos * diasDesconto) / 30) : 0;
+  const escolhido = descontoTexto == null ? null : reaisParaCentavos(descontoTexto);
+  const descontoInvalido = escolhido != null && (Number.isNaN(escolhido) || escolhido < 0);
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Pausas">
@@ -75,7 +79,8 @@ export function PausasDoAluno({
             iniciar(async () => {
               setAviso(null);
               try {
-                const r = await registrarPausa(vinculoId, de, ate, comDesconto, motivo);
+                if (descontoInvalido) return setAviso({ tipo: "erro", texto: "Confira o valor do desconto." });
+                const r = await registrarPausa(vinculoId, de, ate, comDesconto, motivo, escolhido);
                 if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
                 setAviso({
                   tipo: "ok",
@@ -85,6 +90,7 @@ export function PausasDoAluno({
                 });
                 setAbrindo(false);
                 setMotivo("");
+                setDescontoTexto(null);
                 router.refresh();
               } catch {
                 setAviso({ tipo: "erro", texto: "Não foi possível registrar agora. Confira sua internet." });
@@ -126,17 +132,42 @@ export function PausasDoAluno({
               Sem desconto
             </Chip>
           </div>
-          <p className="text-xs text-ink-3">
-            {dias > 0 && `${dias} dia${dias === 1 ? "" : "s"}. `}
-            {comDesconto
-              ? valorMensalCentavos == null
-                ? "A matrícula não tem valor, então não há desconto."
-                : diasDesconto > 0
-                  ? `Desconto de cerca de ${centavosParaReais(estimativa)} na próxima mensalidade${diasDesconto < dias ? ` (só ${diasDesconto} dias: o limite do ano é ${limite})` : ""}.`
-                  : `${primeiro} já usou os ${limite} dias com desconto deste ano; a pausa fica sem desconto.`
-              : `${primeiro} paga a mensalidade normal.`}{" "}
-            {comDesconto && `Usados no ano: ${diasUsados} de ${limite} dias.`}
-          </p>
+          {comDesconto && valorMensalCentavos != null ? (
+            <div className="flex flex-col gap-2 rounded-[14px] bg-surface-2 p-3">
+              <label htmlFor="pausa-desconto" className="text-[13px] font-bold text-ink-2">
+                Desconto na próxima mensalidade
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-3">R$</span>
+                <input
+                  id="pausa-desconto"
+                  inputMode="decimal"
+                  value={descontoTexto ?? centavosParaCampo(estimativa)}
+                  onChange={(e) => setDescontoTexto(e.target.value)}
+                  className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
+                />
+              </div>
+              <p className="text-xs text-ink-3">
+                <strong>Sugestão do Pienel: {centavosParaReais(estimativa)}</strong>. É proporcional aos dias parados:{" "}
+                {centavosParaReais(valorMensalCentavos)} por mês ÷ 30 × {diasDesconto} dia{diasDesconto === 1 ? "" : "s"}.
+                {diasDesconto < dias &&
+                  (diasDesconto === 0
+                    ? ` ${primeiro} já usou os ${limite} dias com desconto deste ano.`
+                    : ` Só ${diasDesconto} dos ${dias} dias entram: o limite é de ${limite} dias com desconto por ano e ${primeiro} já usou ${diasUsados}.`)}{" "}
+                Assim o aluno paga só pelas aulas que teve e o limite protege a sua renda. Você pode trocar o valor.
+              </p>
+              {descontoTexto != null && (
+                <button type="button" onClick={() => setDescontoTexto(null)} className="self-start text-xs font-semibold text-brand">
+                  Usar a sugestão
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-ink-3">
+              {dias > 0 && `${dias} dia${dias === 1 ? "" : "s"}. `}
+              {comDesconto ? "A matrícula não tem valor, então não há desconto." : `${primeiro} paga a mensalidade normal.`}
+            </p>
+          )}
           <Campo id="pausa-motivo" rotulo="Motivo" opcional>
             <input
               id="pausa-motivo"

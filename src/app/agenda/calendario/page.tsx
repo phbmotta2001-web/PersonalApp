@@ -93,6 +93,17 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const semana = horariosLivres(faixas, bloqueios, duracao, 7, new Date(), aulasQueOcupam, inicioSemana);
   const doDia = semana.find((d) => d.data === dia) ?? semana[0];
   const aulasDe = (data: string) => aulasQueOcupam.filter((a) => emBrasilia(a.inicio).data === data);
+  // Aulas em pausa: o horário fica livre só para reposição ou aula avulsa (exceção).
+  const pausasDe = (data: string) => aulas.filter((a) => a.situacao === "pausada" && emBrasilia(a.inicio).data === data);
+  const pausasDoDia = pausasDe(dia);
+  const pausaNoHorario = (m: number) =>
+    pausasDoDia.find((a) => {
+      const [hi, mi] = emBrasilia(a.inicio).hora.split(":").map(Number);
+      const [hf, mf] = emBrasilia(a.fim).hora.split(":").map(Number);
+      const ini = hi * 60 + mi;
+      const fim = hf * 60 + mf;
+      return m < fim && m + duracao > ini;
+    });
   // No dia escolhido aparecem também as canceladas e remarcadas (riscadas).
   const aulasDoDia = aulas.filter((a) => emBrasilia(a.inicio).data === dia && a.situacao !== "recusada");
   const caiEmBloqueio = (a: { inicio: string; fim: string }) =>
@@ -170,6 +181,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         <nav className="grid grid-cols-7 gap-1" aria-label="Dias da semana">
           {semana.map((d) => {
             const n = aulasDe(d.data).length;
+            const p = pausasDe(d.data).length;
             const ativo = d.data === dia;
             return (
               <Link
@@ -178,14 +190,15 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 scroll={false}
                 aria-current={ativo ? "date" : undefined}
                 className={`flex flex-col items-center gap-0.5 rounded-[14px] py-2 text-xs ${
-                  ativo ? "bg-ink text-app" : "border border-line bg-surface text-ink-2"
+                  ativo ? "bg-ink text-app" : p > 0 ? "border border-dashed border-info bg-info-soft/60 text-ink-2" : "border border-line bg-surface text-ink-2"
                 }`}
               >
                 <span>{curtoDoDia(d.diaSemana)}</span>
                 <span className="text-[15px] font-bold tabular-nums">{d.data.slice(8, 10)}</span>
                 <span className={`text-[10.5px] ${ativo ? "" : "text-ink-3"}`}>
-                  {n > 0 ? `${n} aula${n > 1 ? "s" : ""}` : d.trabalha ? "livre" : "folga"}
+                  {n > 0 ? `${n} aula${n > 1 ? "s" : ""}` : p > 0 ? "" : d.trabalha ? "livre" : "folga"}
                 </span>
+                {p > 0 && <span className={`text-[10px] font-bold ${ativo ? "" : "text-info"}`}>{p === 1 ? "pausa" : `${p} pausas`}</span>}
               </Link>
             );
           })}
@@ -288,12 +301,29 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             <div className="flex flex-col gap-1.5 border-t border-line pt-2.5">
               <p className="text-xs font-semibold text-ink-3">Horários livres</p>
               <span className="flex flex-wrap gap-1.5">
-                {doDia.livres.map((m) => (
-                  <span key={m} className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums">
-                    {minParaHora(m)}
-                  </span>
-                ))}
+                {doDia.livres.map((m) => {
+                  const pausa = pausaNoHorario(m);
+                  return pausa ? (
+                    <span
+                      key={m}
+                      title={`Horário de ${pausa.nome} (em pausa): só reposição ou aula avulsa`}
+                      className="rounded-lg border border-dashed border-info bg-info-soft px-2 py-0.5 text-xs font-bold text-info tabular-nums"
+                    >
+                      {minParaHora(m)}*
+                    </span>
+                  ) : (
+                    <span key={m} className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums">
+                      {minParaHora(m)}
+                    </span>
+                  );
+                })}
               </span>
+              {pausasDoDia.length > 0 && (
+                <p className="text-xs text-info">
+                  * Horário de {[...new Set(pausasDoDia.map((a) => a.nome.split(" ")[0]))].join(" e ")} (em pausa): use só
+                  para reposição ou aula avulsa. O horário fixo continua dele.
+                </p>
+              )}
             </div>
           ) : (
             <p className="border-t border-line pt-2.5 text-xs text-ink-3">{doDia.trabalha ? "Sem horários livres." : "Folga."}</p>
