@@ -15,7 +15,7 @@ export default function PaginaAula({ params }: PageProps<"/agenda/aula/[aula]">)
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <Cabecalho titulo="Aula">
-        <BotaoVoltar reserva="/agenda" className="hover:bg-surface-2" />
+        <BotaoVoltar reserva="/agenda/calendario" className="hover:bg-surface-2" />
       </Cabecalho>
       <Suspense fallback={<Carregando />}>
         <Conteudo params={params} />
@@ -32,7 +32,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/aula/[aula]">["
     return (
       <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
         <p>Aula não encontrada.</p>
-        <Link href="/agenda" className="font-semibold text-brand">
+        <Link href="/agenda/calendario" className="font-semibold text-brand">
           Voltar para a agenda
         </Link>
       </div>

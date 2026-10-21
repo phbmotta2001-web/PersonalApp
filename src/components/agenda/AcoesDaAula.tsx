@@ -216,7 +216,7 @@ export function AcoesDaAula({
                   try {
                     const r = await remarcarAula(aula.id, data, inicioMin);
                     if (!r.ok) return setErro(r.erro);
-                    router.replace(`/agenda?dia=${data}`);
+                    router.replace(`/agenda/calendario?dia=${data}`);
                     router.refresh();
                   } catch {
                     setErro("Não foi possível remarcar agora. Confira sua internet.");

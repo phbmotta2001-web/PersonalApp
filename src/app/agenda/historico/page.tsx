@@ -24,7 +24,7 @@ export default function PaginaCalendario({ searchParams }: PageProps<"/agenda/hi
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <Cabecalho titulo="Calendário de aulas">
-        <BotaoVoltar reserva="/agenda" className="hover:bg-surface-2" />
+        <BotaoVoltar reserva="/agenda/alunos" className="hover:bg-surface-2" />
       </Cabecalho>
       <Suspense fallback={<Carregando />}>
         <Conteudo searchParams={searchParams} />

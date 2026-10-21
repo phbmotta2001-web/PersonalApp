@@ -70,7 +70,7 @@ export function FormNovaAula({
       try {
         const r = await criarAula(nova);
         if (!r.ok) return setErro(r.erro);
-        router.replace(`/agenda?dia=${nova.data}`);
+        router.replace(`/agenda/calendario?dia=${nova.data}`);
         router.refresh();
       } catch {
         setErro("Não foi possível marcar agora. Confira sua internet.");

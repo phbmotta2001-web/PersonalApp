@@ -18,7 +18,7 @@ export default function PaginaNovaAula({ searchParams }: PageProps<"/agenda/aula
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <Cabecalho titulo="Nova aula">
-        <BotaoVoltar reserva="/agenda" className="hover:bg-surface-2" />
+        <BotaoVoltar reserva="/agenda/calendario" className="hover:bg-surface-2" />
       </Cabecalho>
       <Suspense fallback={<Carregando />}>
         <Conteudo searchParams={searchParams} />
