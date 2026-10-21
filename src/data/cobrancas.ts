@@ -4,7 +4,7 @@
 // As regras ficam no banco (gerar_cobrancas, marcar_cobranca_paga, aluno_avisar_pagamento…).
 
 import QRCode from "qrcode";
-import type { Cobranca, FormaPagamento } from "@/lib/cobranca";
+import { mensalidadesPrevistas, type Cobranca, type FormaPagamento } from "@/lib/cobranca";
 import { reaisParaCentavos } from "@/lib/matricula";
 import { pixCopiaECola, problemasDoPix, type DadosPix, type TipoChavePix } from "@/lib/pix";
 import { frase } from "@/lib/formato";
@@ -97,6 +97,62 @@ export async function resumoDasCobrancas(hoje: string): Promise<{ aReceber: numb
     aReceber: soma((abertas ?? []).filter((c) => c.vencimento >= hoje).map((c) => c.valor_centavos)),
     recebido: soma((pagas ?? []).map((c) => c.valor_pago_centavos ?? 0)),
     atrasado: soma((abertas ?? []).filter((c) => c.vencimento < hoje).map((c) => c.valor_centavos)),
+  };
+}
+
+/**
+ * Financeiro do mês do personal (centavos): recebido no mês, a receber até o fim do
+ * mês (as em aberto que vencem até lá + as mensalidades que ainda vão ser criadas)
+ * e atrasado. `previsto` é a parte que ainda não virou cobrança.
+ */
+export async function financeiroDoMes(
+  hoje: string,
+): Promise<{ recebido: number; aReceber: number; previsto: number; atrasado: number }> {
+  const zero = { recebido: 0, aReceber: 0, previsto: 0, atrasado: 0 };
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return zero;
+  const [a, m] = hoje.split("-").map(Number);
+  const proximo = m === 12 ? `${a + 1}-01-01` : `${a}-${String(m + 1).padStart(2, "0")}-01`;
+  const fimDoMes = new Date(Date.parse(`${proximo}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  const [{ data: abertas }, { data: pagas }, { data: matriculas }, { data: mensalidades }] = await Promise.all([
+    supabase.from("cobrancas").select("vencimento, valor_centavos").eq("personal_id", id).eq("situacao", "aberta"),
+    supabase
+      .from("cobrancas")
+      .select("valor_pago_centavos, valor_centavos")
+      .eq("personal_id", id)
+      .eq("situacao", "paga")
+      .gte("pago_em", `${hoje.slice(0, 7)}-01`)
+      .lt("pago_em", proximo),
+    supabase
+      .from("matriculas")
+      .select("id, valor_centavos, dia_vencimento, ciclo_meses, fim")
+      .eq("personal_id", id)
+      .eq("situacao", "ativa")
+      .not("valor_centavos", "is", null)
+      .not("dia_vencimento", "is", null),
+    supabase.from("cobrancas").select("matricula_id, vencimento").eq("personal_id", id).eq("tipo", "mensalidade"),
+  ]);
+  const ultimo = new Map<string, string>();
+  for (const c of mensalidades ?? [])
+    if (c.matricula_id && (ultimo.get(c.matricula_id) ?? "") < c.vencimento) ultimo.set(c.matricula_id, c.vencimento);
+  const previsto = mensalidadesPrevistas(
+    (matriculas ?? []).map((mt) => ({
+      valorCentavos: mt.valor_centavos as number,
+      diaVencimento: mt.dia_vencimento as number,
+      cicloMeses: mt.ciclo_meses,
+      fim: mt.fim,
+      ultimoVencimento: ultimo.get(mt.id) ?? null,
+    })),
+    hoje,
+    fimDoMes,
+  );
+  const soma = (l: number[]) => l.reduce((s, v) => s + v, 0);
+  const emAberto = abertas ?? [];
+  return {
+    recebido: soma((pagas ?? []).map((c) => c.valor_pago_centavos ?? c.valor_centavos)),
+    aReceber: soma(emAberto.filter((c) => c.vencimento >= hoje && c.vencimento <= fimDoMes).map((c) => c.valor_centavos)) + previsto,
+    previsto,
+    atrasado: soma(emAberto.filter((c) => c.vencimento < hoje).map((c) => c.valor_centavos)),
   };
 }
 

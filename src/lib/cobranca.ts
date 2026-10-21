@@ -6,7 +6,7 @@
 // - Atrasada: vermelho para os dois (e o nome do aluno em vermelho na lista do personal).
 // - Pagamento por fora: o aluno avisa "Já paguei" e o personal confirma.
 
-import { centavosParaReais } from "./matricula";
+import { centavosParaReais, proximoVencimento } from "./matricula";
 
 export type SituacaoCobranca = "a_vencer" | "vence_hoje" | "atrasada" | "paga" | "cancelada";
 export type FormaPagamento = "pix" | "dinheiro" | "cartao" | "transferencia" | "outro";
@@ -116,4 +116,35 @@ export function mensagemDeCobranca(
   if (pixCopiaECola) linhas.push("", "Pix copia e cola:", pixCopiaECola);
   linhas.push("", "Depois de pagar, toque em \"Já paguei\" no Pienel. Obrigado!");
   return linhas.join("\n");
+}
+
+// ─── Previsão do mês ───────────────────────────────────────────────────────
+
+/** Matrícula ativa com valor, para prever as mensalidades que ainda não foram criadas. */
+export interface MatriculaParaPrevisao {
+  valorCentavos: number;
+  diaVencimento: number;
+  cicloMeses: number;
+  fim: string | null;
+  /** Vencimento da última mensalidade já criada (nulo: nenhuma ainda). */
+  ultimoVencimento: string | null;
+}
+
+/**
+ * Soma das mensalidades que ainda NÃO foram criadas (cada uma aparece só uma semana
+ * antes do vencimento) e vencem de `hoje` até `ate`, inclusive. Segue o mesmo
+ * calendário do banco (somar_meses_no_dia). Sem mensalidade criada ainda, não prevê:
+ * a 1ª (proporcional) sai na hora da matrícula.
+ */
+export function mensalidadesPrevistas(matriculas: MatriculaParaPrevisao[], hoje: string, ate: string): number {
+  let total = 0;
+  for (const m of matriculas) {
+    if (!m.ultimoVencimento) continue;
+    let v = proximoVencimento(m.ultimoVencimento, m.diaVencimento, m.cicloMeses);
+    while (v <= ate && (!m.fim || v <= m.fim)) {
+      if (v >= hoje) total += m.valorCentavos;
+      v = proximoVencimento(v, m.diaVencimento, m.cicloMeses);
+    }
+  }
+  return total;
 }

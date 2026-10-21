@@ -5,11 +5,12 @@ import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
-import { lerPix } from "@/data/cobrancas";
+import { financeiroDoMes, lerPix } from "@/data/cobrancas";
 import { sair } from "@/data/conta";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerTabelaDeValores } from "@/data/precos";
 import { textoDeHoras } from "@/lib/aula";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { centavosParaReais } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 import { aPartirDe } from "@/lib/precos";
@@ -32,8 +33,15 @@ export default function PaginaMinhaConta() {
 // Aba "Minha conta" do personal: dados, configurações de cobrança e regras, sair.
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [tabela, antecedencia, pix] = await Promise.all([lerTabelaDeValores(), lerAntecedencia(), lerPix()]);
+  const hoje = agoraEmBrasilia().data;
+  const [tabela, antecedencia, pix, financeiro] = await Promise.all([
+    lerTabelaDeValores(),
+    lerAntecedencia(),
+    lerPix(),
+    financeiroDoMes(hoje),
+  ]);
   const menorValor = aPartirDe(tabela);
+  const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
 
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-5 pb-28">
@@ -48,6 +56,31 @@ async function Conteudo() {
         </p>
       </section>
 
+      <Link href="/agenda/cobrancas" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Financeiro do mês">
+        <span className="flex items-center gap-2">
+          <span className="flex-1 text-[15px] font-semibold">Financeiro de {nomeDoMes}</span>
+          <span className="text-[13px] font-semibold text-brand">Cobranças ›</span>
+        </span>
+        <span className="grid grid-cols-2 gap-2">
+          <span className="flex flex-col gap-0.5 rounded-[14px] bg-ok-soft p-3">
+            <span className="text-xs text-ok">Recebido</span>
+            <span className="text-[18px] font-extrabold text-ok tabular-nums">{centavosParaReais(financeiro.recebido)}</span>
+          </span>
+          <span className="flex flex-col gap-0.5 rounded-[14px] bg-surface-2 p-3">
+            <span className="text-xs text-ink-3">A receber até o fim do mês</span>
+            <span className="text-[18px] font-extrabold tabular-nums">{centavosParaReais(financeiro.aReceber)}</span>
+          </span>
+        </span>
+        {financeiro.atrasado > 0 && (
+          <span className="text-[13px] font-bold text-bad">{centavosParaReais(financeiro.atrasado)} atrasado</span>
+        )}
+        {financeiro.previsto > 0 && (
+          <span className="text-xs text-ink-3">
+            Inclui {centavosParaReais(financeiro.previsto)} de mensalidades que ainda vão ser geradas.
+          </span>
+        )}
+      </Link>
+
       <nav className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4" aria-label="Configurações">
         <Linha
           href="/agenda/valores"
@@ -57,6 +90,12 @@ async function Conteudo() {
         />
         <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo Pienel"} />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+        <Linha
+          href="/agenda/online/questionarios"
+          icone="conversa"
+          titulo="Questionários dos alunos online"
+          texto="Modelos de check-in e acompanhamento"
+        />
       </nav>
 
       <form action={sair}>
