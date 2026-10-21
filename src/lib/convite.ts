@@ -121,7 +121,9 @@ const whatsappValido = (s: string) => /^\d{10,13}$/.test(digitos(s));
 export function problemasDoAlunoSemConta(d: DadosAlunoSemConta, hoje: string): string[] {
   const p: string[] = [];
   if (d.nome.trim().length < 2 || d.nome.trim().length > 80) p.push("escreva o nome do aluno");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.dataNascimento) || d.dataNascimento > hoje || d.dataNascimento < "1900-01-01")
+  // Menos de 2 anos é engano (no iPhone, tocar no campo vazio já preenche com hoje).
+  const doisAnosAtras = `${Number(hoje.slice(0, 4)) - 2}${hoje.slice(4)}`;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.dataNascimento) || d.dataNascimento > doisAnosAtras || d.dataNascimento < "1900-01-01")
     p.push("confira a data de nascimento");
   if (d.whatsapp.trim() !== "" && !whatsappValido(d.whatsapp)) p.push("confira o WhatsApp do aluno (com DDD)");
   if (d.observacoes.length > 1000) p.push("as observações passam de 1000 letras");

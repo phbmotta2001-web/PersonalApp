@@ -126,7 +126,7 @@ export function problemasDaMatricula(d: DadosMatricula): string[] {
   if (valor !== null && (Number.isNaN(valor) || valor < 1 || valor > 10_000_000)) p.push("confira o valor mensal");
   if (d.diaVencimento !== null && !(d.diaVencimento >= 1 && d.diaVencimento <= 31)) p.push("escolha o dia de vencimento");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.inicio)) p.push("escolha a data de início");
-  else if (d.fim && d.fim < d.inicio) p.push("a data de fim tem que ser depois do início");
+  else if (d.fim && d.fim <= d.inicio) p.push("a data de término tem que ser depois do início");
   return p;
 }
 

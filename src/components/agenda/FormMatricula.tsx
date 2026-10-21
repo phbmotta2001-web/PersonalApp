@@ -75,6 +75,9 @@ export function FormMatricula({
   const [ultimaHora, setUltimaHora] = useState(atual?.horarios.at(-1)?.inicioMin ?? 420);
   // O banco guarda só o DIA do vencimento. Novo: o dia do início, até o personal escolher outro.
   const [diaMexido, setDiaMexido] = useState(!!atual);
+  // Data de término só aparece se o personal escolher (no iPhone, tocar num campo de
+  // data vazio já preenche com hoje, e a matrícula terminaria hoje sem querer).
+  const [temFim, setTemFim] = useState(!!atual?.fim);
   // Alterando aulas a cada N semanas: início do ciclo (sem mexer, segue o ciclo atual).
   const [inicioCiclo, setInicioCiclo] = useState<string | null>(null);
   const [tentou, setTentou] = useState(false);
@@ -86,7 +89,10 @@ export function FormMatricula({
   const presencial = dados.modalidade === "presencial";
   // Meses de cada cobrança: presencial é sempre mensal; online e híbrido seguem o plano.
   const ciclo = presencial ? 1 : dados.cicloMeses;
-  const problemas = problemasDaMatricula(dados);
+  const problemas = [
+    ...problemasDaMatricula(dados),
+    ...(atual && dados.fim && dados.fim <= hoje ? ['para terminar hoje, use "Encerrar matrícula"'] : []),
+  ];
   const choques = online ? [] : choquesComOutros(dados.horarios, dados.duracao, ocupados);
   const fora = !online && faixas.length > 0 ? foraDoExpediente(dados.horarios, dados.duracao, faixas) : [];
   const doPlano = tabelaOnline[dados.cicloMeses];
@@ -434,16 +440,51 @@ export function FormMatricula({
             {textoDosVencimentos(dados.inicio, dados.diaVencimento, ciclo, atual ? hoje : null)}
           </p>
         )}
-        <Campo id="mat-fim" rotulo="Termina em" opcional ajuda="Deixe vazio se a matrícula não tem data para acabar.">
-          <input
-            id="mat-fim"
-            type="date"
-            value={dados.fim}
-            min={atual ? hoje : dados.inicio}
-            onChange={(e) => mudar({ fim: e.target.value })}
-            className={ESTILO_CAIXA}
-          />
-        </Campo>
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-[13px] font-bold text-ink-2">Duração da matrícula</legend>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Duração da matrícula">
+            <Chip
+              ativo={!temFim}
+              onClick={() => {
+                setTemFim(false);
+                mudar({ fim: "" });
+              }}
+            >
+              Sem data para acabar
+            </Chip>
+            <Chip
+              ativo={temFim}
+              onClick={() => {
+                setTemFim(true);
+                // Sugere 3 meses depois do início (ou de hoje, ao alterar); o personal ajusta.
+                if (!dados.fim) mudar({ fim: proximoVencimento(atual ? hoje : dados.inicio, diaDoMes(atual ? hoje : dados.inicio), 3) });
+              }}
+            >
+              Termina numa data
+            </Chip>
+          </div>
+          {temFim && (
+            <>
+              <label htmlFor="mat-fim" className="sr-only">
+                Termina em
+              </label>
+              <input
+                id="mat-fim"
+                type="date"
+                value={dados.fim}
+                min={somarDias(atual ? hoje : dados.inicio, 1)}
+                onChange={(e) => mudar({ fim: e.target.value })}
+                className={ESTILO_CAIXA}
+              />
+              {dados.fim && (
+                <p className="text-xs text-ink-3">
+                  Última aula até {dados.fim.slice(8, 10)}/{dados.fim.slice(5, 7)}/{dados.fim.slice(0, 4)}. Depois disso as
+                  aulas saem da agenda e as cobranças param.
+                </p>
+              )}
+            </>
+          )}
+        </fieldset>
       </section>
 
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
