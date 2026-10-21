@@ -13,7 +13,7 @@ import type { Resposta } from "./conta";
 import { listarMeusAlunos } from "./convites";
 
 const CAMPOS =
-  "id, vinculo_id, tipo, descricao, periodo_inicio, periodo_fim, vencimento, valor_centavos, situacao, pago_em, forma_pagamento, valor_pago_centavos, aluno_avisou_em";
+  "id, vinculo_id, tipo, descricao, periodo_inicio, periodo_fim, vencimento, valor_centavos, situacao, pago_em, forma_pagamento, valor_pago_centavos, aluno_avisou_em, desconto_centavos";
 
 interface Linha {
   id: string;
@@ -29,6 +29,7 @@ interface Linha {
   forma_pagamento: FormaPagamento | null;
   valor_pago_centavos: number | null;
   aluno_avisou_em: string | null;
+  desconto_centavos: number;
 }
 
 const paraCobranca = (l: Linha): Cobranca => ({
@@ -45,6 +46,7 @@ const paraCobranca = (l: Linha): Cobranca => ({
   formaPagamento: l.forma_pagamento,
   valorPagoCentavos: l.valor_pago_centavos,
   alunoAvisouEm: l.aluno_avisou_em,
+  descontoCentavos: l.desconto_centavos ?? 0,
 });
 
 const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value/i;

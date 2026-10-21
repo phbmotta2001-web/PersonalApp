@@ -20,7 +20,7 @@ export function somarMes(mes: string, n: number): string {
  */
 export function paraCalendario(aulas: AulaDaAgenda[], agora: Date, filtro = ""): AulaDoCalendario[] {
   return aulas
-    .filter((a) => (!filtro || a.vinculoId === filtro) && a.situacao !== "recusada" && a.situacao !== "remarcada")
+    .filter((a) => (!filtro || a.vinculoId === filtro) && a.situacao !== "recusada" && a.situacao !== "remarcada" && a.situacao !== "pausada")
     .map((a) => ({
       ...a,
       categoria: categoriaDoHistorico(a.situacao, a.origem, a.fim, agora),

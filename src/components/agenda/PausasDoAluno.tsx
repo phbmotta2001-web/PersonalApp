@@ -1,0 +1,214 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { cancelarPausa, registrarPausa, type Pausa } from "@/data/pausas";
+import { somarDias } from "@/lib/expediente";
+import { centavosParaReais } from "@/lib/matricula";
+import { Chip } from "../Chip";
+import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
+
+const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+const diasEntre = (de: string, ate: string) => Math.round((Date.parse(ate) - Date.parse(de)) / 86_400_000) + 1;
+
+/** Pausas da matrícula na ficha do aluno: registrar (datas, com ou sem desconto) e cancelar. */
+export function PausasDoAluno({
+  vinculoId,
+  nome,
+  pausas,
+  diasUsados,
+  limite,
+  valorMensalCentavos,
+  hoje,
+}: {
+  vinculoId: string;
+  nome: string;
+  pausas: Pausa[];
+  /** Dias com desconto já usados neste ano. */
+  diasUsados: number;
+  /** Máximo de dias com desconto por ano (Regras). */
+  limite: number;
+  /** Valor de um mês da matrícula (null: sem valor). */
+  valorMensalCentavos: number | null;
+  hoje: string;
+}) {
+  const router = useRouter();
+  const [abrindo, setAbrindo] = useState(false);
+  const [de, setDe] = useState(somarDias(hoje, 1));
+  const [ate, setAte] = useState(somarDias(hoje, 7));
+  const [comDesconto, setComDesconto] = useState(true);
+  const [motivo, setMotivo] = useState("");
+  const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  const primeiro = nome.split(" ")[0];
+  const dias = de && ate && ate >= de ? diasEntre(de, ate) : 0;
+  const restam = Math.max(0, limite - diasUsados);
+  const diasDesconto = comDesconto ? Math.min(dias, restam) : 0;
+  const estimativa = valorMensalCentavos != null ? Math.round((valorMensalCentavos * diasDesconto) / 30) : 0;
+
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Pausas">
+      <div className="flex items-center gap-2">
+        <h3 className="flex-1 text-[15px] font-bold">Pausas</h3>
+        {!abrindo && (
+          <button type="button" onClick={() => setAbrindo(true)} className="text-[13px] font-semibold text-brand">
+            Registrar pausa
+          </button>
+        )}
+      </div>
+
+      {pausas.length === 0 && !abrindo && (
+        <p className="text-[13px] text-ink-3">
+          Viagem, doença ou ausência: as aulas do período saem da agenda e o horário fica livre para reposição.
+        </p>
+      )}
+
+      {pausas.map((p) => (
+        <LinhaDaPausa key={p.id} pausa={p} />
+      ))}
+
+      {abrindo && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!dias) return setAviso({ tipo: "erro", texto: "Confira as datas da pausa." });
+            iniciar(async () => {
+              setAviso(null);
+              try {
+                const r = await registrarPausa(vinculoId, de, ate, comDesconto, motivo);
+                if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+                setAviso({
+                  tipo: "ok",
+                  texto:
+                    `Pausa registrada: ${r.aulas} aula${r.aulas === 1 ? "" : "s"} em pausa.` +
+                    (r.descontoCentavos > 0 ? ` Desconto de ${centavosParaReais(r.descontoCentavos)} na mensalidade.` : ""),
+                });
+                setAbrindo(false);
+                setMotivo("");
+                router.refresh();
+              } catch {
+                setAviso({ tipo: "erro", texto: "Não foi possível registrar agora. Confira sua internet." });
+              }
+            });
+          }}
+          className="flex flex-col gap-3 border-t border-line pt-3"
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <Campo id="pausa-de" rotulo="De">
+              <input
+                id="pausa-de"
+                type="date"
+                min={hoje}
+                value={de}
+                onChange={(e) => {
+                  setDe(e.target.value);
+                  if (e.target.value && ate < e.target.value) setAte(e.target.value);
+                }}
+                className={ESTILO_CAIXA}
+              />
+            </Campo>
+            <Campo id="pausa-ate" rotulo="Até">
+              <input
+                id="pausa-ate"
+                type="date"
+                min={de || hoje}
+                value={ate}
+                onChange={(e) => setAte(e.target.value)}
+                className={ESTILO_CAIXA}
+              />
+            </Campo>
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Desconto">
+            <Chip ativo={comDesconto} onClick={() => setComDesconto(true)}>
+              Com desconto
+            </Chip>
+            <Chip ativo={!comDesconto} onClick={() => setComDesconto(false)}>
+              Sem desconto
+            </Chip>
+          </div>
+          <p className="text-xs text-ink-3">
+            {dias > 0 && `${dias} dia${dias === 1 ? "" : "s"}. `}
+            {comDesconto
+              ? valorMensalCentavos == null
+                ? "A matrícula não tem valor, então não há desconto."
+                : diasDesconto > 0
+                  ? `Desconto de cerca de ${centavosParaReais(estimativa)} na próxima mensalidade${diasDesconto < dias ? ` (só ${diasDesconto} dias: o limite do ano é ${limite})` : ""}.`
+                  : `${primeiro} já usou os ${limite} dias com desconto deste ano; a pausa fica sem desconto.`
+              : `${primeiro} paga a mensalidade normal.`}{" "}
+            {comDesconto && `Usados no ano: ${diasUsados} de ${limite} dias.`}
+          </p>
+          <Campo id="pausa-motivo" rotulo="Motivo" opcional>
+            <input
+              id="pausa-motivo"
+              maxLength={120}
+              placeholder="Viagem, doença…"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              className={ESTILO_CAIXA}
+            />
+          </Campo>
+          <button type="submit" disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
+            {ocupado ? "Registrando…" : "Registrar pausa"}
+          </button>
+          <button type="button" onClick={() => setAbrindo(false)} className="text-[13px] font-semibold text-ink-3">
+            Cancelar
+          </button>
+        </form>
+      )}
+      <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto ?? null}</Aviso>
+    </section>
+  );
+}
+
+function LinhaDaPausa({ pausa: p }: { pausa: Pausa }) {
+  const router = useRouter();
+  const [confirmando, setConfirmando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  return (
+    <div className="flex flex-col gap-1.5 rounded-[14px] border border-dashed border-info bg-info-soft/50 px-3 py-2.5 text-[13px]">
+      <p>
+        <strong>
+          {dataBr(p.inicio)} a {dataBr(p.fim)}
+        </strong>
+        {p.motivo && ` · ${p.motivo}`}
+      </p>
+      <p className="text-xs text-ink-2">
+        {p.descontoCentavos > 0
+          ? `Desconto de ${centavosParaReais(p.descontoCentavos)} ${p.descontoAplicado ? "na mensalidade" : "na próxima mensalidade"}`
+          : "Sem desconto"}
+      </p>
+      {confirmando ? (
+        <span className="flex gap-4 text-[13px] font-bold">
+          <button type="button" onClick={() => setConfirmando(false)} className="text-ink-3">
+            Manter
+          </button>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() =>
+              iniciar(async () => {
+                setErro(null);
+                try {
+                  const r = await cancelarPausa(p.id);
+                  if (!r.ok) return setErro(r.erro);
+                  router.refresh();
+                } catch {
+                  setErro("Não foi possível cancelar agora. Confira sua internet.");
+                }
+              })
+            }
+            className="text-bad"
+          >
+            {ocupado ? "Cancelando…" : "Cancelar pausa"}
+          </button>
+        </span>
+      ) : (
+        <button type="button" onClick={() => setConfirmando(true)} className="self-start text-xs font-semibold text-ink-3">
+          Cancelar pausa (as aulas voltam)
+        </button>
+      )}
+      <Aviso>{erro}</Aviso>
+    </div>
+  );
+}

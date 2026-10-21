@@ -83,6 +83,9 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/cobrancas/[cobr
         </div>
         <p className="text-sm text-ink-2">{descricaoDaCobranca(c)}</p>
         <p className="text-[26px] font-extrabold tabular-nums">{centavosParaReais(c.valorCentavos)}</p>
+        {c.descontoCentavos > 0 && (
+          <p className="text-xs text-info">Já com desconto de {centavosParaReais(c.descontoCentavos)} (pausa da matrícula)</p>
+        )}
         <p className={`text-[13px] ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
           {textoDoVencimento(c.vencimento, hoje)}
         </p>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ConvidarParaConta } from "@/components/agenda/ConvidarParaConta";
+import { PausasDoAluno } from "@/components/agenda/PausasDoAluno";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
 import { SuspensaoAutomatica } from "@/components/agenda/SuspensaoAutomatica";
 import { Avatar } from "@/components/Avatar";
@@ -9,7 +10,9 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { aulasDoMes, reposicoesDisponiveis } from "@/data/aulas";
+import { lerRegras } from "@/data/aulas";
 import { listarCobrancas } from "@/data/cobrancas";
+import { listarPausas } from "@/data/pausas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerMatricula, matriculasSuspensas, proximaAulaPorAluno } from "@/data/matriculas";
@@ -42,7 +45,8 @@ export default function PaginaFichaDoAluno({ params }: PageProps<"/agenda/alunos
 async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">["params"] }) {
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem] = await Promise.all([
+  const hojeBr = agoraEmBrasilia().data;
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -51,6 +55,8 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     listarCobrancas(vinculo),
     matriculasSuspensas(),
     origemDoSite(),
+    listarPausas(vinculo, hojeBr),
+    lerRegras(),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -147,6 +153,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       )}
 
       {matricula ? (
+        <>
         <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
           <div className="flex items-center gap-2">
             <Icone nome="calendario" className="size-[18px] text-brand" />
@@ -178,6 +185,16 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           </p>
           <SuspensaoAutomatica vinculoId={vinculo} ligada={matricula.suspenderSeAtrasar} />
         </section>
+          <PausasDoAluno
+            vinculoId={vinculo}
+            nome={a.nomeCompleto}
+            pausas={pausas.atuais}
+            diasUsados={pausas.diasComDescontoNoAno}
+            limite={regras.pausaDias}
+            valorMensalCentavos={matricula.valorCentavos != null ? Math.round(matricula.valorCentavos / matricula.cicloMeses) : null}
+            hoje={hojeBr}
+          />
+        </>
       ) : (
         <Link
           href={`/agenda/alunos/${vinculo}/matricula`}

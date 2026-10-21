@@ -21,7 +21,8 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [salvando, iniciar] = useTransition();
   const tudoValido = valida(regras.cancelamentoH) && valida(regras.reposicaoH);
-  const mudou = regras.cancelamentoH !== salvo.cancelamentoH || regras.reposicaoH !== salvo.reposicaoH;
+  const mudou =
+    regras.cancelamentoH !== salvo.cancelamentoH || regras.reposicaoH !== salvo.reposicaoH || regras.pausaDias !== salvo.pausaDias;
 
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
@@ -47,6 +48,29 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
           setRegras({ ...regras, reposicaoH: h });
         }}
       />
+
+      <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
+        <h2 className="text-[15px] font-bold">Pausas com desconto</h2>
+        <p className="text-[13px] text-ink-2">
+          Quantos dias por ano cada aluno pode pausar a matrícula com desconto na mensalidade (viagem, doença…).
+          Passou disso, a pausa fica sem desconto. Você registra a pausa na ficha do aluno.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {[0, 7, 14, 21, 30].map((d) => (
+            <Chip
+              key={d}
+              ativo={regras.pausaDias === d}
+              onClick={() => {
+                setAviso(null);
+                setRegras({ ...regras, pausaDias: d });
+              }}
+            >
+              {d === 0 ? "Sem desconto" : `${d} dias`}
+              {d === 14 ? " (padrão)" : ""}
+            </Chip>
+          ))}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4 text-[13px] text-ink-2">
         <h2 className="text-[15px] font-bold text-ink">Como funciona</h2>

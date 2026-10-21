@@ -17,7 +17,9 @@ export type SituacaoAula =
   | "remarcada"
   /** Pedido do aluno (reposição ou remarcação) esperando resposta. */
   | "pendente"
-  | "recusada";
+  | "recusada"
+  /** Aula fixa durante uma pausa da matrícula: o horário fica livre para reposição. */
+  | "pausada";
 
 export type OrigemAula = "fixa" | "avulsa" | "reposicao" | "experimental";
 
@@ -45,6 +47,7 @@ export const ROTULO_SITUACAO: Record<SituacaoAula, string> = {
   remarcada: "Remarcada",
   pendente: "Aguardando resposta",
   recusada: "Pedido recusado",
+  pausada: "Pausa",
 };
 
 export const ROTULO_ORIGEM: Record<OrigemAula, string> = {
@@ -65,6 +68,7 @@ export const COR_SITUACAO: Record<SituacaoAula, string> = {
   remarcada: "bg-surface-2 text-ink-3",
   pendente: "bg-gold-soft text-gold",
   recusada: "bg-surface-2 text-ink-3",
+  pausada: "bg-info-soft text-info",
 };
 
 /** A aula não acontece (some do horário, aparece riscada). */

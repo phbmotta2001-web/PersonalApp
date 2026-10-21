@@ -226,6 +226,20 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               {aulasDoDia.map((a) => {
                 const s = situacaoEfetiva(a.situacao, a.fim, agora);
                 const riscada = naoAcontece(s);
+                if (s === "pausada")
+                  return (
+                    <li key={a.id}>
+                      <div className="my-1.5 flex items-start gap-3 rounded-[12px] border border-dashed border-info bg-info-soft/60 px-2.5 py-2 text-info">
+                        <span className="w-[82px] shrink-0 text-sm font-bold tabular-nums">
+                          {emBrasilia(a.inicio).hora}–{emBrasilia(a.fim).hora}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold">{a.nome} · em pausa</span>
+                          <span className="block text-xs">Horário livre para reposição ou aula avulsa</span>
+                        </span>
+                      </div>
+                    </li>
+                  );
                 return (
                   <li key={a.id}>
                     <Link href={`/agenda/aula/${a.id}`} className="flex items-start gap-3 py-2.5">

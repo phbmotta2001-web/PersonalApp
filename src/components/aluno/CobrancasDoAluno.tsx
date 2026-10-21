@@ -52,6 +52,9 @@ export function CobrancasDoAluno({
                 <p className={`text-xs ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
                   {textoDoVencimento(c.vencimento, hoje)}
                 </p>
+                {c.descontoCentavos > 0 && (
+                  <p className="text-xs text-info">Com desconto de {centavosParaReais(c.descontoCentavos)} pela pausa</p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="text-[17px] font-extrabold tabular-nums">{centavosParaReais(c.valorCentavos)}</span>

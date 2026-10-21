@@ -248,17 +248,23 @@ export interface Regras {
   cancelamentoH: number;
   /** Horas de antecedência para o aluno marcar reposição ou remarcar pelo app. */
   reposicaoH: number;
+  /** Máximo de dias de pausa COM desconto por aluno, por ano. */
+  pausaDias: number;
 }
 
 export async function lerRegras(): Promise<Regras> {
   const { supabase, id } = await usuarioAtual();
-  if (!id) return { cancelamentoH: 12, reposicaoH: 8 };
+  if (!id) return { cancelamentoH: 12, reposicaoH: 8, pausaDias: 14 };
   const { data } = await supabase
     .from("personais")
-    .select("antecedencia_cancelamento_h, antecedencia_reposicao_h")
+    .select("antecedencia_cancelamento_h, antecedencia_reposicao_h, pausa_dias_ano")
     .eq("id", id)
     .maybeSingle();
-  return { cancelamentoH: data?.antecedencia_cancelamento_h ?? 12, reposicaoH: data?.antecedencia_reposicao_h ?? 8 };
+  return {
+    cancelamentoH: data?.antecedencia_cancelamento_h ?? 12,
+    reposicaoH: data?.antecedencia_reposicao_h ?? 8,
+    pausaDias: data?.pausa_dias_ano ?? 14,
+  };
 }
 
 /** Só a antecedência de cancelamento (tela da aula). */
@@ -269,12 +275,17 @@ export async function lerAntecedencia(): Promise<number> {
 export async function salvarRegras(regras: Regras): Promise<Resposta> {
   const ok = (h: number) => Number.isInteger(h) && h >= 0 && h <= 168;
   if (!ok(regras.cancelamentoH) || !ok(regras.reposicaoH)) return { ok: false, erro: "Escolha de 0 a 168 horas." };
+  if (!Number.isInteger(regras.pausaDias) || regras.pausaDias < 0 || regras.pausaDias > 90)
+    return { ok: false, erro: "O limite de pausa vai de 0 a 90 dias por ano." };
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("salvar_regras", {
-    p_antecedencia_h: regras.cancelamentoH,
-    p_antecedencia_reposicao_h: regras.reposicaoH,
-  });
-  return error ? { ok: false, erro: "Não foi possível salvar. Tente de novo." } : { ok: true };
+  const [{ error }, { error: erroPausa }] = await Promise.all([
+    supabase.rpc("salvar_regras", {
+      p_antecedencia_h: regras.cancelamentoH,
+      p_antecedencia_reposicao_h: regras.reposicaoH,
+    }),
+    supabase.rpc("salvar_limite_pausa", { p_dias: regras.pausaDias }),
+  ]);
+  return error || erroPausa ? { ok: false, erro: "Não foi possível salvar. Tente de novo." } : { ok: true };
 }
 
 export interface PedidoPendente {

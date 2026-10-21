@@ -35,6 +35,8 @@ export interface Cobranca {
   valorPagoCentavos: number | null;
   /** O aluno avisou que pagou (ISO), esperando o personal confirmar. */
   alunoAvisouEm: string | null;
+  /** Desconto já abatido do valor (pausas com desconto). */
+  descontoCentavos: number;
 }
 
 /** Situação para mostrar: aberta vira "a vencer", "vence hoje" ou "atrasada". */
