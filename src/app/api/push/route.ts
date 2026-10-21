@@ -25,12 +25,14 @@ const mesmaSenha = (a: string, b: string) => {
 };
 
 export async function POST(request: Request) {
-  const segredo = process.env.PUSH_SEGREDO;
-  const publica = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const privada = process.env.VAPID_PRIVATE_KEY;
+  // trim(): ao colar na Vercel, às vezes entra um espaço ou uma quebra de linha junto.
+  const segredo = process.env.PUSH_SEGREDO?.trim();
+  const publica = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
+  const privada = process.env.VAPID_PRIVATE_KEY?.trim();
   if (!segredo || !publica || !privada) return new Response("Notificações não configuradas.", { status: 503 });
-  if (!mesmaSenha(request.headers.get("x-pienel-segredo") ?? "", segredo))
-    return new Response("Acesso negado.", { status: 401 });
+  if (!mesmaSenha((request.headers.get("x-pienel-segredo") ?? "").trim(), segredo))
+    // Só o tamanho da senha configurada (nunca o valor), para conferir a configuração.
+    return new Response(`Acesso negado. (senha configurada com ${segredo.length} caracteres)`, { status: 401 });
 
   const { url, chave } = configSupabase();
   const supabase = createClient(url, chave, { auth: { persistSession: false } });
