@@ -4,10 +4,10 @@ export const ESTILO_CAIXA =
   "min-h-12 w-full rounded-[13px] border border-line bg-surface px-3.5 placeholder:text-ink-3 disabled:bg-surface-2 disabled:text-ink-3";
 
 export const ESTILO_BOTAO_PRINCIPAL =
-  "flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] bg-brand px-[18px] font-bold text-brand-ink hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100";
+  "botao-macio flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] bg-brand px-[18px] font-bold text-brand-ink hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100";
 
 export const ESTILO_BOTAO_SECUNDARIO =
-  "flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] border border-line bg-surface px-[18px] font-bold hover:border-brand";
+  "botao-macio-claro flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] border border-line bg-surface px-[18px] font-bold hover:border-brand";
 
 export function Campo({
   id,

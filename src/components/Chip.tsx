@@ -15,7 +15,7 @@ export function Chip({
       type="button"
       aria-pressed={ativo}
       onClick={onClick}
-      className={`inline-flex min-h-[38px] shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-[13.5px] font-semibold transition-colors ${
+      className={`chip-macio inline-flex min-h-[38px] shrink-0 items-center whitespace-nowrap rounded-full border px-3.5 text-[13.5px] font-semibold transition-colors ${
         ativo
           ? "border-ink bg-ink text-app"
           : "border-line bg-surface text-ink-2 hover:border-brand"

@@ -71,7 +71,7 @@ async function Conteudo() {
         <Link
           href="/agenda/avisos"
           aria-label={naoLidos > 0 ? `Avisos: ${naoLidos} novo${naoLidos > 1 ? "s" : ""}` : "Avisos"}
-          className="relative grid size-11 place-items-center rounded-full border border-line bg-surface"
+          className={`relative grid size-11 place-items-center rounded-full border border-line bg-surface ${naoLidos > 0 ? "sino-tocando" : ""}`}
         >
           <Icone nome="sino" className="size-5" />
           {naoLidos > 0 && (

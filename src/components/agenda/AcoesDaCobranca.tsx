@@ -14,6 +14,7 @@ import { centavosParaCampo, centavosParaReais } from "@/lib/matricula";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
+import { soltarConfete } from "@/lib/confete";
 import { CopiarPix } from "./CopiarPix";
 
 /** Ações de uma cobrança: receber, cobrar no WhatsApp, mudar valor, cancelar e desfazer. */
@@ -40,12 +41,14 @@ export function AcoesDaCobranca({
   const s = situacaoDaCobranca(c, hoje);
   const primeiro = c.nome.split(" ")[0];
 
-  const executar = (fn: () => Promise<{ ok: true } | { ok: false; erro: string }>) =>
+  const executar = (fn: () => Promise<{ ok: true } | { ok: false; erro: string }>, comemorarEm?: Element | null) =>
     iniciar(async () => {
       setErro(null);
       try {
         const r = await fn();
         if (!r.ok) return setErro(r.erro);
+        // Pagamento recebido: comemora com o personal.
+        if (comemorarEm !== undefined) soltarConfete(comemorarEm);
         setModo(null);
         router.refresh();
       } catch {
@@ -110,7 +113,7 @@ export function AcoesDaCobranca({
           <button
             type="button"
             disabled={ocupado}
-            onClick={() => executar(() => marcarCobrancaPaga(c.id, pagoEm, forma, valor))}
+            onClick={(e) => executar(() => marcarCobrancaPaga(c.id, pagoEm, forma, valor), e.currentTarget)}
             className={ESTILO_BOTAO_PRINCIPAL}
           >
             <Icone nome="certo" className="size-4" /> {ocupado ? "Salvando…" : "Confirmar recebimento"}

@@ -119,3 +119,126 @@ h3 {
   letter-spacing: -0.01em;
   text-wrap: balance;
 }
+
+/* ─── Estilo "Macio" (decisão de 22/10/2026) ────────────────────────────────
+   Botões com leve relevo que afundam ao tocar; cartões com sombra suave; ícones
+   da barra de abas pulam com efeito de mola; o sino balança quando há avisos.
+   Quem pediu "reduzir movimento" no celular vê tudo parado (fim do arquivo). */
+:root {
+  --brand-2: #24704f;
+  --sombra: 16 32 26;
+  --mola: cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand-2: #8adcb2;
+    --sombra: 0 0 0;
+  }
+}
+
+/* Botão principal: relevo, brilho no topo e sombra; ao tocar, afunda. */
+.botao-macio,
+:where(button, a).bg-brand {
+  background-image: linear-gradient(180deg, var(--brand-2), var(--brand));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    0 6px 14px -6px rgb(var(--sombra) / 0.55),
+    0 2px 3px rgb(var(--sombra) / 0.18);
+  transition: transform 0.12s, box-shadow 0.12s, filter 0.15s;
+}
+.botao-macio:not(:disabled):active,
+:where(button, a).bg-brand:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgb(0 0 0 / 0.18),
+    0 1px 2px rgb(var(--sombra) / 0.2);
+}
+
+/* Botões e links claros com borda: sombra curta; ao tocar, encolhem um pouco. */
+.botao-macio-claro,
+:where(button, a).bg-surface.border {
+  box-shadow: 0 2px 5px -3px rgb(var(--sombra) / 0.3);
+  transition: transform 0.15s var(--mola), box-shadow 0.15s;
+}
+.botao-macio-claro:not(:disabled):active,
+:where(button, a).bg-surface.border:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 2px rgb(var(--sombra) / 0.2);
+}
+
+/* Cartões (blocos com borda): sombra suave, como se estivessem um pouco acima da página. */
+:where(section, div, li, form, dl).bg-surface.border {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 8px 22px -14px rgb(var(--sombra) / 0.35);
+}
+
+/* Chips: leve sombra; ao tocar, encolhem com mola. */
+.chip-macio {
+  box-shadow: 0 2px 4px -2px rgb(var(--sombra) / 0.25);
+  transition: transform 0.18s var(--mola), background-color 0.15s, color 0.15s;
+}
+.chip-macio:active {
+  transform: scale(0.94);
+}
+
+/* Barra de abas: o ícone da aba atual pula ao chegar; qualquer ícone afunda ao tocar. */
+.aba-macia[aria-current="page"] svg {
+  animation: pienel-pula 0.5s var(--mola);
+}
+.aba-macia:active svg {
+  transform: scale(0.88);
+}
+.aba-macia svg {
+  transition: transform 0.15s var(--mola);
+}
+
+/* Sino com avisos novos: balança uma vez ao abrir a tela. */
+.sino-tocando svg {
+  animation: pienel-balanca 0.7s ease 0.4s;
+  transform-origin: 50% 10%;
+}
+
+/* Caixas de marcar: estalam ao marcar. */
+input[type="checkbox"]:checked {
+  animation: pienel-estala 0.3s var(--mola);
+}
+
+@keyframes pienel-pula {
+  0% { transform: translateY(0); }
+  40% { transform: translateY(-7px) scale(1.1); }
+  100% { transform: none; }
+}
+@keyframes pienel-balanca {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(16deg); }
+  40% { transform: rotate(-12deg); }
+  60% { transform: rotate(8deg); }
+  80% { transform: rotate(-4deg); }
+}
+@keyframes pienel-estala {
+  0% { transform: scale(0.8); }
+  60% { transform: scale(1.15); }
+  100% { transform: none; }
+}
+
+/* Confete de comemoração (pagamento recebido). */
+.pienel-confete {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 60;
+  animation: pienel-confete 0.9s ease-out forwards;
+}
+@keyframes pienel-confete {
+  to { transform: translate(var(--dx), var(--dy)) rotate(var(--giro)); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

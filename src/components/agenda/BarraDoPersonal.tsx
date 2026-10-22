@@ -27,7 +27,7 @@ export function BarraDoPersonal() {
               <Link
                 href={a.href}
                 aria-current={ativa ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] ${
+                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] ${
                   ativa ? "font-bold text-brand" : "font-semibold text-ink-3"
                 }`}
               >
