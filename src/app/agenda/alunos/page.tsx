@@ -92,7 +92,7 @@ async function Conteudo() {
   return (
     <>
       {online > 0 && (
-        <Link href="/agenda/online" className="mx-[18px] mt-2 flex items-center gap-2 text-[13px] font-semibold text-info">
+        <Link href="/agenda/online" className="mx-[18px] mt-2 flex items-center gap-2 text-[14px] font-semibold text-info">
           <Icone nome="conversa" className="size-4" /> Acompanhamento online e check-ins ›
         </Link>
       )}

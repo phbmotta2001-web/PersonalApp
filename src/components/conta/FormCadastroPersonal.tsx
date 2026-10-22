@@ -54,7 +54,7 @@ export function FormCadastroPersonal() {
         <p className="text-ink-2">
           Enviamos um link de confirmação para <b>{enviadoPara}</b>. Clique nele para ativar sua conta.
         </p>
-        <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+        <ul className="list-disc space-y-1 pl-5 text-[14px] text-ink-3">
           <li>Abra o link <b>neste mesmo navegador</b>.</li>
           <li>Não chegou? Procure no spam. A mensagem pode levar alguns minutos.</li>
         </ul>
@@ -67,7 +67,7 @@ export function FormCadastroPersonal() {
 
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
-      <p className="text-[13px] text-ink-3">
+      <p className="text-[14px] text-ink-3">
         É aluno? Você entra pelo link de convite que o seu personal envia.
       </p>
 
@@ -152,7 +152,7 @@ export function FormCadastroPersonal() {
           onChange={(e) => mudar({ aceitouTermo: e.target.checked })}
           className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
         />
-        <span className="text-[13px] text-ink-2">
+        <span className="text-[14px] text-ink-2">
           <b className="block text-ink">Termo de confidencialidade</b>
           {TEXTO_TERMO_CONFIDENCIALIDADE}
         </span>
@@ -164,7 +164,7 @@ export function FormCadastroPersonal() {
         {enviando ? "Criando conta…" : "Criar minha conta de personal"}
       </button>
 
-      <p className="text-center text-[13px] text-ink-3">
+      <p className="text-center text-[14px] text-ink-3">
         Já tem conta?{" "}
         <Link href="/entrar" className="font-semibold text-brand">
           Entrar

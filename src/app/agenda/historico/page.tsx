@@ -97,7 +97,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
 
       <CalendarioDoMes mes={mes} dia={dia} hoje={hoje} aulas={doCalendario} linkDoDia={(d) => link(mes, d)} />
 
-      <section className="flex flex-wrap gap-x-3 gap-y-1.5 text-[11.5px] text-ink-2" aria-label="Legenda">
+      <section className="flex flex-wrap gap-x-3 gap-y-1.5 text-[13px] text-ink-2" aria-label="Legenda">
         {CATEGORIAS_HISTORICO.map((c) => (
           <span key={c.valor} className="flex items-center gap-1.5">
             <span className={`size-2.5 rounded-full ${c.ponto}`} aria-hidden="true" />
@@ -109,19 +109,19 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
           Marcadas <strong className="tabular-nums">{marcadas}</strong>
         </span>
       </section>
-      <p className="-mt-2 text-[11px] text-ink-3">
+      <p className="-mt-2 text-[12.5px] text-ink-3">
         Perdidas = faltas e cancelamentos em cima da hora. Aula que passou sem marcação conta como dada.
       </p>
 
       <section className="flex flex-col gap-2" aria-label="Aulas do dia escolhido">
-        <h3 className="text-[15px] font-bold">
+        <h3 className="text-[16px] font-bold">
           {dia === hoje ? "Hoje" : nomeDoDia(diaDaSemana(dia))}{" "}
           <span className="font-normal text-ink-3">
             {dia.slice(8, 10)}/{dia.slice(5, 7)}
           </span>
         </h3>
         {listaDoDia.length === 0 ? (
-          <p className="rounded-[16px] border border-dashed border-line p-3 text-sm text-ink-3">Nenhuma aula neste dia.</p>
+          <p className="rounded-[16px] border border-dashed border-line p-3 text-[15px] text-ink-3">Nenhuma aula neste dia.</p>
         ) : (
           <ul className="flex flex-col gap-1.5">
             {listaDoDia.map((a) => {
@@ -149,15 +149,15 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/his
                       className={`h-9 w-1.5 shrink-0 rounded-full ${cat ? cat.ponto : "border border-brand"}`}
                       aria-hidden="true"
                     />
-                    <span className="w-12 shrink-0 text-sm font-bold tabular-nums">{emBrasilia(a.inicio).hora}</span>
+                    <span className="w-12 shrink-0 text-[15px] font-bold tabular-nums">{emBrasilia(a.inicio).hora}</span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold">{a.nome}</span>
+                      <span className="block truncate text-[15px] font-semibold">{a.nome}</span>
                       {a.origem !== "fixa" && (
-                        <span className="block text-xs text-ink-3">{ROTULO_ORIGEM[a.origem as OrigemAula]}</span>
+                        <span className="block text-[13px] text-ink-3">{ROTULO_ORIGEM[a.origem as OrigemAula]}</span>
                       )}
                     </span>
                     <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${cat ? cat.etiqueta : "bg-brand-soft text-brand"}`}
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[12.5px] font-bold ${cat ? cat.etiqueta : "bg-brand-soft text-brand"}`}
                     >
                       {etiqueta}
                     </span>

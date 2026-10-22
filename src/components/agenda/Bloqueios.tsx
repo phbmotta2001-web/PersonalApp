@@ -96,7 +96,7 @@ export function Bloqueios({ bloqueios }: { bloqueios: Required<Bloqueio>[] }) {
               role="radio"
               aria-checked={novo.diaInteiro === o.valor}
               onClick={() => mudar({ diaInteiro: o.valor })}
-              className={`min-h-11 rounded-[11px] text-sm font-bold ${
+              className={`min-h-11 rounded-[11px] text-[15px] font-bold ${
                 novo.diaInteiro === o.valor ? "bg-surface text-ink shadow-sm" : "text-ink-2"
               }`}
             >
@@ -180,7 +180,7 @@ export function Bloqueios({ bloqueios }: { bloqueios: Required<Bloqueio>[] }) {
       <section className="flex flex-col gap-2.5">
         <h2 className="text-[17px] font-semibold">Próximos bloqueios</h2>
         {bloqueios.length === 0 ? (
-          <p className="text-sm text-ink-3">Nenhum bloqueio marcado.</p>
+          <p className="text-[15px] text-ink-3">Nenhum bloqueio marcado.</p>
         ) : (
           <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
             {bloqueios.map((b) => (
@@ -189,11 +189,11 @@ export function Bloqueios({ bloqueios }: { bloqueios: Required<Bloqueio>[] }) {
                   <Icone nome="calendario" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold tabular-nums">{descrever(b)}</p>
-                  {b.motivo && <p className="truncate text-[12.5px] text-ink-3">{b.motivo}</p>}
+                  <p className="text-[15px] font-bold tabular-nums">{descrever(b)}</p>
+                  {b.motivo && <p className="truncate text-[14px] text-ink-3">{b.motivo}</p>}
                 </div>
                 {apagando === b.id ? (
-                  <span className="flex gap-2 text-[13px] font-bold">
+                  <span className="flex gap-2 text-[14px] font-bold">
                     <button type="button" onClick={() => setApagando(null)} className="text-ink-3">
                       Manter
                     </button>

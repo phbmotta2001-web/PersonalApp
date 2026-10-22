@@ -30,7 +30,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/val
   const { tipo } = await searchParams;
   const online = tipo === "online";
   const aba = (ativo: boolean) =>
-    `flex-1 rounded-[11px] py-2 text-center text-sm font-bold ${ativo ? "bg-surface shadow-sm" : "text-ink-3"}`;
+    `flex-1 rounded-[11px] py-2 text-center text-[15px] font-bold ${ativo ? "bg-surface shadow-sm" : "text-ink-3"}`;
 
   return (
     <>

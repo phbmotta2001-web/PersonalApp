@@ -58,11 +58,11 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-6 pb-6">
       <header className="flex flex-col gap-1">
-        <p className="text-sm font-bold text-brand">Pienel</p>
+        <p className="text-[15px] font-bold text-brand">Pienel</p>
         <h1 className="text-[24px] leading-tight font-extrabold">
           {convite.personalNome} convidou você para treinar pelo Pienel
         </h1>
-        <p className="text-[13px] text-ink-3">CREF {convite.personalCref}</p>
+        <p className="text-[14px] text-ink-3">CREF {convite.personalCref}</p>
       </header>
       <p className="text-ink-2">
         Olá, {convite.nomeConvite.split(" ")[0]}! No Pienel você vê seus horários de treino, remarca aulas e recebe
@@ -70,7 +70,7 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
       </p>
 
       {tipo === "personal" ? (
-        <form action={sair} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4 text-sm text-ink-2">
+        <form action={sair} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4 text-[15px] text-ink-2">
           <p>Você está com uma conta de <b>personal</b>. Para aceitar este convite, use uma conta de aluno (com outro e-mail).</p>
           <button type="submit" className={ESTILO_BOTAO_SECUNDARIO}>
             Sair desta conta
@@ -82,14 +82,14 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
         <>
           <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
             <p className="font-bold">Já tem conta no Pienel?</p>
-            <p className="text-[13px] text-ink-3">Por exemplo, se você já treina com outro personal pelo app.</p>
+            <p className="text-[14px] text-ink-3">Por exemplo, se você já treina com outro personal pelo app.</p>
             <Link href={`/entrar?voltar=${encodeURIComponent(aqui)}`} className={ESTILO_BOTAO_SECUNDARIO}>
               Entrar e aceitar o convite
             </Link>
           </section>
           <section className="flex flex-col gap-1">
             <h2 className="px-[18px] text-[17px] font-semibold">Ou crie sua conta</h2>
-            <p className="px-[18px] text-xs text-ink-3">
+            <p className="px-[18px] text-[13px] text-ink-3">
               Só maiores de 18 anos. Menor de idade? Avise {primeiro}: você pode ser colocado na agenda sem conta.
             </p>
             <div className="-mx-[18px]">
@@ -110,7 +110,7 @@ async function Aluno({ codigo, personal, aqui }: { codigo: string; personal: str
     return (
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
         <p className="font-bold">Falta pouco: complete seu perfil</p>
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           Para treinar com um personal pelo Pienel, informe {juntarComE(faltaNoPerfil(conta))}. Assim ele conhece suas
           limitações e treina você com segurança.
         </p>
@@ -126,7 +126,7 @@ async function Aluno({ codigo, personal, aqui }: { codigo: string; personal: str
 function Mensagem({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 px-[18px] pt-8 text-ink-2">
-      <p className="text-sm font-bold text-brand">Pienel</p>
+      <p className="text-[15px] font-bold text-brand">Pienel</p>
       <h1 className="text-[22px] font-extrabold text-ink">{titulo}</h1>
       <div className="flex flex-col gap-3">{children}</div>
     </div>

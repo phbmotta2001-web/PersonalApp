@@ -44,12 +44,12 @@ export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; n
       }}
       className="flex flex-col gap-4 px-[18px] pt-2 pb-6"
     >
-      <p className="text-[13px] text-ink-2">
+      <p className="text-[14px] text-ink-2">
         O aluno paga direto para a sua chave: o dinheiro cai na sua conta, sem passar pelo Pienel. Cada cobrança já vai com
         o Pix copia e cola e o QR Code com o valor certo.
       </p>
       <fieldset className="flex flex-col gap-[7px]">
-        <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Tipo de chave</legend>
+        <legend className="mb-[7px] text-[14px] font-bold text-ink-2">Tipo de chave</legend>
         <div className="flex flex-wrap gap-2">
           {TIPOS_CHAVE_PIX.map((t) => (
             <Chip key={t.valor} ativo={pix.tipo === t.valor} onClick={() => mudar({ tipo: t.valor })}>

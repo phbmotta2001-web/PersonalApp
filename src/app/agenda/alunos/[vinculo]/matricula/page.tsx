@@ -39,7 +39,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
 
   if (!aluno)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-6 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-6 text-[15px] text-ink-2">
         <p>Este aluno não está mais ligado a você, ou o endereço está errado.</p>
         <Link href="/agenda/alunos" className="font-semibold text-brand">
           Ver meus alunos
@@ -52,7 +52,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
       <Cabecalho titulo={atual ? "Alterar matrícula" : "Nova matrícula"}>
         <BotaoVoltar reserva={`/agenda/alunos/${vinculo}`} className="hover:bg-surface-2" />
       </Cabecalho>
-      <p className="px-[18px] text-[13px] text-ink-3">{aluno.nomeCompleto}</p>
+      <p className="px-[18px] text-[14px] text-ink-3">{aluno.nomeCompleto}</p>
       <FormMatricula
         vinculoId={vinculo}
         nomeAluno={aluno.nomeCompleto}

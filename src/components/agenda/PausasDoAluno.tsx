@@ -53,16 +53,16 @@ export function PausasDoAluno({
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Pausas">
       <div className="flex items-center gap-2">
-        <h3 className="flex-1 text-[15px] font-bold">Pausas</h3>
+        <h3 className="flex-1 text-[16px] font-bold">Pausas</h3>
         {!abrindo && (
-          <button type="button" onClick={() => setAbrindo(true)} className="text-[13px] font-semibold text-brand">
+          <button type="button" onClick={() => setAbrindo(true)} className="text-[14px] font-semibold text-brand">
             Registrar pausa
           </button>
         )}
       </div>
 
       {pausas.length === 0 && !abrindo && (
-        <p className="text-[13px] text-ink-3">
+        <p className="text-[14px] text-ink-3">
           Viagem, doença ou ausência: as aulas do período saem da agenda e o horário fica livre para reposição.
         </p>
       )}
@@ -134,7 +134,7 @@ export function PausasDoAluno({
           </div>
           {comDesconto && valorMensalCentavos != null ? (
             <div className="flex flex-col gap-2 rounded-[14px] bg-surface-2 p-3">
-              <label htmlFor="pausa-desconto" className="text-[13px] font-bold text-ink-2">
+              <label htmlFor="pausa-desconto" className="text-[14px] font-bold text-ink-2">
                 Desconto na próxima mensalidade
               </label>
               <div className="relative">
@@ -147,7 +147,7 @@ export function PausasDoAluno({
                   className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
                 />
               </div>
-              <p className="text-xs text-ink-3">
+              <p className="text-[13px] text-ink-3">
                 <strong>Sugestão do Pienel: {centavosParaReais(estimativa)}</strong>. É proporcional aos dias parados:{" "}
                 {centavosParaReais(valorMensalCentavos)} por mês ÷ 30 × {diasDesconto} dia{diasDesconto === 1 ? "" : "s"}.
                 {diasDesconto < dias &&
@@ -157,13 +157,13 @@ export function PausasDoAluno({
                 Assim o aluno paga só pelas aulas que teve e o limite protege a sua renda. Você pode trocar o valor.
               </p>
               {descontoTexto != null && (
-                <button type="button" onClick={() => setDescontoTexto(null)} className="self-start text-xs font-semibold text-brand">
+                <button type="button" onClick={() => setDescontoTexto(null)} className="self-start text-[13px] font-semibold text-brand">
                   Usar a sugestão
                 </button>
               )}
             </div>
           ) : (
-            <p className="text-xs text-ink-3">
+            <p className="text-[13px] text-ink-3">
               {dias > 0 && `${dias} dia${dias === 1 ? "" : "s"}. `}
               {comDesconto ? "A matrícula não tem valor, então não há desconto." : `${primeiro} paga a mensalidade normal.`}
             </p>
@@ -181,7 +181,7 @@ export function PausasDoAluno({
           <button type="submit" disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
             {ocupado ? "Registrando…" : "Registrar pausa"}
           </button>
-          <button type="button" onClick={() => setAbrindo(false)} className="text-[13px] font-semibold text-ink-3">
+          <button type="button" onClick={() => setAbrindo(false)} className="text-[14px] font-semibold text-ink-3">
             Cancelar
           </button>
         </form>
@@ -197,20 +197,20 @@ function LinhaDaPausa({ pausa: p }: { pausa: Pausa }) {
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
-    <div className="flex flex-col gap-1.5 rounded-[14px] border border-dashed border-info bg-info-soft/50 px-3 py-2.5 text-[13px]">
+    <div className="flex flex-col gap-1.5 rounded-[14px] border border-dashed border-info bg-info-soft/50 px-3 py-2.5 text-[14px]">
       <p>
         <strong>
           {dataBr(p.inicio)} a {dataBr(p.fim)}
         </strong>
         {p.motivo && ` · ${p.motivo}`}
       </p>
-      <p className="text-xs text-ink-2">
+      <p className="text-[13px] text-ink-2">
         {p.descontoCentavos > 0
           ? `Desconto de ${centavosParaReais(p.descontoCentavos)} ${p.descontoAplicado ? "na mensalidade" : "na próxima mensalidade"}`
           : "Sem desconto"}
       </p>
       {confirmando ? (
-        <span className="flex gap-4 text-[13px] font-bold">
+        <span className="flex gap-4 text-[14px] font-bold">
           <button type="button" onClick={() => setConfirmando(false)} className="text-ink-3">
             Manter
           </button>
@@ -235,7 +235,7 @@ function LinhaDaPausa({ pausa: p }: { pausa: Pausa }) {
           </button>
         </span>
       ) : (
-        <button type="button" onClick={() => setConfirmando(true)} className="self-start text-xs font-semibold text-ink-3">
+        <button type="button" onClick={() => setConfirmando(true)} className="self-start text-[13px] font-semibold text-ink-3">
           Cancelar pausa (as aulas voltam)
         </button>
       )}

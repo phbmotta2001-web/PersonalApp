@@ -29,7 +29,7 @@ async function Conteudo() {
   const questionarios = await listarQuestionarios();
   return (
     <div className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
-      <p className="text-[13px] text-ink-2">
+      <p className="text-[14px] text-ink-2">
         Seus modelos de questionário. Depois, na página de cada aluno online, você escolhe qual enviar e quando (toda semana,
         a cada 15 dias ou todo mês).
       </p>
@@ -44,8 +44,8 @@ async function Conteudo() {
                 <Icone nome="conversa" className="size-[18px]" />
               </span>
               <span className="flex-1">
-                <span className="block text-sm font-bold">{q.nome}</span>
-                <span className="block text-xs text-ink-3">
+                <span className="block text-[15px] font-bold">{q.nome}</span>
+                <span className="block text-[13px] text-ink-3">
                   {q.perguntas.length} pergunta{q.perguntas.length === 1 ? "" : "s"} · toque para editar
                 </span>
               </span>
@@ -56,7 +56,7 @@ async function Conteudo() {
       </ul>
       <Link
         href="/agenda/online/questionarios/novo"
-        className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] border border-dashed border-brand text-sm font-bold text-brand"
+        className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] border border-dashed border-brand text-[15px] font-bold text-brand"
       >
         <Icone nome="mais" className="size-4" /> Novo questionário
       </Link>

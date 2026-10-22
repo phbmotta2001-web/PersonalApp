@@ -1,13 +1,13 @@
 // Peças comuns dos formulários (cadastro, entrar, perfil, pedido).
 
 export const ESTILO_CAIXA =
-  "min-h-12 w-full rounded-[13px] border border-line bg-surface px-3.5 placeholder:text-ink-3 disabled:bg-surface-2 disabled:text-ink-3";
+  "min-h-[52px] w-full rounded-[13px] border border-line bg-surface px-3.5 text-[16px] placeholder:text-ink-3 disabled:bg-surface-2 disabled:text-ink-3";
 
 export const ESTILO_BOTAO_PRINCIPAL =
-  "botao-macio flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] bg-brand px-[18px] font-bold text-brand-ink hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100";
+  "botao-macio flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[15px] bg-brand px-[18px] font-bold text-brand-ink hover:brightness-110 disabled:opacity-60 disabled:hover:brightness-100";
 
 export const ESTILO_BOTAO_SECUNDARIO =
-  "botao-macio-claro flex min-h-[50px] w-full items-center justify-center gap-2 rounded-[15px] border border-line bg-surface px-[18px] font-bold hover:border-brand";
+  "botao-macio-claro flex min-h-[54px] w-full items-center justify-center gap-2 rounded-[15px] border border-line bg-surface px-[18px] font-bold hover:border-brand";
 
 export function Campo({
   id,
@@ -24,11 +24,11 @@ export function Campo({
 }) {
   return (
     <div className="flex flex-col gap-[7px]">
-      <label htmlFor={id} className="text-[13px] font-bold text-ink-2">
+      <label htmlFor={id} className="text-[14px] font-bold text-ink-2">
         {rotulo} {opcional && <span className="font-normal text-ink-3">(opcional)</span>}
       </label>
       {children}
-      {ajuda && <p className="text-xs text-ink-3">{ajuda}</p>}
+      {ajuda && <p className="text-[13px] text-ink-3">{ajuda}</p>}
     </div>
   );
 }
@@ -39,7 +39,7 @@ export function Aviso({ tipo = "erro", children }: { tipo?: "erro" | "ok"; child
   return (
     <p
       role={tipo === "erro" ? "alert" : "status"}
-      className={`rounded-[13px] px-3.5 py-2.5 text-[13px] ${
+      className={`rounded-[13px] px-3.5 py-2.5 text-[14px] ${
         tipo === "erro" ? "bg-bad/10 text-bad" : "bg-ok-soft text-ok"
       }`}
     >
@@ -49,7 +49,7 @@ export function Aviso({ tipo = "erro", children }: { tipo?: "erro" | "ok"; child
 }
 
 export function Carregando() {
-  return <p className="px-[18px] py-6 text-sm text-ink-3">Carregando…</p>;
+  return <p className="px-[18px] py-6 text-[15px] text-ink-3">Carregando…</p>;
 }
 
 export function Cabecalho({ titulo, children }: { titulo: string; children?: React.ReactNode }) {

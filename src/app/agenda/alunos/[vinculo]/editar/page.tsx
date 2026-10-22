@@ -47,7 +47,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
           }}
         />
       ) : (
-        <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+        <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
           <p>Só dá para editar aqui os alunos que não usam o app. Os outros cuidam do próprio perfil.</p>
           <Link href={`/agenda/alunos/${vinculo}`} className="font-semibold text-brand">
             Voltar para a ficha

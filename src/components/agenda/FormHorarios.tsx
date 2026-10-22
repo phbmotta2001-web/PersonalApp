@@ -19,7 +19,7 @@ import { Chip } from "../Chip";
 import { ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Icone } from "../Icone";
 
-const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums";
+const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-[15px] tabular-nums";
 
 const ordenar = (faixas: Faixa[]) => [...faixas].sort((a, b) => a.dia - b.dia || a.inicioMin - b.inicioMin);
 
@@ -90,14 +90,14 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
         {nuncaConfigurou && (
-          <p className="rounded-[14px] bg-brand-soft px-3.5 py-3 text-[13px] text-brand">
+          <p className="rounded-[14px] bg-brand-soft px-3.5 py-3 text-[14px] text-brand">
             Todos os dias começam ligados, das 06:00 às 21:00. Desligue os dias em que você não trabalha,
             ajuste os horários e salve.
           </p>
         )}
 
         <fieldset className="flex flex-col gap-[7px]">
-          <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Duração padrão da aula</legend>
+          <legend className="mb-[7px] text-[14px] font-bold text-ink-2">Duração padrão da aula</legend>
           <div className="flex flex-wrap gap-2">
             {DURACOES.map((d) => (
               <Chip
@@ -112,7 +112,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
               </Chip>
             ))}
           </div>
-          <p className="text-xs text-ink-3">Os horários livres são cortados nesse tamanho a partir do início de cada faixa.</p>
+          <p className="text-[13px] text-ink-3">Os horários livres são cortados nesse tamanho a partir do início de cada faixa.</p>
         </fieldset>
 
         <ul className="flex flex-col gap-3">
@@ -142,7 +142,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
                 {ligado ? (
                   <div className="mt-3 flex flex-col gap-2">
                     {lista.map((f, i) => (
-                      <div key={i} className="flex flex-wrap items-center gap-2 text-sm text-ink-2">
+                      <div key={i} className="flex flex-wrap items-center gap-2 text-[15px] text-ink-2">
                         <label className="sr-only" htmlFor={`ini-${d.valor}-${i}`}>Início</label>
                         <select
                           id={`ini-${d.valor}-${i}`}
@@ -176,7 +176,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
                         </button>
                       </div>
                     ))}
-                    <div className="flex flex-wrap gap-3 text-[13px] font-semibold text-brand">
+                    <div className="flex flex-wrap gap-3 text-[14px] font-semibold text-brand">
                       {lista.length < MAX_FAIXAS_POR_DIA && (
                         <button type="button" onClick={() => adicionarFaixa(d.valor)} className="inline-flex items-center gap-1">
                           <Icone nome="mais" className="size-4" /> Adicionar faixa
@@ -194,7 +194,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
                     </div>
                     {copiandoDe === d.valor && (
                       <div className="flex flex-col gap-2 rounded-2xl bg-surface-2 p-3">
-                        <p className="text-xs text-ink-3">Copiar os horários de {d.nome.toLowerCase()} para:</p>
+                        <p className="text-[13px] text-ink-3">Copiar os horários de {d.nome.toLowerCase()} para:</p>
                         <div className="flex flex-wrap gap-2">
                           {DIAS.filter((o) => o.valor !== d.valor).map((o) => (
                             <Chip
@@ -212,16 +212,16 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
                           type="button"
                           disabled={destinos.length === 0}
                           onClick={aplicarCopia}
-                          className="self-start rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink disabled:opacity-50"
+                          className="self-start rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink disabled:opacity-50"
                         >
                           Copiar
                         </button>
-                        <p className="text-xs text-ink-3">Os horários que esses dias já tinham são substituídos.</p>
+                        <p className="text-[13px] text-ink-3">Os horários que esses dias já tinham são substituídos.</p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="mt-1 text-[13px] text-ink-3">Não trabalho neste dia</p>
+                  <p className="mt-1 text-[14px] text-ink-3">Não trabalho neste dia</p>
                 )}
               </li>
             );
@@ -233,7 +233,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
         <button type="button" onClick={salvar} disabled={!mudou || problemas.length > 0 || salvando} className={ESTILO_BOTAO_PRINCIPAL}>
           {salvando ? "Salvando…" : "Salvar horários"}
         </button>
-        <p aria-live="polite" className="min-h-4 text-center text-xs text-ink-3">
+        <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {problemas.length > 0
             ? `Para salvar: ${frase(problemas)}`
             : aviso?.tipo === "erro"

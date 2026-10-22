@@ -65,31 +65,31 @@ async function Conteudo() {
     <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32">
       <header className="flex items-end gap-2">
         <h1 className="flex-1 text-[24px] font-extrabold">Financeiro</h1>
-        <span className="rounded-full bg-surface-2 px-3 py-1 text-[12.5px] font-semibold text-ink-2 first-letter:uppercase">
+        <span className="rounded-full bg-surface-2 px-3 py-1 text-[14px] font-semibold text-ink-2 first-letter:uppercase">
           {nomeDoMes}
         </span>
       </header>
 
-      <section className="grid grid-cols-3 gap-2" aria-label="Resumo do mês">
-        <Numero titulo="Recebido" valor={financeiro.recebido} cor="text-ok" />
+      <section className="grid grid-cols-2 gap-2" aria-label="Resumo do mês">
+        <Numero titulo="Recebido no mês" valor={financeiro.recebido} cor="text-ok" grande />
         <Numero titulo="A receber" valor={financeiro.aReceber} />
         <Numero titulo="Atrasado" valor={financeiro.atrasado} cor={financeiro.atrasado > 0 ? "text-bad" : undefined} />
       </section>
       {financeiro.previsto > 0 && (
-        <p className="-mt-2 text-xs text-ink-3">
+        <p className="-mt-2 text-[13px] text-ink-3">
           A receber inclui {centavosParaReais(financeiro.previsto)} de mensalidades que ainda vão ser geradas.
         </p>
       )}
 
       {avisaram.map((c) => (
         <section key={c.id} className="flex flex-col gap-2.5 rounded-[20px] bg-ok-soft p-4" aria-label="Aluno avisou que pagou">
-          <p className="flex items-start gap-2 text-sm text-ok">
+          <p className="flex items-start gap-2 text-[15px] text-ok">
             <Icone nome="certo" className="mt-0.5 size-4" />
             <span className="flex-1">
               <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}
-              <span className="block text-xs opacity-80">{descricaoDaCobranca(c)}</span>
+              <span className="block text-[13px] opacity-80">{descricaoDaCobranca(c)}</span>
             </span>
-            <Link href={`/agenda/cobrancas/${c.id}`} className="text-xs font-semibold underline">
+            <Link href={`/agenda/cobrancas/${c.id}`} className="text-[13px] font-semibold underline">
               Ver
             </Link>
           </p>
@@ -106,13 +106,13 @@ async function Conteudo() {
       />
 
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Recebido por mês">
-        <h2 className="text-[15px] font-semibold">Recebido por mês</h2>
+        <h2 className="text-[16px] font-semibold">Recebido por mês</h2>
         <div className="flex h-36 items-end gap-2">
           {meses.map((m, i) => {
             const atual = i === meses.length - 1;
             return (
               <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-                <span className={`text-[10.5px] tabular-nums ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
+                <span className={`text-[12px] tabular-nums ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
                   {m.centavos > 0 ? curto(m.centavos) : ""}
                 </span>
                 <span
@@ -120,7 +120,7 @@ async function Conteudo() {
                   style={{ height: `${Math.max(3, Math.round((m.centavos / maior) * 100))}%` }}
                   title={`${MESES[Number(m.mes.slice(5)) - 1]}: ${centavosParaReais(m.centavos)}`}
                 />
-                <span className={`text-[11px] ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
+                <span className={`text-[12.5px] ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
                   {MESES[Number(m.mes.slice(5)) - 1]}
                 </span>
               </div>
@@ -142,7 +142,7 @@ async function Conteudo() {
 
       <Link
         href="/agenda/cobrancas/nova"
-        className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[14px] font-extrabold text-brand-ink"
+        className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
       >
         <Icone nome="mais" className="size-4" /> Cobrança
       </Link>
@@ -150,11 +150,13 @@ async function Conteudo() {
   );
 }
 
-function Numero({ titulo, valor, cor }: { titulo: string; valor: number; cor?: string }) {
+function Numero({ titulo, valor, cor, grande = false }: { titulo: string; valor: number; cor?: string; grande?: boolean }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-[16px] border border-line bg-surface px-3 py-2.5">
-      <span className="text-[11.5px] text-ink-3">{titulo}</span>
-      <span className={`font-display text-[16px] font-extrabold tabular-nums ${cor ?? ""}`}>{centavosParaReais(valor)}</span>
+    <div className={`flex flex-col gap-1 rounded-[18px] border border-line bg-surface px-4 py-3.5 ${grande ? "col-span-2" : ""}`}>
+      <span className="text-[13px] text-ink-3">{titulo}</span>
+      <span className={`font-display ${grande ? "text-[30px]" : "text-[21px]"} leading-tight font-extrabold tabular-nums ${cor ?? ""}`}>
+        {centavosParaReais(valor)}
+      </span>
     </div>
   );
 }
@@ -176,9 +178,9 @@ function Lista({
   if (cobrancas.length === 0 && vazio === null) return null;
   return (
     <section className="flex flex-col gap-2" aria-label={titulo}>
-      <h2 className="text-[11.5px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">{titulo}</h2>
+      <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">{titulo}</h2>
       {cobrancas.length === 0 ? (
-        <p className="text-[13px] text-ink-3">{vazio}</p>
+        <p className="text-[14px] text-ink-3">{vazio}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
           {cobrancas.map((c) => {
@@ -188,13 +190,13 @@ function Lista({
                 <Link href={`/agenda/cobrancas/${c.id}`} className="flex items-center gap-3 py-2.5">
                   <Avatar nome={c.nome} cor={corPorId(c.vinculoId)} tamanho="pequeno" />
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-sm font-bold ${atrasada ? "text-bad" : ""}`}>{c.nome}</span>
-                    <span className={`block text-xs ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
+                    <span className={`block truncate text-[15px] font-bold ${atrasada ? "text-bad" : ""}`}>{c.nome}</span>
+                    <span className={`block text-[13px] ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
                       {textoDoVencimento(c.vencimento, hoje)} · {centavosParaReais(c.valorCentavos)}
                     </span>
                   </span>
                   {acao ? (
-                    <span className="rounded-[11px] border border-line bg-surface px-3 py-1.5 text-[12.5px] font-bold">{acao}</span>
+                    <span className="rounded-[11px] border border-line bg-surface px-3 py-1.5 text-[14px] font-bold">{acao}</span>
                   ) : (
                     <span className="text-ink-3" aria-hidden="true">›</span>
                   )}
@@ -215,8 +217,8 @@ function Linha({ href, icone, titulo, texto }: { href: string; icone: NomeIcone;
         <Icone nome={icone} className="size-[18px]" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold">{titulo}</span>
-        <span className="block text-xs text-ink-3">{texto}</span>
+        <span className="block text-[15px] font-bold">{titulo}</span>
+        <span className="block text-[13px] text-ink-3">{texto}</span>
       </span>
       <span className="text-ink-3" aria-hidden="true">›</span>
     </Link>

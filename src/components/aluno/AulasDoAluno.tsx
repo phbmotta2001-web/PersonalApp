@@ -87,7 +87,7 @@ export function AulasDoAluno({
 
       {reposicoes.length > 0 && (
         <div className="flex flex-col gap-2 rounded-[14px] bg-brand-soft p-3 text-brand">
-          <p className="text-[13px]">
+          <p className="text-[14px]">
             Você tem <strong>{reposicoes.length}</strong> {reposicoes.length === 1 ? "reposição" : "reposições"}. A
             primeira vale até {dataCurta(reposicoes[0])}.
           </p>
@@ -115,7 +115,7 @@ export function AulasDoAluno({
                 setErro(null);
                 setAcao({ tipo: "reposicao" });
               }}
-              className="self-start rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink"
+              className="self-start rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink"
             >
               Marcar reposição
             </button>
@@ -124,7 +124,7 @@ export function AulasDoAluno({
       )}
 
       {recusados.map((r) => (
-        <p key={r.id} className="rounded-[14px] bg-surface-2 px-3 py-2.5 text-[13px] text-ink-2">
+        <p key={r.id} className="rounded-[14px] bg-surface-2 px-3 py-2.5 text-[14px] text-ink-2">
           Seu pedido para {textoCurto(r.inicio)} não foi aceito
           {r.resposta ? `: ${r.resposta.replace(/[.!]$/, "")}.` : "."} Se era uma reposição, ela continua com você.
         </p>
@@ -132,7 +132,7 @@ export function AulasDoAluno({
 
       {aulas.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-semibold text-ink-3">Próximas aulas</p>
+          <p className="text-[13px] font-semibold text-ink-3">Próximas aulas</p>
           <ul className="flex flex-col divide-y divide-line">
             {aulas.map((a) => {
               const aberta = acao && "aulaId" in acao && acao.aulaId === a.id ? acao.tipo : null;
@@ -142,12 +142,12 @@ export function AulasDoAluno({
                 return (
                   <li key={a.id} className="flex flex-col gap-2 py-2.5">
                     <div className="flex items-center gap-2">
-                      <span className="flex-1 text-sm tabular-nums">
+                      <span className="flex-1 text-[15px] tabular-nums">
                         <span className="text-ink-2">
                           {curtoDoDia(diaDaSemana(data))} {dataCurta(data)}
                         </span>{" "}
                         <span className="font-bold">{hora}</span>
-                        <span className="block text-xs text-gold">
+                        <span className="block text-[13px] text-gold">
                           {a.propostaPor === "personal"
                             ? `${primeiro} sugeriu este horário`
                             : `${a.aulaOriginalId ? "Remarcação" : "Reposição"} pedida · aguardando ${primeiro}`}
@@ -158,7 +158,7 @@ export function AulasDoAluno({
                           type="button"
                           disabled={ocupado}
                           onClick={() => executar(() => alunoDesistirPedido(a.id), "Pedido cancelado.")}
-                          className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold"
+                          className="rounded-[10px] border border-line px-2.5 py-1.5 text-[13px] font-bold"
                         >
                           Desistir
                         </button>
@@ -170,7 +170,7 @@ export function AulasDoAluno({
                           type="button"
                           disabled={ocupado}
                           onClick={() => executar(() => alunoResponderSugestao(a.id, false), "Sugestão recusada.")}
-                          className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[13px] font-bold"
+                          className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[14px] font-bold"
                         >
                           Recusar
                         </button>
@@ -183,7 +183,7 @@ export function AulasDoAluno({
                               `Combinado: aula ${textoCurto(a.inicio)}.`,
                             )
                           }
-                          className="flex-1 rounded-[12px] bg-brand px-3 py-2.5 text-[13px] font-bold text-brand-ink"
+                          className="flex-1 rounded-[12px] bg-brand px-3 py-2.5 text-[14px] font-bold text-brand-ink"
                         >
                           Aceitar horário
                         </button>
@@ -194,15 +194,15 @@ export function AulasDoAluno({
               return (
                 <li key={a.id} className="flex flex-col gap-2 py-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="flex-1 text-sm tabular-nums">
+                    <span className="flex-1 text-[15px] tabular-nums">
                       <span className="text-ink-2">
                         {curtoDoDia(diaDaSemana(data))} {dataCurta(data)}
                       </span>{" "}
                       <span className="font-bold">{hora}</span>
-                      {a.origem === "reposicao" && <span className="text-xs text-ink-3"> · reposição</span>}
+                      {a.origem === "reposicao" && <span className="text-[13px] text-ink-3"> · reposição</span>}
                     </span>
                     {pedida ? (
-                      <span className="text-xs text-gold">Troca pedida</span>
+                      <span className="text-[13px] text-gold">Troca pedida</span>
                     ) : (
                       <button
                         type="button"
@@ -212,7 +212,7 @@ export function AulasDoAluno({
                           setErro(null);
                           setAcao(aberta === "remarcar" ? null : { tipo: "remarcar", aulaId: a.id });
                         }}
-                        className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold"
+                        className="rounded-[10px] border border-line px-2.5 py-1.5 text-[13px] font-bold"
                       >
                         Remarcar
                       </button>
@@ -225,7 +225,7 @@ export function AulasDoAluno({
                         setErro(null);
                         setAcao(aberta === "cancelar" ? null : { tipo: "cancelar", aulaId: a.id });
                       }}
-                      className="rounded-[10px] border border-line px-2.5 py-1.5 text-xs font-bold text-bad"
+                      className="rounded-[10px] border border-line px-2.5 py-1.5 text-[13px] font-bold text-bad"
                     >
                       Cancelar
                     </button>
@@ -234,12 +234,12 @@ export function AulasDoAluno({
                   {aberta === "cancelar" && (
                     <div className="flex flex-col gap-2 rounded-[14px] border border-line p-3">
                       {comAntecedencia(a.inicio) ? (
-                        <p className="text-[13px] text-ink-2">
+                        <p className="text-[14px] text-ink-2">
                           Você ganha uma <strong>reposição</strong>, válida até o próximo vencimento da mensalidade.{" "}
                           {primeiro} será avisado.
                         </p>
                       ) : (
-                        <p className="text-[13px] text-bad">
+                        <p className="text-[14px] text-bad">
                           Faltam menos de {textoDeHoras(regras.cancelamentoH)} para a aula: em cima da hora, ela{" "}
                           <strong>conta como dada, sem reposição</strong>.
                         </p>
@@ -248,7 +248,7 @@ export function AulasDoAluno({
                         <button
                           type="button"
                           onClick={() => setAcao(null)}
-                          className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[13px] font-bold"
+                          className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[14px] font-bold"
                         >
                           Manter aula
                         </button>
@@ -273,7 +273,7 @@ export function AulasDoAluno({
                               }
                             })
                           }
-                          className="flex-1 rounded-[12px] bg-bad px-3 py-2.5 text-[13px] font-bold text-white disabled:opacity-60"
+                          className="flex-1 rounded-[12px] bg-bad px-3 py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
                         >
                           {ocupado ? "Cancelando…" : "Cancelar aula"}
                         </button>
@@ -299,7 +299,7 @@ export function AulasDoAluno({
                         }
                       />
                     ) : (
-                      <p className="rounded-[14px] border border-line p-3 text-[13px] text-ink-2">
+                      <p className="rounded-[14px] border border-line p-3 text-[14px] text-ink-2">
                         Faltam menos de {textoDeHoras(regras.cancelamentoH)}: para remarcar agora, fale com {primeiro}.
                       </p>
                     ))}
@@ -364,15 +364,15 @@ function EscolherHorario({
     <div className="flex flex-col gap-2.5 rounded-[14px] border border-line bg-surface p-3 text-ink">
       <div className="flex items-center gap-2">
         <Icone nome="calendario" className="size-4 text-brand" />
-        <p className="flex-1 text-[13px] font-bold">Escolha o novo horário</p>
+        <p className="flex-1 text-[14px] font-bold">Escolha o novo horário</p>
         <button type="button" onClick={onCancelar} aria-label="Fechar" className="text-ink-3">
           <Icone nome="fechar" className="size-4" />
         </button>
       </div>
       {livres === null ? (
-        <p className="text-xs text-ink-3">Carregando os horários livres…</p>
+        <p className="text-[13px] text-ink-3">Carregando os horários livres…</p>
       ) : livres.length === 0 ? (
-        <p className="text-xs text-ink-3">Não há horários livres nesse período. Fale com seu personal.</p>
+        <p className="text-[13px] text-ink-3">Não há horários livres nesse período. Fale com seu personal.</p>
       ) : (
         <>
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
@@ -385,7 +385,7 @@ function EscolherHorario({
                   setDia(d);
                   setEscolhido(null);
                 }}
-                className={`flex shrink-0 flex-col items-center rounded-[12px] border px-2.5 py-1.5 text-xs ${
+                className={`flex shrink-0 flex-col items-center rounded-[12px] border px-2.5 py-1.5 text-[13px] ${
                   dia === d ? "border-ink bg-ink text-app" : "border-line"
                 }`}
               >
@@ -401,7 +401,7 @@ function EscolherHorario({
                 type="button"
                 aria-pressed={escolhido === l}
                 onClick={() => setEscolhido(l)}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-bold tabular-nums ${
+                className={`rounded-lg px-2.5 py-1.5 text-[15px] font-bold tabular-nums ${
                   escolhido === l ? "bg-ink text-app" : "bg-brand-soft text-brand"
                 }`}
               >
@@ -409,7 +409,7 @@ function EscolherHorario({
               </button>
             ))}
           </div>
-          <p className="text-[11.5px] text-ink-3">
+          <p className="text-[13px] text-ink-3">
             Só aparecem horários livres com pelo menos {textoDeHoras(antecedenciaH)} de antecedência.
           </p>
           <button

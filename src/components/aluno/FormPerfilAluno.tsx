@@ -163,7 +163,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
         <div className="flex flex-col items-center gap-1 text-center">
           <Avatar nome={p.nomeCompleto} cor="av6" tamanho="grande" />
           <p className="mt-1 text-lg font-bold">{p.nomeCompleto}</p>
-          <p className="text-[13px] text-ink-3">{idadeEm(p.dataNascimento)} anos</p>
+          <p className="text-[14px] text-ink-3">{idadeEm(p.dataNascimento)} anos</p>
         </div>
 
         {/* ── Conta ── */}
@@ -194,7 +194,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
               }}
               className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
             />
-            <span className="text-[13px] text-ink-2">
+            <span className="text-[14px] text-ink-2">
               <b className="block text-ink">{TEXTO_CONSENTIMENTO_WHATSAPP}</b>
               {AJUDA_CONSENTIMENTO_WHATSAPP}
             </span>
@@ -229,7 +229,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
           </Campo>
 
           <fieldset className="flex flex-col gap-[7px]">
-            <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Nível de experiência com treino</legend>
+            <legend className="mb-[7px] text-[14px] font-bold text-ink-2">Nível de experiência com treino</legend>
             <div role="radiogroup" aria-label="Nível de experiência com treino" className="flex flex-col gap-2">
               {NIVEIS_ALUNO.map((n) => {
                 const ativo = perfil.nivel === n.valor;
@@ -252,8 +252,8 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
                       {ativo && <span className="size-[11px] rounded-full bg-brand" />}
                     </span>
                     <span>
-                      <span className="block text-[14.5px] font-bold">{n.rotulo}</span>
-                      <span className="block text-[12.5px] text-ink-3">{n.descricao}</span>
+                      <span className="block text-[15.5px] font-bold">{n.rotulo}</span>
+                      <span className="block text-[14px] text-ink-3">{n.descricao}</span>
                     </span>
                   </button>
                 );
@@ -280,7 +280,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
           descricao="O endereço serve para treinos na sua casa."
         >
           <fieldset className="flex flex-col gap-[7px]">
-            <legend className="mb-[7px] text-[13px] font-bold text-ink-2">
+            <legend className="mb-[7px] text-[14px] font-bold text-ink-2">
               Gênero <span className="font-normal text-ink-3">(opcional)</span>
             </legend>
             <div className="flex flex-wrap gap-2">
@@ -294,7 +294,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
                 </Chip>
               ))}
             </div>
-            <p className="text-xs text-ink-3">
+            <p className="text-[13px] text-ink-3">
               Na busca, esconde só personais especializados no treino do outro gênero. &quot;Outro&quot;,
               &quot;Prefiro não informar&quot; ou sem resposta: você vê todos.
             </p>
@@ -344,7 +344,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
             </span>
             <div>
               <h2 className="text-[17px] font-semibold">Dados de saúde</h2>
-              <p className="text-[12.5px] text-ink-3">
+              <p className="text-[14px] text-ink-3">
                 Seus personais veem estes dados para treinar você com segurança. A declaração de
                 restrições é obrigatória para treinar com um personal pelo Pienel.
               </p>
@@ -354,7 +354,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
           {consentimentoSaude ? (
             <>
               <fieldset className="flex flex-col gap-[7px]">
-                <legend className="mb-[7px] text-[13px] font-bold text-ink-2">
+                <legend className="mb-[7px] text-[14px] font-bold text-ink-2">
                   Você tem alguma restrição ou limitação física ou de saúde?
                 </legend>
                 <div role="radiogroup" aria-label="Você tem alguma restrição?" className="grid grid-cols-2 gap-2">
@@ -372,7 +372,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
                         onClick={() =>
                           mudarSaude({ temRestricoes: o.valor, restricoes: o.valor ? saude.restricoes : "" })
                         }
-                        className={`flex min-h-12 items-center justify-center gap-2 rounded-[13px] border-[1.5px] bg-surface text-sm font-bold ${
+                        className={`flex min-h-12 items-center justify-center gap-2 rounded-[13px] border-[1.5px] bg-surface text-[15px] font-bold ${
                           ativo ? "border-brand text-ink" : "border-line text-ink-2"
                         }`}
                       >
@@ -388,7 +388,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
                     );
                   })}
                 </div>
-                <p className="text-xs text-ink-3">
+                <p className="text-[13px] text-ink-3">
                   {declaradasEm
                     ? `Declaração atualizada em ${new Date(declaradasEm).toLocaleDateString("pt-BR")}.`
                     : "Obrigatório para enviar pedidos."}
@@ -461,7 +461,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
         <button type="button" onClick={() => sair()} className={ESTILO_BOTAO_SECUNDARIO}>
           Sair da conta
         </button>
-        <Link href="/conta/excluir" className="self-center text-[13px] font-semibold text-bad">
+        <Link href="/conta/excluir" className="self-center text-[14px] font-semibold text-bad">
           Excluir minha conta
         </Link>
       </div>
@@ -476,7 +476,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
             {ocupado ? "Salvando…" : "Salvar"}
           </button>
         )}
-        <p aria-live="polite" className="min-h-4 text-center text-xs text-ink-3">
+        <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {problemas.length > 0
             ? `Para salvar: ${frase(problemas)}`
             : aviso && !(aviso.tipo === "ok" && mudouAlgo)
@@ -497,7 +497,7 @@ function Bloco({ titulo, descricao, children }: { titulo: string; descricao: str
     <section className="flex flex-col gap-4">
       <div>
         <h2 className="text-[17px] font-semibold">{titulo}</h2>
-        <p className="text-[12.5px] text-ink-3">{descricao}</p>
+        <p className="text-[14px] text-ink-3">{descricao}</p>
       </div>
       {children}
     </section>
@@ -508,10 +508,10 @@ function EmBreve({ titulo, texto }: { titulo: string; texto: string }) {
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-line px-3.5 py-3">
       <div className="flex-1">
-        <p className="text-sm font-bold text-ink-2">{titulo}</p>
-        <p className="text-xs text-ink-3">{texto}</p>
+        <p className="text-[15px] font-bold text-ink-2">{titulo}</p>
+        <p className="text-[13px] text-ink-3">{texto}</p>
       </div>
-      <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-ink-3">Em breve</span>
+      <span className="rounded-full bg-surface px-2 py-0.5 text-[12.5px] font-bold text-ink-3">Em breve</span>
     </div>
   );
 }
@@ -543,7 +543,7 @@ function TrocarEmail({ emailAtual }: { emailAtual: string }) {
             <button
               type="button"
               onClick={() => setAberto(true)}
-              className="shrink-0 rounded-[13px] border border-line bg-surface px-3 text-[13px] font-semibold"
+              className="shrink-0 rounded-[13px] border border-line bg-surface px-3 text-[14px] font-semibold"
             >
               Trocar
             </button>
@@ -565,7 +565,7 @@ function TrocarEmail({ emailAtual }: { emailAtual: string }) {
             type="button"
             onClick={enviar}
             disabled={ocupado || !novo}
-            className="shrink-0 rounded-[13px] bg-brand px-3 text-[13px] font-bold text-brand-ink disabled:opacity-60"
+            className="shrink-0 rounded-[13px] bg-brand px-3 text-[14px] font-bold text-brand-ink disabled:opacity-60"
           >
             {ocupado ? "…" : "Enviar"}
           </button>
@@ -583,7 +583,7 @@ function DarConsentimento({ aoDar }: { aoDar: () => void }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-line bg-surface p-3.5 text-[13px] text-ink-2">
+      <div className="rounded-2xl border border-line bg-surface p-3.5 text-[14px] text-ink-2">
         <p className="font-bold text-ink">Para preencher estes dados, é preciso sua autorização.</p>
         <p className="mt-1">Depois de autorizar, você pode preencher: restrições e limitações, peso, altura e outras medidas.</p>
         <p className="mt-1">{AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO}</p>
@@ -618,7 +618,7 @@ function RetirarConsentimento({ aoRetirar }: { aoRetirar: () => void }) {
       <button
         type="button"
         onClick={() => setConfirmando(true)}
-        className="self-start text-[13px] font-semibold text-bad"
+        className="self-start text-[14px] font-semibold text-bad"
       >
         Retirar autorização dos dados de saúde
       </button>
@@ -626,13 +626,13 @@ function RetirarConsentimento({ aoRetirar }: { aoRetirar: () => void }) {
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-bad/40 bg-surface p-3.5">
-      <p className="text-[13px] text-ink-2">{AVISO_RETIRAR_CONSENTIMENTO}</p>
+      <p className="text-[14px] text-ink-2">{AVISO_RETIRAR_CONSENTIMENTO}</p>
       <Aviso>{erro}</Aviso>
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => setConfirmando(false)}
-          className="flex-1 rounded-[13px] border border-line px-3 py-2.5 text-[13px] font-bold"
+          className="flex-1 rounded-[13px] border border-line px-3 py-2.5 text-[14px] font-bold"
         >
           Manter
         </button>
@@ -646,7 +646,7 @@ function RetirarConsentimento({ aoRetirar }: { aoRetirar: () => void }) {
               else setErro(r.erro);
             })
           }
-          className="flex-1 rounded-[13px] bg-bad px-3 py-2.5 text-[13px] font-bold text-white disabled:opacity-60"
+          className="flex-1 rounded-[13px] bg-bad px-3 py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
         >
           {ocupado ? "Apagando…" : "Retirar e apagar"}
         </button>

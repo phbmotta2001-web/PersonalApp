@@ -67,24 +67,24 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
           <Avatar nome={personal.nome} cor={personal.cor} tamanho="grande" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[26px] font-extrabold">{personal.nome}</h1>
-            <p className="text-[13.5px] text-on-deep-2">
+            <p className="text-[14.5px] text-on-deep-2">
               Personal trainer · {personal.bairro} · {perfil.cref}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5">
-          <span className="inline-flex min-h-6 items-center gap-1 rounded-[7px] bg-white/12 px-2 text-xs font-bold">
+          <span className="inline-flex min-h-6 items-center gap-1 rounded-[7px] bg-white/12 px-2 text-[13px] font-bold">
             <Icone nome="escudo" className="size-4" />
             CREF verificado
           </span>
           {personal.nivel && <SeloNivel nivel={personal.nivel} />}
           {perfil.selo && (
-            <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-xs font-bold">
+            <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-[13px] font-bold">
               {perfil.selo}
             </span>
           )}
           {personal.publico !== "todos" && (
-            <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-xs font-bold">
+            <span className="inline-flex min-h-6 items-center rounded-[7px] bg-white/12 px-2 text-[13px] font-bold">
               {personal.genero === "f" ? "Especializada" : "Especializado"} em treino {personal.publico}
             </span>
           )}
@@ -106,7 +106,7 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
             {personal.objetivos.map((o) => (
               <span
                 key={o}
-                className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-bold text-ink-2"
+                className="rounded-full bg-surface-2 px-2.5 py-0.5 text-[13px] font-bold text-ink-2"
               >
                 {o}
               </span>
@@ -117,33 +117,33 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
         <section className="flex flex-col gap-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-[17px] font-semibold">Horários livres</h2>
-            <span className="text-xs text-ink-3">toda semana · aulas de 1 h</span>
+            <span className="text-[13px] text-ink-3">toda semana · aulas de 1 h</span>
           </div>
           <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4 py-1">
             {DIAS_SEMANA.map((d) => {
               const horas = personal.disponibilidade[d] ?? [];
               return (
                 <li key={d} className="flex items-center gap-3 py-2.5">
-                  <span className="w-[72px] shrink-0 text-sm font-bold">{NOME_DIA[d]}</span>
+                  <span className="w-[72px] shrink-0 text-[15px] font-bold">{NOME_DIA[d]}</span>
                   {horas.length > 0 ? (
                     <span className="flex flex-wrap gap-1.5">
                       {horas.map((h) => (
                         <span
                           key={h}
-                          className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums"
+                          className="rounded-lg bg-brand-soft px-2 py-0.5 text-[13px] font-bold text-brand tabular-nums"
                         >
                           {faixaDaAula(h)}
                         </span>
                       ))}
                     </span>
                   ) : (
-                    <span className="text-xs text-ink-3">Sem horário livre</span>
+                    <span className="text-[13px] text-ink-3">Sem horário livre</span>
                   )}
                 </li>
               );
             })}
           </ul>
-          <p className="text-xs text-ink-3">
+          <p className="text-[13px] text-ink-3">
             Você escolhe seus horários ao clicar em &quot;Tenho interesse&quot;. Eles só ficam reservados
             quando {personal.genero === "f" ? "ela" : "ele"} aceitar.
           </p>
@@ -153,12 +153,12 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
           <h2 className="text-[17px] font-semibold">Onde atende</h2>
           <ul className="divide-y divide-line">
             {perfil.ondeAtende.map((o) => (
-              <li key={o.local} className="flex items-center gap-3 py-2.5 text-sm">
+              <li key={o.local} className="flex items-center gap-3 py-2.5 text-[15px]">
                 <span className="text-brand">
                   <Icone nome={ICONE_DO_LOCAL[o.local]} />
                 </span>
                 <span className="flex-1">{o.rotulo}</span>
-                <span className="text-[12.5px] text-ink-3">{o.regioes}</span>
+                <span className="text-[14px] text-ink-3">{o.regioes}</span>
               </li>
             ))}
           </ul>
@@ -170,26 +170,26 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
             {perfil.planos.map((pl) => (
               <li key={pl.vezesPorSemana} className="flex items-center gap-3 py-3">
                 <div className="flex-1">
-                  <p className="text-[15px] font-bold">
+                  <p className="text-[16px] font-bold">
                     {pl.vezesPorSemana}x por semana
                     {pl.maisEscolhido && (
-                      <span className="ml-1.5 rounded-full bg-ok-soft px-2 py-0.5 text-xs text-ok">
+                      <span className="ml-1.5 rounded-full bg-ok-soft px-2 py-0.5 text-[13px] text-ok">
                         Mais escolhido
                       </span>
                     )}
                   </p>
-                  <p className="text-[12.5px] text-ink-3 tabular-nums">
+                  <p className="text-[14px] text-ink-3 tabular-nums">
                     {formatarReais(pl.precoAula)} por aula
                   </p>
                 </div>
                 <p className="text-right text-base font-extrabold tabular-nums">
                   {formatarReais(pl.mensalidade)}
-                  <span className="text-[12.5px] font-normal text-ink-3">/mês</span>
+                  <span className="text-[14px] font-normal text-ink-3">/mês</span>
                 </p>
               </li>
             ))}
           </ul>
-          <p className="text-[12.5px] text-ink-3">
+          <p className="text-[14px] text-ink-3">
             Mensalidade cobrada automaticamente no cartão ou Pix. A primeira aula é experimental e
             sem custo.
           </p>
@@ -207,14 +207,14 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
             >
               <figcaption className="flex justify-between gap-2">
                 <b>{d.autora}</b>
-                <span className="text-[12.5px] text-ink-3">{d.tempo}</span>
+                <span className="text-[14px] text-ink-3">{d.tempo}</span>
               </figcaption>
-              <blockquote className="text-sm text-ink-2">{d.texto}</blockquote>
+              <blockquote className="text-[15px] text-ink-2">{d.texto}</blockquote>
             </figure>
           ))}
         </section>
 
-        <p className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+        <p className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[14px] text-ink-2">
           <span className="mt-px text-brand">
             <Icone nome="relogio" />
           </span>
@@ -225,7 +225,7 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
       <footer className="sticky bottom-0 flex items-center gap-2.5 border-t border-line bg-surface px-[18px] pt-3 pb-3.5">
         <div className="flex min-w-0 flex-1 flex-col justify-center">
           <b className="text-base tabular-nums">{faixaPreco}</b>
-          <span className="text-xs text-ink-3">por aula, cobrado por mês</span>
+          <span className="text-[13px] text-ink-3">por aula, cobrado por mês</span>
         </div>
         <BotaoInteresse personal={personal} />
       </footer>
@@ -236,7 +236,7 @@ async function Perfil({ params }: { params: PageProps<"/personais/[slug]">["para
 function Numero({ valor, legenda }: { valor: string; legenda: string }) {
   return (
     <div className="flex flex-col-reverse rounded-[14px] border border-line bg-surface px-1.5 py-2.5 text-center">
-      <dt className="text-[11px] leading-tight text-ink-3">{legenda}</dt>
+      <dt className="text-[12.5px] leading-tight text-ink-3">{legenda}</dt>
       <dd className="font-display text-lg font-extrabold tabular-nums">{valor}</dd>
     </div>
   );

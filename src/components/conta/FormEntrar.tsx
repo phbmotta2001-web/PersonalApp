@@ -78,7 +78,7 @@ export function FormEntrar() {
         {entrando ? "Entrando…" : "Entrar"}
       </button>
 
-      <p className="text-center text-[13px] text-ink-3">
+      <p className="text-center text-[14px] text-ink-3">
         É personal e ainda não tem conta?{" "}
         <Link href="/cadastro" className="font-semibold text-brand">
           Criar conta de personal

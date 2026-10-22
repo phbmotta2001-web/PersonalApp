@@ -50,8 +50,8 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
       />
 
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
-        <h2 className="text-[15px] font-bold">Pausas com desconto</h2>
-        <p className="text-[13px] text-ink-2">
+        <h2 className="text-[16px] font-bold">Pausas com desconto</h2>
+        <p className="text-[14px] text-ink-2">
           Quantos dias por ano cada aluno pode pausar a matrícula com desconto na mensalidade (viagem, doença…).
           Passou disso, a pausa fica sem desconto. Você registra a pausa na ficha do aluno.
         </p>
@@ -72,8 +72,8 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
         </div>
       </section>
 
-      <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4 text-[13px] text-ink-2">
-        <h2 className="text-[15px] font-bold text-ink">Como funciona</h2>
+      <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4 text-[14px] text-ink-2">
+        <h2 className="text-[16px] font-bold text-ink">Como funciona</h2>
         <p>• O aluno cancela, remarca e marca reposição pelo app, e você recebe um aviso no sininho da agenda.</p>
         <p>• Remarcar pelo app só vale com a antecedência de cancelamento; em cima da hora, ele precisa falar com você.</p>
         <p>• Quando você cancela uma aula, o aluno sempre ganha reposição.</p>
@@ -127,8 +127,8 @@ function EscolhaDeHoras({
   const [outro, setOutro] = useState(!opcoes.includes(valor));
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
-      <h2 className="text-[15px] font-bold">{titulo}</h2>
-      <p className="text-[13px] text-ink-2">{texto}</p>
+      <h2 className="text-[16px] font-bold">{titulo}</h2>
+      <p className="text-[14px] text-ink-2">{texto}</p>
       <div className="flex flex-wrap gap-2">
         {opcoes.map((h) => (
           <Chip
@@ -148,7 +148,7 @@ function EscolhaDeHoras({
         </Chip>
       </div>
       {outro && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-[15px]">
           <input
             type="number"
             inputMode="numeric"

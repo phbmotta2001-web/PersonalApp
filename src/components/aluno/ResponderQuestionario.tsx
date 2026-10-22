@@ -62,7 +62,7 @@ export function ResponderQuestionario({
               key={q.id}
               className={`flex flex-col gap-2.5 rounded-[18px] border bg-surface p-3.5 ${semResposta ? "border-bad" : "border-line"}`}
             >
-              <p className="text-sm font-bold">
+              <p className="text-[15px] font-bold">
                 {i + 1}. {q.texto}
                 {!q.obrigatoria && <span className="font-normal text-ink-3"> (opcional)</span>}
               </p>
@@ -76,7 +76,7 @@ export function ResponderQuestionario({
                       role="radio"
                       aria-checked={v === n}
                       onClick={() => responder(q.id, n)}
-                      className={`min-h-10 rounded-[9px] text-sm font-bold tabular-nums ${
+                      className={`min-h-10 rounded-[9px] text-[15px] font-bold tabular-nums ${
                         v === n ? "bg-ink text-app" : "border border-line bg-surface"
                       }`}
                     >
@@ -87,7 +87,7 @@ export function ResponderQuestionario({
               )}
 
               {q.tipo === "numero" && (
-                <label className="flex items-center gap-2 text-sm text-ink-2">
+                <label className="flex items-center gap-2 text-[15px] text-ink-2">
                   <input
                     inputMode="decimal"
                     aria-label={q.texto}
@@ -114,7 +114,7 @@ export function ResponderQuestionario({
                       role="radio"
                       aria-checked={v === valor}
                       onClick={() => responder(q.id, valor as boolean)}
-                      className={`min-h-11 rounded-[12px] text-sm font-bold ${
+                      className={`min-h-11 rounded-[12px] text-[15px] font-bold ${
                         v === valor ? "bg-ink text-app" : "border border-line bg-surface"
                       }`}
                     >
@@ -133,7 +133,7 @@ export function ResponderQuestionario({
                       role="radio"
                       aria-checked={v === o}
                       onClick={() => responder(q.id, o)}
-                      className={`min-h-11 rounded-[12px] px-3 text-left text-sm font-semibold ${
+                      className={`min-h-11 rounded-[12px] px-3 text-left text-[15px] font-semibold ${
                         v === o ? "bg-ink text-app" : "border border-line bg-surface"
                       }`}
                     >

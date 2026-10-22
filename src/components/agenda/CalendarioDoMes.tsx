@@ -60,7 +60,7 @@ export function CalendarioDoMes({
 
   return (
     <section aria-label="Calendário do mês" className="rounded-[20px] border border-line bg-surface p-2">
-      <div className="grid grid-cols-7 pb-1 text-center text-[11px] font-semibold text-ink-3">
+      <div className="grid grid-cols-7 pb-1 text-center text-[12.5px] font-semibold text-ink-3">
         {DIAS.map((d) => (
           <span key={d.valor}>{d.curto}</span>
         ))}
@@ -82,7 +82,7 @@ export function CalendarioDoMes({
                 escolhido ? "bg-ink text-app" : ehHoje ? "bg-brand-soft" : "hover:bg-surface-2"
               } ${d < hoje && !escolhido ? "text-ink-2" : ""}`}
             >
-              <span className={`text-[13px] tabular-nums ${ehHoje ? "font-extrabold" : "font-semibold"}`}>
+              <span className={`text-[14px] tabular-nums ${ehHoje ? "font-extrabold" : "font-semibold"}`}>
                 {Number(d.slice(8))}
               </span>
               <span className="flex max-w-full flex-wrap justify-center gap-0.5 px-0.5">
@@ -96,7 +96,7 @@ export function CalendarioDoMes({
                     }`}
                   />
                 ))}
-                {lista.length > 4 && <span className="text-[9px] leading-[7px] font-bold">+</span>}
+                {lista.length > 4 && <span className="text-[11px] leading-[7px] font-bold">+</span>}
               </span>
             </Link>
           );

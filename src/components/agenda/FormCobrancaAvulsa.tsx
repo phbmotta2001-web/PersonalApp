@@ -16,7 +16,7 @@ export function FormCobrancaAvulsa({ alunos, hoje }: { alunos: { vinculoId: stri
   const [ocupado, iniciar] = useTransition();
 
   if (alunos.length === 0)
-    return <p className="px-[18px] pt-4 text-sm text-ink-3">Você ainda não tem alunos ativos para cobrar.</p>;
+    return <p className="px-[18px] pt-4 text-[15px] text-ink-3">Você ainda não tem alunos ativos para cobrar.</p>;
 
   return (
     <form
@@ -51,7 +51,7 @@ export function FormCobrancaAvulsa({ alunos, hoje }: { alunos: { vinculoId: stri
       <div className="grid grid-cols-2 gap-3">
         <Campo id="av-valor" rotulo="Valor">
           <div className="relative">
-            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-3">R$</span>
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[15px] text-ink-3">R$</span>
             <input
               id="av-valor"
               inputMode="decimal"

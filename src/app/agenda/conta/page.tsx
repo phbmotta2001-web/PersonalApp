@@ -38,8 +38,8 @@ async function Conteudo() {
 
       <section className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4">
         <Avatar nome={personal.nomeCompleto} cor="av1" />
-        <div className="min-w-0 text-[13px] text-ink-2">
-          <p className="truncate text-[16px] font-bold text-ink">{personal.nomeCompleto}</p>
+        <div className="min-w-0 text-[14px] text-ink-2">
+          <p className="truncate text-[17px] font-bold text-ink">{personal.nomeCompleto}</p>
           <p className="truncate">{personal.email}</p>
           <p>
             WhatsApp {formatarWhatsapp(personal.whatsapp)} · CREF {personal.cref}/{personal.crefUf}
@@ -72,7 +72,7 @@ async function Conteudo() {
           Sair da conta
         </button>
       </form>
-      <Link href="/conta/excluir" className="self-center text-[13px] font-semibold text-bad">
+      <Link href="/conta/excluir" className="self-center text-[14px] font-semibold text-bad">
         Excluir minha conta
       </Link>
     </div>
@@ -82,7 +82,7 @@ async function Conteudo() {
 function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2" aria-label={titulo}>
-      <h2 className="text-[11.5px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">{titulo}</h2>
+      <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">{titulo}</h2>
       <nav className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">{children}</nav>
     </section>
   );
@@ -95,8 +95,8 @@ function Linha({ href, icone, titulo, texto }: { href: string; icone: NomeIcone;
         <Icone nome={icone} className="size-[18px]" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold">{titulo}</span>
-        <span className="block text-xs text-ink-3">{texto}</span>
+        <span className="block text-[15px] font-bold">{titulo}</span>
+        <span className="block text-[13px] text-ink-3">{texto}</span>
       </span>
       <span className="text-ink-3" aria-hidden="true">›</span>
     </Link>

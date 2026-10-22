@@ -39,7 +39,7 @@ export function FormExcluirConta() {
           className={ESTILO_CAIXA}
         />
       </Campo>
-      <label className="flex items-start gap-3 text-[13px] text-ink-2">
+      <label className="flex items-start gap-3 text-[14px] text-ink-2">
         <input
           type="checkbox"
           checked={entendi}

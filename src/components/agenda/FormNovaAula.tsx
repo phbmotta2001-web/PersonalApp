@@ -84,7 +84,7 @@ export function FormNovaAula({
   return (
     <form onSubmit={salvar} className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-[13px] font-bold text-ink-2">Tipo de aula</legend>
+        <legend className="mb-2 text-[14px] font-bold text-ink-2">Tipo de aula</legend>
         <div className="grid grid-cols-3 gap-2">
           {TIPOS.map((t) => (
             <button
@@ -96,7 +96,7 @@ export function FormNovaAula({
                 const manter = lista.some((a) => a.vinculoId === nova.vinculoId) || (t.valor === "experimental" && semAluno);
                 mudar({ origem: t.valor, vinculoId: manter ? nova.vinculoId : (lista[0]?.vinculoId ?? null) });
               }}
-              className={`min-h-11 rounded-[13px] border text-sm font-bold ${
+              className={`min-h-11 rounded-[13px] border text-[15px] font-bold ${
                 nova.origem === t.valor ? "border-ink bg-ink text-app" : "border-line bg-surface"
               }`}
             >
@@ -104,11 +104,11 @@ export function FormNovaAula({
             </button>
           ))}
         </div>
-        <p className="text-xs text-ink-3">{TIPOS.find((t) => t.valor === nova.origem)?.texto}</p>
+        <p className="text-[13px] text-ink-3">{TIPOS.find((t) => t.valor === nova.origem)?.texto}</p>
       </fieldset>
 
       {nova.origem === "reposicao" && opcoes.length === 0 ? (
-        <p className="rounded-[14px] border border-dashed border-line p-3 text-[13px] text-ink-3">
+        <p className="rounded-[14px] border border-dashed border-line p-3 text-[14px] text-ink-3">
           Nenhum aluno tem reposição disponível agora. Reposições surgem quando uma aula é cancelada com antecedência.
         </p>
       ) : (
@@ -132,7 +132,7 @@ export function FormNovaAula({
         </Campo>
       )}
       {nova.origem === "reposicao" && credito && (
-        <p className="-mt-3 text-xs text-ink-3">Usa a reposição que vale até {dataCurta(credito.validoAte)}.</p>
+        <p className="-mt-3 text-[13px] text-ink-3">Usa a reposição que vale até {dataCurta(credito.validoAte)}.</p>
       )}
       {semAluno && nova.origem === "experimental" && (
         <Campo id="aula-nome" rotulo="Nome">
@@ -160,7 +160,7 @@ export function FormNovaAula({
       </Campo>
 
       <fieldset className="flex flex-col gap-[7px]">
-        <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Duração</legend>
+        <legend className="mb-[7px] text-[14px] font-bold text-ink-2">Duração</legend>
         <div className="flex flex-wrap gap-2">
           {DURACOES.map((d) => (
             <Chip
@@ -178,11 +178,11 @@ export function FormNovaAula({
       </fieldset>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-[13px] font-bold text-ink-2">Horário</legend>
+        <legend className="mb-2 text-[14px] font-bold text-ink-2">Horário</legend>
         {livres === null ? (
-          <p className="text-xs text-ink-3">Carregando seus horários livres…</p>
+          <p className="text-[13px] text-ink-3">Carregando seus horários livres…</p>
         ) : livres.length === 0 ? (
-          <p className="text-xs text-ink-3">Nenhum horário livre neste dia. Escolha outro dia ou um horário abaixo.</p>
+          <p className="text-[13px] text-ink-3">Nenhum horário livre neste dia. Escolha outro dia ou um horário abaixo.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {livres.map((m) => (
@@ -191,7 +191,7 @@ export function FormNovaAula({
                 type="button"
                 aria-pressed={nova.inicioMin === m}
                 onClick={() => mudar({ inicioMin: m })}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-bold tabular-nums ${
+                className={`rounded-lg px-2.5 py-1.5 text-[15px] font-bold tabular-nums ${
                   nova.inicioMin === m ? "bg-ink text-app" : "bg-brand-soft text-brand"
                 }`}
               >
@@ -200,12 +200,12 @@ export function FormNovaAula({
             ))}
           </div>
         )}
-        <label className="flex items-center gap-2 text-xs text-ink-3">
+        <label className="flex items-center gap-2 text-[13px] text-ink-3">
           Outro horário:
           <select
             value={nova.inicioMin}
             onChange={(e) => mudar({ inicioMin: Number(e.target.value) })}
-            className="min-h-10 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums text-ink"
+            className="min-h-10 rounded-[11px] border border-line bg-surface px-2 text-[15px] tabular-nums text-ink"
           >
             <option value={-1}>—</option>
             {opcoesDeHora(0, 1440 - nova.duracao).map((m) => (

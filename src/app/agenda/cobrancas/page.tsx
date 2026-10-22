@@ -58,8 +58,8 @@ async function Conteudo() {
           className="flex items-center gap-3 rounded-[20px] border-2 border-dashed border-brand bg-brand-soft p-4 text-brand"
         >
           <span className="flex-1">
-            <span className="block text-sm font-bold">Cadastre sua chave Pix</span>
-            <span className="block text-xs">
+            <span className="block text-[15px] font-bold">Cadastre sua chave Pix</span>
+            <span className="block text-[13px]">
               Assim cada cobrança já vai com o Pix copia e cola e o QR Code, com o valor certo.
             </span>
           </span>
@@ -69,7 +69,7 @@ async function Conteudo() {
 
       <Link
         href="/agenda/cobrancas/nova"
-        className="inline-flex items-center gap-1.5 self-start rounded-full bg-brand px-3.5 py-2 text-[13px] font-bold text-brand-ink"
+        className="inline-flex items-center gap-1.5 self-start rounded-full bg-brand px-3.5 py-2 text-[14px] font-bold text-brand-ink"
       >
         <Icone nome="mais" className="size-4" /> Cobrança avulsa
       </Link>
@@ -80,14 +80,14 @@ async function Conteudo() {
       <Lista titulo="Pagas recentemente" cobrancas={pagas.slice(0, 15)} hoje={hoje} />
 
       {com.length === 0 && (
-        <p className="rounded-[20px] border border-dashed border-line p-4 text-sm text-ink-3">
+        <p className="rounded-[20px] border border-dashed border-line p-4 text-[15px] text-ink-3">
           Nenhuma cobrança ainda. As mensalidades aparecem sozinhas uma semana antes do vencimento, a partir do valor e do
           vencimento de cada matrícula.
         </p>
       )}
 
       {pix && (
-        <Link href="/agenda/pix" className="self-center text-[13px] font-semibold text-brand">
+        <Link href="/agenda/pix" className="self-center text-[14px] font-semibold text-brand">
           Chave Pix: {pix.chave} · alterar
         </Link>
       )}
@@ -98,8 +98,8 @@ async function Conteudo() {
 function Numero({ titulo, valor, cor }: { titulo: string; valor: number; cor: string }) {
   return (
     <div className="rounded-[16px] border border-line bg-surface px-2.5 py-2.5">
-      <p className={`text-[15px] font-extrabold tabular-nums ${cor}`}>{centavosParaReais(valor)}</p>
-      <p className="text-[11px] text-ink-3">{titulo}</p>
+      <p className={`text-[16px] font-extrabold tabular-nums ${cor}`}>{centavosParaReais(valor)}</p>
+      <p className="text-[12.5px] text-ink-3">{titulo}</p>
     </div>
   );
 }
@@ -118,7 +118,7 @@ function Lista({
   if (cobrancas.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
-      <h2 className={`text-[15px] font-semibold ${destaque === "bad" ? "text-bad" : destaque === "gold" ? "text-gold" : ""}`}>
+      <h2 className={`text-[16px] font-semibold ${destaque === "bad" ? "text-bad" : destaque === "gold" ? "text-gold" : ""}`}>
         {titulo} ({cobrancas.length})
       </h2>
       <ul className="flex flex-col gap-1.5">
@@ -131,19 +131,19 @@ function Lista({
               }`}
             >
               <span className="min-w-0 flex-1">
-                <span className={`block truncate text-sm font-bold ${c.s === "atrasada" ? "text-bad" : ""}`}>{c.nome}</span>
-                <span className="block truncate text-xs text-ink-3">{descricaoDaCobranca(c)}</span>
-                <span className="block text-xs text-ink-3">
+                <span className={`block truncate text-[15px] font-bold ${c.s === "atrasada" ? "text-bad" : ""}`}>{c.nome}</span>
+                <span className="block truncate text-[13px] text-ink-3">{descricaoDaCobranca(c)}</span>
+                <span className="block text-[13px] text-ink-3">
                   {c.s === "paga" && c.pagoEm
                     ? `pago em ${c.pagoEm.slice(8, 10)}/${c.pagoEm.slice(5, 7)}`
                     : textoDoVencimento(c.vencimento, hoje)}
                 </span>
               </span>
               <span className="flex flex-col items-end gap-1">
-                <span className="text-sm font-extrabold tabular-nums">
+                <span className="text-[15px] font-extrabold tabular-nums">
                   {centavosParaReais(c.s === "paga" ? (c.valorPagoCentavos ?? c.valorCentavos) : c.valorCentavos)}
                 </span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_COBRANCA[c.s]}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_COBRANCA[c.s]}`}>
                   {c.alunoAvisouEm && c.situacao === "aberta" ? "Avisou que pagou" : ROTULO_COBRANCA[c.s]}
                 </span>
               </span>

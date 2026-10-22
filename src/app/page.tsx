@@ -18,7 +18,7 @@ export default function Home() {
         </p>
       </div>
 
-      <ul className="flex flex-col gap-3 text-[15px] text-ink-2">
+      <ul className="flex flex-col gap-3 text-[16px] text-ink-2">
         {[
           { icone: "relogio" as const, texto: "Agenda com aulas fixas, remarcações e reposições" },
           { icone: "usuario" as const, texto: "Alunos marcam e remarcam sozinhos, dentro das suas regras" },
@@ -67,7 +67,7 @@ async function MenuConta() {
           Abrir minha área
         </Link>
         {/* Cada e-mail é aluno OU personal: para criar a conta de personal, é preciso sair desta. */}
-        <form action={sair} className="text-center text-[13px] text-ink-3">
+        <form action={sair} className="text-center text-[14px] text-ink-3">
           É personal? Use outro e-mail:{" "}
           <button type="submit" className="font-semibold text-brand">
             sair desta conta de aluno
@@ -84,7 +84,7 @@ async function MenuConta() {
       <Link href="/entrar" className="text-center font-semibold text-brand">
         Já tenho conta: entrar
       </Link>
-      <p className="text-center text-[13px] text-ink-3">
+      <p className="text-center text-[14px] text-ink-3">
         É aluno? Sua conta é criada pelo link de convite do seu personal.
       </p>
     </div>

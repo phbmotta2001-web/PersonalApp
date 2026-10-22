@@ -60,7 +60,7 @@ export function AcoesDaCobranca({
     return (
       <div className="flex flex-col gap-3">
         {c.situacao === "paga" && c.pagoEm && (
-          <p className="rounded-[14px] bg-ok-soft p-3 text-[13px] text-ok">
+          <p className="rounded-[14px] bg-ok-soft p-3 text-[14px] text-ok">
             Recebido em {c.pagoEm.slice(8, 10)}/{c.pagoEm.slice(5, 7)}/{c.pagoEm.slice(0, 4)}
             {c.formaPagamento && ` por ${FORMAS_PAGAMENTO.find((f) => f.valor === c.formaPagamento)?.rotulo.toLowerCase()}`}
             {c.valorPagoCentavos != null && `: ${centavosParaReais(c.valorPagoCentavos)}`}.
@@ -76,7 +76,7 @@ export function AcoesDaCobranca({
   return (
     <div className="flex flex-col gap-3">
       {c.alunoAvisouEm && (
-        <p className="rounded-[14px] bg-gold-soft p-3 text-[13px] text-gold">
+        <p className="rounded-[14px] bg-gold-soft p-3 text-[14px] text-gold">
           <strong>{primeiro} avisou que pagou</strong> em {new Date(c.alunoAvisouEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}.
           Confira no seu banco e confirme abaixo.
         </p>
@@ -85,14 +85,14 @@ export function AcoesDaCobranca({
 
       {modo === "receber" ? (
         <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
-          <p className="text-[15px] font-bold">Marcar como recebido</p>
+          <p className="text-[16px] font-bold">Marcar como recebido</p>
           <div className="grid grid-cols-2 gap-3">
             <Campo id="rec-data" rotulo="Data">
               <input id="rec-data" type="date" value={pagoEm} max={hoje} onChange={(e) => setPagoEm(e.target.value)} className={ESTILO_CAIXA} />
             </Campo>
             <Campo id="rec-valor" rotulo="Valor recebido">
               <div className="relative">
-                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-3">R$</span>
+                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[15px] text-ink-3">R$</span>
                 <input
                   id="rec-valor"
                   inputMode="decimal"
@@ -138,7 +138,7 @@ export function AcoesDaCobranca({
 
       {pix && <CopiarPix codigo={pix.codigo} qrSvg={pix.qrSvg} />}
 
-      <div className="flex flex-wrap gap-4 pt-1 text-[13px] font-semibold">
+      <div className="flex flex-wrap gap-4 pt-1 text-[14px] font-semibold">
         <button type="button" onClick={() => setModo(modo === "valor" ? null : "valor")} className="text-brand">
           Mudar valor
         </button>
@@ -149,11 +149,11 @@ export function AcoesDaCobranca({
 
       {modo === "valor" && (
         <section className="flex flex-col gap-2 rounded-[16px] border border-line bg-surface p-3">
-          <label htmlFor="novo-valor" className="text-[13px] font-bold text-ink-2">
+          <label htmlFor="novo-valor" className="text-[14px] font-bold text-ink-2">
             Novo valor (ex.: com desconto)
           </label>
           <div className="relative">
-            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-3">R$</span>
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[15px] text-ink-3">R$</span>
             <input
               id="novo-valor"
               inputMode="decimal"
@@ -169,14 +169,14 @@ export function AcoesDaCobranca({
       )}
       {modo === "cancelar" && (
         <section className="flex flex-col gap-2 rounded-[16px] border border-bad/40 bg-surface p-3">
-          <p className="text-[13px] text-ink-2">
+          <p className="text-[14px] text-ink-2">
             A cobrança sai da lista de {primeiro} (ex.: mês de férias). Dá para reabrir depois.
           </p>
           <button
             type="button"
             disabled={ocupado}
             onClick={() => executar(() => cancelarCobranca(c.id))}
-            className="flex min-h-11 items-center justify-center rounded-[13px] bg-bad px-3 text-[13px] font-bold text-white disabled:opacity-60"
+            className="flex min-h-11 items-center justify-center rounded-[13px] bg-bad px-3 text-[14px] font-bold text-white disabled:opacity-60"
           >
             Cancelar cobrança
           </button>

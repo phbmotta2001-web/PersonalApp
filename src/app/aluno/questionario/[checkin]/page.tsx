@@ -31,7 +31,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/questionario/[ch
   const voltar = c ? `/aluno/personal/${c.vinculoId}` : "/aluno";
   if (!c)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
         <p>Questionário não encontrado. Confira se entrou com a sua conta de aluno.</p>
         <Link href="/aluno" className="font-semibold text-brand">
           Ir para a minha área
@@ -40,7 +40,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/questionario/[ch
     );
   if (c.respondidoEm)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
         <p className="rounded-[14px] bg-ok-soft p-3 text-ok">Você já respondeu este questionário. Obrigado!</p>
         <Link href={voltar} className="font-semibold text-brand">
           Voltar
@@ -50,7 +50,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/questionario/[ch
   return (
     <>
       <p className="px-[18px] pb-1 text-[17px] font-extrabold">{c.titulo}</p>
-      <p className="px-[18px] pb-2 text-xs text-ink-3">Suas respostas vão para o seu personal. Leva uns 2 minutos.</p>
+      <p className="px-[18px] pb-2 text-[13px] text-ink-3">Suas respostas vão para o seu personal. Leva uns 2 minutos.</p>
       <ResponderQuestionario checkinId={c.id} perguntas={c.perguntas} voltar={voltar} />
     </>
   );

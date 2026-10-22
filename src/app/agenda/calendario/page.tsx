@@ -159,7 +159,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
           <Link
             href={expandida ? `/agenda/calendario?dia=${dia}` : `/agenda/calendario?ver=mes&dia=${dia}`}
             scroll={false}
-            className="rounded-full border border-line bg-surface px-3 py-1.5 text-[13px] font-semibold"
+            className="rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-semibold"
           >
             {expandida ? "Recolher" : "Expandir"}
           </Link>
@@ -174,7 +174,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               aulas={doMes}
               linkDoDia={(d) => `/agenda/calendario?ver=mes&mes=${mes}&dia=${d}`}
             />
-            <p className="flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-ink-2" aria-label="Legenda">
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-2" aria-label="Legenda">
               {CATEGORIAS_HISTORICO.map((c) => (
                 <span key={c.valor} className="flex items-center gap-1.5">
                   <span className={`size-2.5 rounded-full ${c.ponto}`} aria-hidden="true" />
@@ -199,16 +199,16 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 href={`/agenda/calendario?dia=${d.data}`}
                 scroll={false}
                 aria-current={ativo ? "date" : undefined}
-                className={`flex flex-col items-center gap-0.5 rounded-[14px] py-2 text-xs ${
+                className={`flex flex-col items-center gap-0.5 rounded-[14px] py-2 text-[13px] ${
                   ativo ? "bg-ink text-app" : p > 0 ? "border border-dashed border-info bg-info-soft/60 text-ink-2" : "border border-line bg-surface text-ink-2"
                 }`}
               >
                 <span>{curtoDoDia(d.diaSemana)}</span>
-                <span className="text-[15px] font-bold tabular-nums">{d.data.slice(8, 10)}</span>
-                <span className={`text-[10.5px] ${ativo ? "" : "text-ink-3"}`}>
+                <span className="text-[16px] font-bold tabular-nums">{d.data.slice(8, 10)}</span>
+                <span className={`text-[12px] ${ativo ? "" : "text-ink-3"}`}>
                   {n > 0 ? `${n} aula${n > 1 ? "s" : ""}` : p > 0 ? "" : d.trabalha ? "livre" : "folga"}
                 </span>
-                {p > 0 && <span className={`text-[10px] font-bold ${ativo ? "" : "text-info"}`}>{p === 1 ? "pausa" : `${p} pausas`}</span>}
+                {p > 0 && <span className={`text-[11.5px] font-bold ${ativo ? "" : "text-info"}`}>{p === 1 ? "pausa" : `${p} pausas`}</span>}
               </Link>
             );
           })}
@@ -216,14 +216,14 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         )}
 
         <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Dia escolhido">
-          <h2 className="text-[16px] font-bold">
+          <h2 className="text-[17px] font-bold">
             {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
           </h2>
           {aniversariosDoDia.map((a) => (
             <Link
               key={a.vinculoId}
               href={`/agenda/alunos/${a.vinculoId}`}
-              className="flex items-center gap-2 rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold"
+              className="flex items-center gap-2 rounded-[12px] bg-gold-soft px-3 py-2 text-[14px] text-gold"
             >
               <Icone nome="estrela" className="size-4 shrink-0" />
               <span>
@@ -232,10 +232,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             </Link>
           ))}
           {doDia.bloqueios.length > 0 && (
-            <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-xs text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
+            <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
           )}
           {faixas.length === 0 && (
-            <p className="text-[13px] text-ink-3">
+            <p className="text-[14px] text-ink-3">
               Você ainda não configurou seus horários de trabalho.{" "}
               <Link href="/agenda/horarios" className="font-semibold text-brand">
                 Configurar agora
@@ -243,7 +243,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             </p>
           )}
           {linhas.length === 0 ? (
-            <p className="text-[13px] text-ink-3">{doDia.trabalha ? "Nenhuma aula neste dia." : "Folga."}</p>
+            <p className="text-[14px] text-ink-3">{doDia.trabalha ? "Nenhuma aula neste dia." : "Folga."}</p>
           ) : (
             <ol className="flex flex-col">
               {linhas.map((l) => {
@@ -255,11 +255,11 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                     key={a ? a.id : `livre-${l.min}`}
                     className="grid grid-cols-[46px_1fr] items-start gap-2 border-t border-dashed border-line py-1.5 first:border-t-0"
                   >
-                    <span className={`pt-2 text-[12.5px] font-bold tabular-nums ${l.tipo === "livre" ? "text-ink-3" : ""}`}>
+                    <span className={`pt-2 text-[14px] font-bold tabular-nums ${l.tipo === "livre" ? "text-ink-3" : ""}`}>
                       {minParaHora(l.min)}
                     </span>
                     {l.tipo === "livre" ? (
-                      <Link href={novaAula(l.min)} className="flex min-h-9 items-center gap-1.5 text-[12.5px] text-ink-3">
+                      <Link href={novaAula(l.min)} className="flex min-h-9 items-center gap-1.5 text-[14px] text-ink-3">
                         livre <span className="font-semibold text-brand">· marcar aula</span>
                       </Link>
                     ) : l.tipo === "pausa" && a ? (
@@ -267,8 +267,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                         href={novaAula(l.min)}
                         className="flex flex-col rounded-[12px] border border-dashed border-info bg-info-soft/60 px-3 py-2 text-info"
                       >
-                        <span className="truncate text-sm font-bold">{a.nome.split(" ")[0]} · em pausa</span>
-                        <span className="text-xs">Livre para reposição ou aula avulsa · marcar aqui</span>
+                        <span className="truncate text-[15px] font-bold">{a.nome.split(" ")[0]} · em pausa</span>
+                        <span className="text-[13px]">Livre para reposição ou aula avulsa · marcar aqui</span>
                       </Link>
                     ) : a && s ? (
                       <Link
@@ -278,8 +278,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                         }`}
                       >
                         <span className="min-w-0 flex-1">
-                          <span className={`block truncate text-sm font-bold ${riscada ? "line-through" : ""}`}>{a.nome}</span>
-                          <span className="block truncate text-xs text-ink-3">
+                          <span className={`block truncate text-[15px] font-bold ${riscada ? "line-through" : ""}`}>{a.nome}</span>
+                          <span className="block truncate text-[13px] text-ink-3">
                             {[
                               `até ${emBrasilia(a.fim).hora}`,
                               !riscada && a.local,
@@ -288,13 +288,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                               .filter(Boolean)
                               .join(" · ")}
                           </span>
-                          {!riscada && caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
+                          {!riscada && caiEmBloqueio(a) && <span className="block text-[13px] font-semibold text-gold">Cai num bloqueio</span>}
                           {!riscada && a.vinculoId && suspensas[a.vinculoId] && (
-                            <span className="block text-xs font-semibold text-bad">Matrícula suspensa</span>
+                            <span className="block text-[13px] font-semibold text-bad">Matrícula suspensa</span>
                           )}
                         </span>
                         {s !== "agendada" && s !== "confirmada" && (
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_SITUACAO[s]}`}>
                             {s === "pendente"
                               ? a.propostaPor === "personal"
                                 ? "Aguardando aluno"
@@ -311,7 +311,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
           )}
         </section>
         {!expandida && (
-        <p className="text-xs text-ink-3">
+        <p className="text-[13px] text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.
         </p>
@@ -321,7 +321,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
       {dia >= hoje && (
         <Link
           href={novaAula()}
-          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[14px] font-extrabold text-brand-ink"
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
         >
           <Icone nome="mais" className="size-4" /> Aula
         </Link>

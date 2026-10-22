@@ -98,10 +98,10 @@ export function AtivarNotificacoes({ texto }: { texto: string }) {
         <Icone nome="sino" className="size-5" />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-sm font-bold text-brand">
+        <p className="text-[15px] font-bold text-brand">
           {modo === "pedir" ? "Ligue as notificações" : "As notificações estão bloqueadas"}
         </p>
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           {modo === "pedir"
             ? texto
             : "Para receber os avisos, libere as notificações do Pienel nos ajustes do celular."}
@@ -113,12 +113,12 @@ export function AtivarNotificacoes({ texto }: { texto: string }) {
               type="button"
               onClick={ligar}
               disabled={ocupado}
-              className="rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink disabled:opacity-60"
+              className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink disabled:opacity-60"
             >
               {ocupado ? "Ligando…" : "Ligar notificações"}
             </button>
           )}
-          <button type="button" onClick={dispensar} className="rounded-[11px] px-3 py-2 text-[13px] font-semibold text-ink-2">
+          <button type="button" onClick={dispensar} className="rounded-[11px] px-3 py-2 text-[14px] font-semibold text-ink-2">
             {modo === "pedir" ? "Agora não" : "Entendi"}
           </button>
         </div>

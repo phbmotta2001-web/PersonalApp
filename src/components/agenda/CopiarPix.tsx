@@ -9,8 +9,8 @@ export function CopiarPix({ codigo, qrSvg }: { codigo: string; qrSvg: string }) 
 
   return (
     <section className="flex flex-col gap-2 rounded-[16px] border border-line bg-surface p-3">
-      <p className="text-[13px] font-bold text-ink-2">Pix copia e cola</p>
-      <p className="max-h-16 overflow-hidden text-[11px] break-all text-ink-3">{codigo}</p>
+      <p className="text-[14px] font-bold text-ink-2">Pix copia e cola</p>
+      <p className="max-h-16 overflow-hidden text-[12.5px] break-all text-ink-3">{codigo}</p>
       <div className="flex gap-2">
         <button
           type="button"
@@ -23,7 +23,7 @@ export function CopiarPix({ codigo, qrSvg }: { codigo: string; qrSvg: string }) 
               setCopiado(false);
             }
           }}
-          className="flex-1 rounded-[12px] bg-brand px-3 py-2.5 text-[13px] font-bold text-brand-ink"
+          className="flex-1 rounded-[12px] bg-brand px-3 py-2.5 text-[14px] font-bold text-brand-ink"
         >
           {copiado ? "Copiado!" : "Copiar código Pix"}
         </button>
@@ -31,7 +31,7 @@ export function CopiarPix({ codigo, qrSvg }: { codigo: string; qrSvg: string }) 
           type="button"
           aria-expanded={mostrarQr}
           onClick={() => setMostrarQr(!mostrarQr)}
-          className="rounded-[12px] border border-line px-3 py-2.5 text-[13px] font-bold"
+          className="rounded-[12px] border border-line px-3 py-2.5 text-[14px] font-bold"
         >
           {mostrarQr ? "Esconder QR" : "Ver QR Code"}
         </button>

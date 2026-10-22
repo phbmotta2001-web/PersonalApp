@@ -31,7 +31,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/question
   const q = await lerQuestionario(id);
   if (!q)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
         <p>Questionário não encontrado.</p>
         <Link href="/agenda/online/questionarios" className="font-semibold text-brand">
           Ver questionários

@@ -37,8 +37,8 @@ export function CobrancasDoAluno({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs font-semibold text-ink-3">Matrícula e pagamentos</p>
-      {abertas.length === 0 && <p className="text-[13px] text-ink-3">Nada em aberto. Tudo em dia!</p>}
+      <p className="text-[13px] font-semibold text-ink-3">Matrícula e pagamentos</p>
+      {abertas.length === 0 && <p className="text-[14px] text-ink-3">Nada em aberto. Tudo em dia!</p>}
       {abertas.map((c) => {
         const s = situacaoDaCobranca(c, hoje);
         return (
@@ -48,23 +48,23 @@ export function CobrancasDoAluno({
           >
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
-                <p className={`text-sm font-bold ${s === "atrasada" ? "text-bad" : ""}`}>{descricaoDaCobranca(c, true)}</p>
-                <p className={`text-xs ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
+                <p className={`text-[15px] font-bold ${s === "atrasada" ? "text-bad" : ""}`}>{descricaoDaCobranca(c, true)}</p>
+                <p className={`text-[13px] ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
                   {textoDoVencimento(c.vencimento, hoje)}
                 </p>
                 {c.descontoCentavos > 0 && (
-                  <p className="text-xs text-info">Com desconto de {centavosParaReais(c.descontoCentavos)} pela pausa</p>
+                  <p className="text-[13px] text-info">Com desconto de {centavosParaReais(c.descontoCentavos)} pela pausa</p>
                 )}
               </div>
               <div className="flex flex-col items-end gap-1">
                 <span className="text-[17px] font-extrabold tabular-nums">{centavosParaReais(c.valorCentavos)}</span>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_COBRANCA[s]}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_COBRANCA[s]}`}>
                   {c.alunoAvisouEm ? "Aguardando confirmação" : ROTULO_COBRANCA[s]}
                 </span>
               </div>
             </div>
             {c.alunoAvisouEm ? (
-              <p className="text-xs text-ink-3">
+              <p className="text-[13px] text-ink-3">
                 Você avisou que pagou. {primeiro} confere no banco e confirma por aqui.
               </p>
             ) : (
@@ -72,7 +72,7 @@ export function CobrancasDoAluno({
                 {pix[c.id] ? (
                   <CopiarPix codigo={pix[c.id].codigo} qrSvg={pix[c.id].qrSvg} />
                 ) : (
-                  <p className="text-xs text-ink-3">Combine a forma de pagamento com {primeiro}.</p>
+                  <p className="text-[13px] text-ink-3">Combine a forma de pagamento com {primeiro}.</p>
                 )}
                 <button
                   type="button"
@@ -89,7 +89,7 @@ export function CobrancasDoAluno({
                       }
                     })
                   }
-                  className="rounded-[12px] border border-brand px-3 py-2.5 text-[13px] font-bold text-brand"
+                  className="rounded-[12px] border border-brand px-3 py-2.5 text-[14px] font-bold text-brand"
                 >
                   {ocupado ? "Avisando…" : "Já paguei"}
                 </button>
@@ -100,7 +100,7 @@ export function CobrancasDoAluno({
       })}
       <Aviso>{erro}</Aviso>
       {pagas.length > 0 && (
-        <ul className="flex flex-col gap-1 text-xs text-ink-3">
+        <ul className="flex flex-col gap-1 text-[13px] text-ink-3">
           {pagas.map((c) => (
             <li key={c.id} className="flex gap-2">
               <span className="flex-1">{descricaoDaCobranca(c, true)}</span>

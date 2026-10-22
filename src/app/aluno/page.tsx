@@ -76,7 +76,7 @@ async function Conteudo() {
   return (
     <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
       <header>
-        <p className="text-[12.5px] text-ink-3">Minha área</p>
+        <p className="text-[14px] text-ink-3">Minha área</p>
         <h1 className="text-[24px] font-extrabold">Olá, {conta.perfil.nomeCompleto.split(" ")[0]}</h1>
       </header>
 
@@ -91,12 +91,12 @@ async function Conteudo() {
           >
             <Icone nome="cadeado" className="size-6 shrink-0 text-bad" />
             <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-extrabold text-bad">Matrícula suspensa</span>
-              <span className="block text-[13px] text-ink-2">
+              <span className="block text-[16px] font-extrabold text-bad">Matrícula suspensa</span>
+              <span className="block text-[14px] text-ink-2">
                 Sua matrícula com {p.nome.split(" ")[0]} venceu sem pagamento. Pague para liberar suas aulas.
               </span>
             </span>
-            <span className="rounded-[11px] bg-bad px-3 py-2 text-[13px] font-bold text-white">Pagar</span>
+            <span className="rounded-[11px] bg-bad px-3 py-2 text-[14px] font-bold text-white">Pagar</span>
           </Link>
         ))}
 
@@ -104,7 +104,7 @@ async function Conteudo() {
       <AtivarNotificacoes texto="Receba o lembrete 1 hora antes da aula, as respostas do seu personal e o aviso de vencimento da matrícula." />
 
       {!perfilCompleto(conta) && (
-        <section className="rounded-[20px] bg-gold-soft p-4 text-[13.5px] text-gold">
+        <section className="rounded-[20px] bg-gold-soft p-4 text-[14.5px] text-gold">
           <p className="font-bold">Complete seu perfil</p>
           <p className="mt-1">
             Falta {juntarComE(faltaNoPerfil(conta))}. Sem isso, você não consegue aceitar convites de personais.
@@ -121,19 +121,19 @@ async function Conteudo() {
             <Icone nome="calendario" />
           </span>
           <p className="font-bold">Você ainda não treina com nenhum personal pelo Pienel</p>
-          <p className="text-[13px] text-ink-3">Peça o link de convite ao seu personal.</p>
+          <p className="text-[14px] text-ink-3">Peça o link de convite ao seu personal.</p>
         </section>
       ) : (
         <>
-          <section className="flex flex-col gap-3 rounded-[22px] bg-deep p-4 text-on-deep" aria-label="Próxima aula">
+          <section className="flex flex-col gap-3 rounded-[24px] bg-deep p-5 text-on-deep" aria-label="Próxima aula">
             {proxima ? (
               <>
                 <div>
-                  <p className="text-[12.5px] text-on-deep-2">Sua próxima aula · {quando(proxima.inicio)}</p>
-                  <p className="font-display text-[24px] leading-tight font-extrabold">
+                  <p className="text-[14px] text-on-deep-2">Sua próxima aula · {quando(proxima.inicio)}</p>
+                  <p className="font-display text-[30px] leading-tight font-extrabold">
                     {textoDaAula(proxima.inicio, null).replace(" às ", ", ")}
                   </p>
-                  <p className="text-[13px] text-on-deep-2">
+                  <p className="text-[14px] text-on-deep-2">
                     com {nomeDe(proxima.vinculoId)}
                     {proxima.local ? ` · ${proxima.local}` : ""}
                   </p>
@@ -141,13 +141,13 @@ async function Conteudo() {
                 <div className="grid grid-cols-2 gap-2">
                   <Link
                     href="/aluno/aulas"
-                    className="flex min-h-11 items-center justify-center rounded-[13px] bg-on-deep text-[13.5px] font-bold text-deep"
+                    className="flex min-h-12 items-center justify-center rounded-[14px] bg-on-deep text-[14.5px] font-bold text-deep"
                   >
                     Remarcar
                   </Link>
                   <Link
                     href="/aluno/aulas"
-                    className="flex min-h-11 items-center justify-center rounded-[13px] border border-on-deep/30 text-[13.5px] font-bold"
+                    className="flex min-h-12 items-center justify-center rounded-[14px] border border-on-deep/30 text-[14.5px] font-bold"
                   >
                     Cancelar
                   </Link>
@@ -156,7 +156,7 @@ async function Conteudo() {
             ) : (
               <>
                 <p className="font-display text-[20px] font-extrabold">Nenhuma aula marcada</p>
-                <p className="text-[13px] text-on-deep-2">Quando seu personal marcar seus horários, a próxima aula aparece aqui.</p>
+                <p className="text-[14px] text-on-deep-2">Quando seu personal marcar seus horários, a próxima aula aparece aqui.</p>
               </>
             )}
           </section>
@@ -168,7 +168,7 @@ async function Conteudo() {
               className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
             >
               <Icone nome="calendario" className="size-5 shrink-0 text-gold" />
-              <span className="min-w-0 flex-1 text-[13.5px]">
+              <span className="min-w-0 flex-1 text-[14.5px]">
                 <strong className="text-gold">{nomeDe(a.vinculoId)} sugeriu outro horário</strong>
                 <span className="block text-ink-2">{textoDaAula(a.inicio, null)} · toque para responder</span>
               </span>
@@ -183,23 +183,23 @@ async function Conteudo() {
                 className={`flex flex-col gap-2.5 rounded-[20px] border p-4 ${atrasada ? "border-bad bg-bad/5" : "border-line bg-surface"}`}
                 aria-label="Matrícula"
               >
-                <p className="flex items-start gap-2 text-[14px]">
+                <p className="flex items-start gap-2 text-[15px]">
                   <Icone nome="dinheiro" className={`mt-0.5 size-5 shrink-0 ${atrasada ? "text-bad" : "text-gold"}`} />
                   <span className="flex-1">
                     <strong className={atrasada ? "text-bad" : ""}>
                       Sua matrícula {textoDoVencimento(c.vencimento, hoje).split(" (")[0]}
                     </strong>
-                    <span className="block text-[13px] text-ink-2">
+                    <span className="block text-[14px] text-ink-2">
                       {centavosParaReais(c.valorCentavos)} · {c.personal}
                     </span>
                   </span>
                 </p>
                 {c.alunoAvisouEm ? (
-                  <p className="text-[13px] text-ink-3">Você avisou que pagou. {c.personal} confere e confirma.</p>
+                  <p className="text-[14px] text-ink-3">Você avisou que pagou. {c.personal} confere e confirma.</p>
                 ) : (
                   <Link
                     href="/aluno/pagamentos"
-                    className="botao-macio flex min-h-11 items-center justify-center rounded-[13px] bg-brand text-[14px] font-bold text-brand-ink"
+                    className="botao-macio flex min-h-11 items-center justify-center rounded-[13px] bg-brand text-[15px] font-bold text-brand-ink"
                   >
                     Pagar com Pix
                   </Link>
@@ -218,23 +218,23 @@ async function Conteudo() {
                 <Icone nome="conversa" className="size-5" />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold">{q.titulo}</span>
-                <span className="block text-xs text-ink-3">{q.personal} está esperando suas respostas. Leva uns 2 minutos.</span>
+                <span className="block text-[15px] font-bold">{q.titulo}</span>
+                <span className="block text-[13px] text-ink-3">{q.personal} está esperando suas respostas. Leva uns 2 minutos.</span>
               </span>
-              <span className="rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink">Responder</span>
+              <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
             </Link>
           ))}
 
           <section className="flex flex-col gap-2" aria-label={personais.length > 1 ? "Seus personais" : "Seu personal"}>
-            <h2 className="text-[11.5px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">
+            <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">
               {personais.length > 1 ? "Seus personais" : "Seu personal"}
             </h2>
             {personais.map((p) => (
               <div key={p.vinculoId} className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-3">
                 <Avatar nome={p.nome} cor={corPorId(p.vinculoId)} tamanho="pequeno" />
                 <Link href={`/aluno/personal/${p.vinculoId}`} className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold">{p.nome}</span>
-                  <span className="block text-xs text-ink-3">CREF {p.cref} · ver detalhes ›</span>
+                  <span className="block truncate text-[15px] font-bold">{p.nome}</span>
+                  <span className="block text-[13px] text-ink-3">CREF {p.cref} · ver detalhes ›</span>
                 </Link>
                 <a
                   href={linkWhatsapp(p.whatsapp, `Oi, ${p.nome.split(" ")[0]}!`)}

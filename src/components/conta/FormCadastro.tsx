@@ -75,7 +75,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
           Enviamos um link de confirmação para <b>{enviadoPara}</b>. Clique nele para ativar sua
           conta.
         </p>
-        <ul className="list-disc space-y-1 pl-5 text-[13px] text-ink-3">
+        <ul className="list-disc space-y-1 pl-5 text-[14px] text-ink-3">
           <li>Abra o link <b>neste mesmo navegador</b>.</li>
           <li>Não chegou? Procure no spam. A mensagem pode levar alguns minutos.</li>
           <li>Se este e-mail já tinha conta, use a opção Entrar.</li>
@@ -142,7 +142,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
           onChange={(e) => mudar({ avisosWhatsapp: e.target.checked })}
           className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
         />
-        <span className="text-[13px] text-ink-2">
+        <span className="text-[14px] text-ink-2">
           <b className="block text-ink">{TEXTO_CONSENTIMENTO_WHATSAPP}</b>
           {AJUDA_CONSENTIMENTO_WHATSAPP}
         </span>
@@ -165,7 +165,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
       </Campo>
 
       <fieldset className="flex flex-col gap-[7px]">
-        <legend className="mb-[7px] text-[13px] font-bold text-ink-2">
+        <legend className="mb-[7px] text-[14px] font-bold text-ink-2">
           Gênero <span className="font-normal text-ink-3">(opcional)</span>
         </legend>
         <div className="flex flex-wrap gap-2">
@@ -179,7 +179,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
             </Chip>
           ))}
         </div>
-        <p className="text-xs text-ink-3">
+        <p className="text-[13px] text-ink-3">
           Usado para mostrar personais especializados em treino feminino ou masculino. Quem marca
           &quot;Outro&quot;, &quot;Prefiro não informar&quot; ou não responde vê todos os personais.
         </p>
@@ -192,7 +192,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
           onChange={(e) => mudar({ consentimentoSaude: e.target.checked })}
           className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]"
         />
-        <span className="text-[13px] text-ink-2">
+        <span className="text-[14px] text-ink-2">
           <b className="block text-ink">Dados de saúde</b>
           {TEXTO_CONSENTIMENTO_SAUDE}
           <span className="mt-1 block text-ink-3">{AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO}</span>
@@ -205,7 +205,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
         {enviando ? "Criando conta…" : "Criar conta"}
       </button>
 
-      <p className="text-center text-[13px] text-ink-3">
+      <p className="text-center text-[14px] text-ink-3">
         Já tem conta?{" "}
         <Link href={`/entrar?voltar=${encodeURIComponent(voltar)}`} className="font-semibold text-brand">
           Entrar

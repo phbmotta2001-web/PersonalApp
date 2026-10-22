@@ -62,7 +62,7 @@ export function FormAlunoSemConta({
       className="flex flex-col gap-4 px-[18px] pt-2 pb-6"
     >
       {!vinculoId && (
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           Para quem não vai usar o app. Você cuida da agenda e das cobranças dele, e pode convidá-lo para ter
           conta depois sem perder nada.
         </p>
@@ -100,8 +100,8 @@ export function FormAlunoSemConta({
 
       {menor && (
         <fieldset className="flex flex-col gap-3 rounded-[18px] border border-gold bg-gold-soft p-3.5">
-          <legend className="px-1 text-[13px] font-bold text-gold">Menor de idade: responsável</legend>
-          <p className="text-xs text-ink-2">As cobranças e os avisos pelo WhatsApp vão para o responsável.</p>
+          <legend className="px-1 text-[14px] font-bold text-gold">Menor de idade: responsável</legend>
+          <p className="text-[13px] text-ink-2">As cobranças e os avisos pelo WhatsApp vão para o responsável.</p>
           <Campo id="sc-resp" rotulo="Nome do responsável">
             <input
               id="sc-resp"
@@ -122,7 +122,7 @@ export function FormAlunoSemConta({
               className={ESTILO_CAIXA}
             />
           </Campo>
-          <label className="flex items-start gap-2.5 text-[13px]">
+          <label className="flex items-start gap-2.5 text-[14px]">
             <input
               type="checkbox"
               checked={dados.responsavelAutorizou}

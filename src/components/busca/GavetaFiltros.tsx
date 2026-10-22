@@ -73,7 +73,7 @@ export function GavetaFiltros({
                 type="button"
                 aria-pressed={ativo}
                 onClick={() => mudar({ genero: g.valor })}
-                className={`min-h-11 rounded-[11px] text-sm font-bold ${
+                className={`min-h-11 rounded-[11px] text-[15px] font-bold ${
                   ativo ? "bg-surface text-ink shadow-sm" : "text-ink-2"
                 }`}
               >
@@ -118,7 +118,7 @@ export function GavetaFiltros({
             {d}
           </Chip>
         ))}
-        <div className="flex w-full flex-wrap items-center gap-2 text-sm text-ink-2">
+        <div className="flex w-full flex-wrap items-center gap-2 text-[15px] text-ink-2">
           <label htmlFor="filtro-de">das</label>
           <select
             id="filtro-de"
@@ -152,7 +152,7 @@ export function GavetaFiltros({
             ))}
           </select>
         </div>
-        <p className="w-full text-xs text-ink-3">
+        <p className="w-full text-[13px] text-ink-3">
           Mostra quem tem aula livre nessa faixa em pelo menos um dos dias escolhidos. Aulas de 1 hora.
         </p>
       </GrupoDaGaveta>

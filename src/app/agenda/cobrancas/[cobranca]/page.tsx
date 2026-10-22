@@ -44,7 +44,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/cobrancas/[cobr
   const [c, pixDados, alunos] = await Promise.all([lerCobranca(id), lerPix(), listarMeusAlunos()]);
   if (!c)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
         <p>Cobrança não encontrada.</p>
         <Link href="/agenda/cobrancas" className="font-semibold text-brand">
           Ver cobranças
@@ -79,19 +79,19 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/cobrancas/[cobr
           <Link href={`/agenda/alunos/${c.vinculoId}`} className={`flex-1 text-[19px] font-extrabold ${s === "atrasada" ? "text-bad" : ""}`}>
             {c.nome}
           </Link>
-          <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${COR_COBRANCA[s]}`}>{ROTULO_COBRANCA[s]}</span>
+          <span className={`rounded-full px-2.5 py-1 text-[13px] font-bold ${COR_COBRANCA[s]}`}>{ROTULO_COBRANCA[s]}</span>
         </div>
-        <p className="text-sm text-ink-2">{descricaoDaCobranca(c)}</p>
+        <p className="text-[15px] text-ink-2">{descricaoDaCobranca(c)}</p>
         <p className="text-[26px] font-extrabold tabular-nums">{centavosParaReais(c.valorCentavos)}</p>
         {c.descontoCentavos > 0 && (
-          <p className="text-xs text-info">Já com desconto de {centavosParaReais(c.descontoCentavos)} (pausa da matrícula)</p>
+          <p className="text-[13px] text-info">Já com desconto de {centavosParaReais(c.descontoCentavos)} (pausa da matrícula)</p>
         )}
-        <p className={`text-[13px] ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
+        <p className={`text-[14px] ${s === "atrasada" ? "font-semibold text-bad" : "text-ink-3"}`}>
           {textoDoVencimento(c.vencimento, hoje)}
         </p>
       </section>
       {c.situacao === "aberta" && !pixDados && (
-        <Link href="/agenda/pix" className="text-[13px] font-semibold text-brand">
+        <Link href="/agenda/pix" className="text-[14px] font-semibold text-brand">
           Cadastre sua chave Pix para mandar o Pix copia e cola junto ›
         </Link>
       )}

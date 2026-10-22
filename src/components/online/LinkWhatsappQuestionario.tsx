@@ -15,7 +15,7 @@ export function LinkWhatsappQuestionario({ checkinId, href, enviado }: { checkin
       onClick={() => {
         void marcarCheckinEnviado(checkinId).then(() => router.refresh());
       }}
-      className={`inline-flex shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[13px] font-bold ${
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-[11px] px-3 py-2 text-[14px] font-bold ${
         enviado ? "border border-line text-ink-2" : "bg-brand text-brand-ink"
       }`}
     >

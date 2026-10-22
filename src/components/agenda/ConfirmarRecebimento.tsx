@@ -34,7 +34,7 @@ export function ConfirmarRecebimento({ cobrancaId, valorCentavos, hoje }: { cobr
             }
           });
         }}
-        className={`${ESTILO_BOTAO_PRINCIPAL} min-h-11 text-[14px]`}
+        className={`${ESTILO_BOTAO_PRINCIPAL} min-h-11 text-[15px]`}
       >
         {ocupado ? "Confirmando…" : "Confirmar recebimento"}
       </button>

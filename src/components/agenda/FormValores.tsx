@@ -43,7 +43,7 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           Quanto custa <strong>cada aula</strong> conforme quantas vezes por semana o aluno treina. Deixe em branco o que você
           não oferece. A mensalidade é calculada sozinha na matrícula: valor da aula × vezes por semana × {SEMANAS_POR_MES}.
         </p>
@@ -55,10 +55,10 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
               <li key={v} className="flex items-center gap-3 py-3">
                 <label htmlFor={`valor-${v}`} className="w-[64px] shrink-0 leading-tight">
                   <span className="block text-[17px] font-extrabold">{v}x</span>
-                  <span className="block text-[11px] text-ink-3">por semana</span>
+                  <span className="block text-[12.5px] text-ink-3">por semana</span>
                 </label>
                 <div className="relative min-w-0 flex-1">
-                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-3">R$</span>
+                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[15px] text-ink-3">R$</span>
                   <input
                     id={`valor-${v}`}
                     inputMode="decimal"
@@ -72,7 +72,7 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
                     aria-describedby={`mensal-${v}`}
                   />
                 </div>
-                <span id={`mensal-${v}`} className="w-[84px] shrink-0 text-right text-[11px] leading-tight text-ink-3 tabular-nums">
+                <span id={`mensal-${v}`} className="w-[84px] shrink-0 text-right text-[12.5px] leading-tight text-ink-3 tabular-nums">
                   {aula != null && !Number.isNaN(aula) ? (
                     <>
                       {centavosParaReais(aula * v * SEMANAS_POR_MES)}
@@ -89,7 +89,7 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
         </ul>
 
         {menor != null && (
-          <p className="text-xs text-ink-3">
+          <p className="text-[13px] text-ink-3">
             Quando a busca de personais abrir, seu perfil vai mostrar &quot;a partir de {centavosParaReais(menor)} por aula&quot; e
             a tabela completa.
           </p>
@@ -105,7 +105,7 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
         >
           {salvando ? "Salvando…" : "Salvar valores"}
         </button>
-        <p aria-live="polite" className="min-h-4 text-center text-xs text-ink-3">
+        <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {problemas.length > 0
             ? frase(problemas)
             : aviso?.tipo === "erro"

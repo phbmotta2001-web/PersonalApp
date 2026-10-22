@@ -41,7 +41,7 @@ function Barra({ caminho }: { caminho: string }) {
               <Link
                 href={a.href}
                 aria-current={ativa ? "page" : undefined}
-                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10.5px] ${
+                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[12px] ${
                   ativa ? "font-bold text-brand" : "font-semibold text-ink-3"
                 }`}
               >

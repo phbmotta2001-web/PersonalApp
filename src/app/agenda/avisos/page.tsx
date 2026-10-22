@@ -63,10 +63,10 @@ async function Conteudo() {
 
   if (avisos.length === 0)
     return (
-      <div className="flex flex-col items-center gap-2 px-[18px] pt-10 text-center text-sm text-ink-3">
+      <div className="flex flex-col items-center gap-2 px-[18px] pt-10 text-center text-[15px] text-ink-3">
         <Icone nome="sino" className="size-8" />
         <p>Nenhum aviso ainda.</p>
-        <p className="text-xs">Quando um aluno cancelar, remarcar ou marcar reposição pelo app, aparece aqui.</p>
+        <p className="text-[13px]">Quando um aluno cancelar, remarcar ou marcar reposição pelo app, aparece aqui.</p>
       </div>
     );
 
@@ -87,8 +87,8 @@ async function Conteudo() {
           <>
             <span className={`mt-1.5 size-2 shrink-0 rounded-full ${a.lido ? "bg-transparent" : "bg-brand"}`} aria-hidden="true" />
             <span className="min-w-0 flex-1">
-              <span className={`block text-sm ${a.lido ? "text-ink-2" : "font-semibold"}`}>{texto(a)}</span>
-              <span className="block text-xs text-ink-3">
+              <span className={`block text-[15px] ${a.lido ? "text-ink-2" : "font-semibold"}`}>{texto(a)}</span>
+              <span className="block text-[13px] text-ink-3">
                 {quando.data.slice(8, 10)}/{quando.data.slice(5, 7)} às {quando.hora}
                 {!a.lido && " · novo"}
               </span>

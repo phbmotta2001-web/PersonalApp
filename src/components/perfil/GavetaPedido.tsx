@@ -115,7 +115,7 @@ export function GavetaPedido({
             <Icone nome="enviar" className="size-4" />
             {enviando ? "Enviando…" : `Enviar para ${t.artigo} ${t.nome}`}
           </button>
-          <p aria-live="polite" className="text-center text-xs text-ink-3">
+          <p aria-live="polite" className="text-center text-[13px] text-ink-3">
             {erro ?? (falta.length > 0 && `Para enviar, falta: ${juntarComE(falta)}.`)}
           </p>
         </div>
@@ -133,12 +133,12 @@ export function GavetaPedido({
                 aria-pressed={ativo}
                 disabled={!cabe}
                 onClick={() => trocarPlano(pl.vezesPorSemana)}
-                className={`flex min-h-11 flex-col items-center justify-center rounded-[11px] py-1 text-sm leading-tight font-bold disabled:opacity-50 ${
+                className={`flex min-h-11 flex-col items-center justify-center rounded-[11px] py-1 text-[15px] leading-tight font-bold disabled:opacity-50 ${
                   ativo ? "bg-surface text-ink shadow-sm" : "text-ink-2"
                 }`}
               >
                 {pl.vezesPorSemana}x
-                <small className="text-[11.5px] font-medium text-ink-3">
+                <small className="text-[13px] font-medium text-ink-3">
                   {cabe ? `${formatarReais(pl.precoAula)}/aula` : "sem horários"}
                 </small>
               </button>
@@ -146,14 +146,14 @@ export function GavetaPedido({
           })}
         </div>
         {personal.perfil.planos.some((pl) => pl.vezesPorSemana > maximo) && (
-          <p className="w-full text-xs text-ink-3">
+          <p className="w-full text-[13px] text-ink-3">
             {maiuscula(t.artigo)} {t.nome} tem horários livres em {maximo} {maximo === 1 ? "dia" : "dias"} da semana.
           </p>
         )}
       </GrupoDaGaveta>
 
       <fieldset className="flex flex-col gap-[7px]">
-        <legend className="mb-[7px] flex w-full justify-between gap-2 text-[13px] font-bold text-ink-2">
+        <legend className="mb-[7px] flex w-full justify-between gap-2 text-[14px] font-bold text-ink-2">
           <span>
             Escolha {pedido.vezesPorSemana} {pedido.vezesPorSemana === 1 ? "horário" : "horários"} (um por dia)
           </span>
@@ -164,7 +164,7 @@ export function GavetaPedido({
         <ul className="divide-y divide-line rounded-2xl border border-line bg-surface px-3">
           {diasLivres(personal.disponibilidade).map((d) => (
             <li key={d} className="flex items-center gap-3 py-2">
-              <span className="w-10 shrink-0 text-sm font-bold">{d}</span>
+              <span className="w-10 shrink-0 text-[15px] font-bold">{d}</span>
               <span className="flex flex-wrap gap-1.5">
                 {(personal.disponibilidade[d] ?? []).map((hora) => {
                   const h = horario(d, hora);
@@ -178,7 +178,7 @@ export function GavetaPedido({
             </li>
           ))}
         </ul>
-        <p aria-live="polite" className="text-xs text-ink-3">
+        <p aria-live="polite" className="text-[13px] text-ink-3">
           {avisoHorario ?? "O pedido não reserva o horário: ele só fica seu quando o personal aceitar."}
         </p>
       </fieldset>
@@ -195,7 +195,7 @@ export function GavetaPedido({
       </GrupoDaGaveta>
 
       <div className="flex flex-col gap-[7px]">
-        <label htmlFor="pedido-mensagem" className="text-[13px] font-bold text-ink-2">
+        <label htmlFor="pedido-mensagem" className="text-[14px] font-bold text-ink-2">
           Conte algo para {t.artigo} {t.nome} <span className="font-normal text-ink-3">(opcional)</span>
         </label>
         <textarea
@@ -208,7 +208,7 @@ export function GavetaPedido({
           placeholder="Ex.: Quero voltar a treinar com alguém que me acompanhe de perto."
           className="min-h-[84px] w-full resize-none rounded-[13px] border border-line bg-surface px-3.5 py-3 placeholder:text-ink-3"
         />
-        <p id="pedido-mensagem-ajuda" className="flex justify-between gap-3 text-xs text-ink-3">
+        <p id="pedido-mensagem-ajuda" className="flex justify-between gap-3 text-[13px] text-ink-3">
           <span>
             {maiuscula(t.artigo)} {t.nome} lê esta mensagem antes de aceitar.
           </span>
@@ -218,20 +218,20 @@ export function GavetaPedido({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-3.5 text-[13px] text-ink-2">
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-3.5 text-[14px] text-ink-2">
         <div>
           <p className="font-bold text-ink">Suas restrições e limitações</p>
           <p className="mt-1 whitespace-pre-line">
             {restricoes || "Você declarou não ter restrições ou limitações."}
           </p>
-          <p className="mt-1 text-xs text-ink-3">
+          <p className="mt-1 text-[13px] text-ink-3">
             Declaração de {new Date(declaradasEm).toLocaleDateString("pt-BR")} ·{" "}
             <Link href="/perfil" className="font-semibold text-brand">
               Atualizar no perfil
             </Link>
           </p>
         </div>
-        <p className="text-xs text-ink-3">{AVISO_RESTRICOES_NO_PEDIDO}</p>
+        <p className="text-[13px] text-ink-3">{AVISO_RESTRICOES_NO_PEDIDO}</p>
         <label className="flex items-start gap-3 border-t border-line pt-3">
           <input
             type="checkbox"
@@ -242,7 +242,7 @@ export function GavetaPedido({
           <span className="font-semibold text-ink">{TEXTO_CONFIRMACAO_RESTRICOES}</span>
         </label>
       </div>
-      <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+      <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[14px] text-ink-2">
         <span className="mt-px text-brand">
           <Icone nome="cadeado" />
         </span>

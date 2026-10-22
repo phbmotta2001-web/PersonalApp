@@ -62,7 +62,7 @@ export function Gaveta({
 export function GrupoDaGaveta({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <fieldset className="flex flex-col gap-[7px]">
-      <legend className="mb-[7px] text-[13px] font-bold text-ink-2">{titulo}</legend>
+      <legend className="mb-[7px] text-[14px] font-bold text-ink-2">{titulo}</legend>
       <div className="flex flex-wrap gap-2">{children}</div>
     </fieldset>
   );

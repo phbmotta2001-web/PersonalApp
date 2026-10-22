@@ -98,11 +98,11 @@ export function Alunos({
       {novo && (
         <section className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
           <p className="font-bold">Convite criado para {novo.nome}</p>
-          <p className="text-[13px] text-ink-3">
+          <p className="text-[14px] text-ink-3">
             Envie o link para o aluno. Ele vale por 14 dias e serve só para essa pessoa.
           </p>
           <BotoesDoLink nome={novo.nome} whatsapp={novo.whatsapp} link={linkDoConvite(origem, novo.codigo)} />
-          <button type="button" onClick={() => setNovo(null)} className="self-start text-[13px] font-semibold text-ink-3">
+          <button type="button" onClick={() => setNovo(null)} className="self-start text-[14px] font-semibold text-ink-3">
             Fechar
           </button>
         </section>
@@ -150,7 +150,7 @@ export function Alunos({
             {ocupado ? "Criando…" : "Criar link de convite"}
           </button>
           {alunos.length > 0 && (
-            <button type="button" onClick={() => setAbrindo(false)} className="text-[13px] font-semibold text-ink-3">
+            <button type="button" onClick={() => setAbrindo(false)} className="text-[14px] font-semibold text-ink-3">
               Cancelar
             </button>
           )}
@@ -169,12 +169,12 @@ export function Alunos({
             >
               <Icone nome="enviar" className="size-4" /> Convidar pelo link
             </button>
-            <p className="-mt-1 text-xs text-ink-3">O aluno cria a conta dele e vê aulas, avisos e pagamentos no app.</p>
-            <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[14px]"}>
+            <p className="-mt-1 text-[13px] text-ink-3">O aluno cria a conta dele e vê aulas, avisos e pagamentos no app.</p>
+            <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[15px]"}>
               Cadastrar quem não usa o app
             </Link>
-            <p className="-mt-1 text-xs text-ink-3">Você cuida da agenda e das cobranças dele (ex.: aluno menor de idade).</p>
-            <button type="button" onClick={() => setEscolhendo(false)} className="text-[13px] font-semibold text-ink-3">
+            <p className="-mt-1 text-[13px] text-ink-3">Você cuida da agenda e das cobranças dele (ex.: aluno menor de idade).</p>
+            <button type="button" onClick={() => setEscolhendo(false)} className="text-[14px] font-semibold text-ink-3">
               Cancelar
             </button>
           </section>
@@ -191,7 +191,7 @@ export function Alunos({
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Buscar aluno"
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-3"
+                className="min-w-0 flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-3"
               />
             </label>
             <div className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1" role="group" aria-label="Filtrar alunos">
@@ -207,9 +207,9 @@ export function Alunos({
           </>
         )}
         {ativos.length === 0 ? (
-          <p className="text-sm text-ink-3">Nenhum aluno ainda. Toque em &quot;Novo aluno&quot; para convidar ou cadastrar.</p>
+          <p className="text-[15px] text-ink-3">Nenhum aluno ainda. Toque em &quot;Novo aluno&quot; para convidar ou cadastrar.</p>
         ) : visiveis.length === 0 ? (
-          <p className="text-sm text-ink-3">Nenhum aluno com esse filtro.</p>
+          <p className="text-[15px] text-ink-3">Nenhum aluno com esse filtro.</p>
         ) : (
           <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
             {visiveis.map((a) => {
@@ -219,11 +219,11 @@ export function Alunos({
                   <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex items-center gap-3 py-2.5">
                     <Avatar nome={a.nome} cor={corPorId(a.vinculoId)} tamanho="pequeno" />
                     <span className="min-w-0 flex-1">
-                      <span className={`block truncate text-[15px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
-                      <span className="block truncate text-[12.5px] text-ink-3">{d?.subtitulo}</span>
+                      <span className={`block truncate text-[16px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
+                      <span className="block truncate text-[14px] text-ink-3">{d?.subtitulo}</span>
                     </span>
                     {d && (
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_ETIQUETA[d.etiqueta.tom]}`}>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_ETIQUETA[d.etiqueta.tom]}`}>
                         {d.etiqueta.texto}
                       </span>
                     )}
@@ -242,7 +242,7 @@ export function Alunos({
             setEscolhendo(true);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[14px] font-extrabold text-brand-ink"
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
         >
           <Icone nome="mais" className="size-4" /> Novo aluno
         </button>
@@ -256,7 +256,7 @@ export function Alunos({
               <li key={a.vinculoId} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="font-bold">{a.nome}</span>
-                  <span className="text-xs text-ink-3">{prazoDoConvite(a.expiraEm)}</span>
+                  <span className="text-[13px] text-ink-3">{prazoDoConvite(a.expiraEm)}</span>
                 </div>
                 {a.codigo && <BotoesDoLink nome={a.nome} whatsapp={a.whatsapp ?? ""} link={linkDoConvite(origem, a.codigo)} />}
                 <CancelarConvite
@@ -276,13 +276,13 @@ export function Alunos({
 
       {antigos.length > 0 && (
         <details className="rounded-[20px] border border-line bg-surface px-4 py-3">
-          <summary className="cursor-pointer text-sm font-bold">Convites vencidos e ex-alunos ({antigos.length})</summary>
+          <summary className="cursor-pointer text-[15px] font-bold">Convites vencidos e ex-alunos ({antigos.length})</summary>
           <ul className="mt-2 divide-y divide-line">
             {antigos.map((a) => (
-              <li key={a.vinculoId} className="flex items-center gap-3 py-2.5 text-sm">
+              <li key={a.vinculoId} className="flex items-center gap-3 py-2.5 text-[15px]">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{a.nome}</span>
-                  <span className="block text-xs text-ink-3">
+                  <span className="block text-[13px] text-ink-3">
                     {a.situacao === "expirado"
                       ? "Convite vencido"
                       : a.situacao === "cancelado"
@@ -299,7 +299,7 @@ export function Alunos({
                     type="button"
                     disabled={ocupado}
                     onClick={() => convidar({ nome: a.nome, whatsapp: a.whatsapp ?? "" })}
-                    className="shrink-0 text-[13px] font-semibold text-brand"
+                    className="shrink-0 text-[14px] font-semibold text-brand"
                   >
                     Novo convite
                   </button>
@@ -322,7 +322,7 @@ export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp:
         href={linkWhatsapp(whatsapp, mensagemDoConvite(nome, link))}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] bg-brand px-3 text-[13px] font-bold text-brand-ink"
+        className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] bg-brand px-3 text-[14px] font-bold text-brand-ink"
       >
         <Icone nome="conversa" className="size-4" /> Enviar pelo WhatsApp
       </a>
@@ -337,7 +337,7 @@ export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp:
             window.prompt("Copie o link:", link);
           }
         }}
-        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[13px]"}
+        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[14px]"}
       >
         {copiado ? "Link copiado!" : "Copiar link"}
       </button>
@@ -348,7 +348,7 @@ export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp:
 function CancelarConvite({ aoCancelar }: { aoCancelar: () => void }) {
   const [confirmando, setConfirmando] = useState(false);
   return confirmando ? (
-    <span className="flex gap-4 text-[13px] font-bold">
+    <span className="flex gap-4 text-[14px] font-bold">
       <button type="button" onClick={() => setConfirmando(false)} className="text-ink-3">
         Manter convite
       </button>
@@ -357,7 +357,7 @@ function CancelarConvite({ aoCancelar }: { aoCancelar: () => void }) {
       </button>
     </span>
   ) : (
-    <button type="button" onClick={() => setConfirmando(true)} className="self-start text-[13px] font-semibold text-ink-3">
+    <button type="button" onClick={() => setConfirmando(true)} className="self-start text-[14px] font-semibold text-ink-3">
       Cancelar convite
     </button>
   );

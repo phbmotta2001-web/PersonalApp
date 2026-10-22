@@ -62,22 +62,22 @@ async function Conteudo() {
           <Icone nome="conversa" className="size-[18px]" />
         </span>
         <span className="flex-1">
-          <span className="block text-sm font-bold">Questionários</span>
-          <span className="block text-xs text-ink-3">Criar e editar os seus modelos de acompanhamento</span>
+          <span className="block text-[15px] font-bold">Questionários</span>
+          <span className="block text-[13px] text-ink-3">Criar e editar os seus modelos de acompanhamento</span>
         </span>
         <span className="text-ink-3" aria-hidden="true">›</span>
       </Link>
 
       {paraEnviar.length > 0 && (
         <section className="flex flex-col gap-2 rounded-[20px] border-2 border-gold bg-gold-soft p-3.5" aria-label="Para enviar">
-          <h2 className="text-[15px] font-bold text-gold">
+          <h2 className="text-[16px] font-bold text-gold">
             {paraEnviar.length === 1 ? "1 questionário para enviar" : `${paraEnviar.length} questionários para enviar`}
           </h2>
           {paraEnviar.map((c) => (
             <div key={c.id} className="flex items-center gap-2 rounded-[14px] bg-surface p-2.5">
-              <span className="min-w-0 flex-1 text-sm">
+              <span className="min-w-0 flex-1 text-[15px]">
                 <span className="block truncate font-bold">{c.nome}</span>
-                <span className="block text-xs text-ink-3">{c.titulo}</span>
+                <span className="block text-[13px] text-ink-3">{c.titulo}</span>
               </span>
               <LinkWhatsappQuestionario
                 checkinId={c.id}
@@ -90,7 +90,7 @@ async function Conteudo() {
       )}
 
       {alunos.length === 0 ? (
-        <p className="rounded-[20px] border border-dashed border-line p-4 text-sm text-ink-3">
+        <p className="rounded-[20px] border border-dashed border-line p-4 text-[15px] text-ink-3">
           Nenhum aluno online ainda. Para incluir, abra a ficha do aluno em{" "}
           <Link href="/agenda/alunos" className="font-semibold text-brand">
             Alunos
@@ -115,20 +115,20 @@ async function Conteudo() {
                     <span className="flex items-center gap-2">
                       <span className={`truncate font-bold ${atrasado ? "text-bad" : ""}`}>{a.nome}</span>
                       {a.modalidade === "hibrido" && (
-                        <span className="shrink-0 rounded-full bg-info-soft px-2 py-0.5 text-[11px] font-bold text-info">
+                        <span className="shrink-0 rounded-full bg-info-soft px-2 py-0.5 text-[12.5px] font-bold text-info">
                           Híbrido
                         </span>
                       )}
                     </span>
-                    <span className="block text-[12.5px] text-ink-3">
+                    <span className="block text-[14px] text-ink-3">
                       {resumoDaModalidade(a.matricula)}
                       {a.modalidade === "hibrido" &&
                         ` · ${resumoDosHorarios(a.matricula.horarios, a.matricula.intervaloSemanas)}`}
                     </span>
                     <span className="mt-1 flex flex-wrap gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${situacao.cor}`}>{situacao.texto}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-bold ${situacao.cor}`}>{situacao.texto}</span>
                       {atrasado && (
-                        <span className="rounded-full bg-bad/10 px-2 py-0.5 text-[11px] font-bold text-bad">
+                        <span className="rounded-full bg-bad/10 px-2 py-0.5 text-[12.5px] font-bold text-bad">
                           {suspensas[a.vinculoId] ? "Matrícula suspensa" : "Mensalidade atrasada"}
                         </span>
                       )}

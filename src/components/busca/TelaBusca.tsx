@@ -22,7 +22,7 @@ export function TelaBusca({ personais }: { personais: Personal[] }) {
         <BotaoVoltar reserva="/" className="hover:bg-surface-2" />
         <div className="min-w-0 flex-1">
           <h1 className="text-[21px] font-semibold">Personais</h1>
-          <p className="text-[12.5px] text-ink-3" aria-live="polite">
+          <p className="text-[14px] text-ink-3" aria-live="polite">
             <span className="tabular-nums">{resultados.length}</span> perto de Ipanema
           </p>
         </div>
@@ -87,12 +87,12 @@ export function TelaBusca({ personais }: { personais: Personal[] }) {
             ))}
           </ul>
         ) : (
-          <div className="flex flex-col items-center gap-3 px-2 py-6 text-center text-sm text-ink-3">
+          <div className="flex flex-col items-center gap-3 px-2 py-6 text-center text-[15px] text-ink-3">
             <p>Nenhum profissional com esses filtros. Tire um filtro para ver mais opções.</p>
             <button
               type="button"
               onClick={() => setFiltros(FILTROS_VAZIOS)}
-              className="text-[13.5px] font-semibold text-brand"
+              className="text-[14.5px] font-semibold text-brand"
             >
               Limpar filtros
             </button>

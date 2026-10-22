@@ -71,11 +71,11 @@ export function InstalarApp() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/icones/icone-192.png" alt="" className="size-11 shrink-0 rounded-[12px]" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-sm font-bold text-brand">Instale o Pienel no seu celular</p>
+        <p className="text-[15px] font-bold text-brand">Instale o Pienel no seu celular</p>
         {modo === "botao" ? (
-          <p className="text-[13px] text-ink-2">Abre com um toque, em tela cheia, como um app.</p>
+          <p className="text-[14px] text-ink-2">Abre com um toque, em tela cheia, como um app.</p>
         ) : (
-          <p className="text-[13px] text-ink-2">
+          <p className="text-[14px] text-ink-2">
             No Safari, toque em <strong>Compartilhar</strong>{" "}
             <Icone nome="compartilhar" className="inline size-4 align-text-bottom" /> e depois em{" "}
             <strong>Adicionar à Tela de Início</strong>.
@@ -90,12 +90,12 @@ export function InstalarApp() {
                 const { outcome } = await evento.userChoice;
                 if (outcome === "accepted") setModo("escondido");
               }}
-              className="rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink"
+              className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink"
             >
               Instalar o Pienel
             </button>
           )}
-          <button type="button" onClick={dispensar} className="rounded-[11px] px-2 py-2 text-[13px] font-semibold text-ink-3">
+          <button type="button" onClick={dispensar} className="rounded-[11px] px-2 py-2 text-[14px] font-semibold text-ink-3">
             Agora não
           </button>
         </div>

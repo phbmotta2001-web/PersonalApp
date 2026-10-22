@@ -29,7 +29,7 @@ import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
 
-const estiloSelect = "min-h-11 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums";
+const estiloSelect = "min-h-11 rounded-[11px] border border-line bg-surface px-2 text-[15px] tabular-nums";
 
 /** Criar ou alterar a matrícula de um aluno: dias e horas fixos, duração, local, mensalidade e datas. */
 export function FormMatricula({
@@ -146,7 +146,7 @@ export function FormMatricula({
   return (
     <form onSubmit={salvar} className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 text-[13px] font-bold text-ink-2">Tipo de acompanhamento</legend>
+        <legend className="mb-2 text-[14px] font-bold text-ink-2">Tipo de acompanhamento</legend>
         <div className="grid grid-cols-3 gap-2">
           {MODALIDADES.map((m) => (
             <button
@@ -160,7 +160,7 @@ export function FormMatricula({
                   intervaloSemanas: m.valor === "hibrido" ? 2 : m.valor === "presencial" ? 1 : dados.intervaloSemanas,
                 })
               }
-              className={`min-h-11 rounded-[13px] border text-sm font-bold ${
+              className={`min-h-11 rounded-[13px] border text-[15px] font-bold ${
                 dados.modalidade === m.valor ? "border-ink bg-ink text-app" : "border-line bg-surface"
               }`}
             >
@@ -168,12 +168,12 @@ export function FormMatricula({
             </button>
           ))}
         </div>
-        <p className="text-xs text-ink-3">{MODALIDADES.find((m) => m.valor === dados.modalidade)?.texto}</p>
+        <p className="text-[13px] text-ink-3">{MODALIDADES.find((m) => m.valor === dados.modalidade)?.texto}</p>
       </fieldset>
 
       {!online && (
       <fieldset className="flex flex-col gap-2.5">
-        <legend className="mb-2 text-[13px] font-bold text-ink-2">
+        <legend className="mb-2 text-[14px] font-bold text-ink-2">
           {presencial ? `Dias e horários fixos de ${primeiro}` : `Aulas presenciais de ${primeiro}`}
         </legend>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Frequência">
@@ -189,7 +189,7 @@ export function FormMatricula({
         </div>
         {dados.intervaloSemanas > 2 && (
           <div className="flex items-center gap-2">
-            <label htmlFor="mat-intervalo" className="text-sm font-semibold">
+            <label htmlFor="mat-intervalo" className="text-[15px] font-semibold">
               Uma vez a cada
             </label>
             <select
@@ -202,7 +202,7 @@ export function FormMatricula({
                 <option key={n} value={n}>{n}</option>
               ))}
             </select>
-            <span className="text-sm text-ink-2">semanas</span>
+            <span className="text-[15px] text-ink-2">semanas</span>
           </div>
         )}
         <div className="grid grid-cols-7 gap-1">
@@ -216,7 +216,7 @@ export function FormMatricula({
                 aria-checked={ativo}
                 aria-label={d.nome}
                 onClick={() => marcarDia(d.valor)}
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-[12px] border text-[12.5px] font-bold ${
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-[12px] border text-[14px] font-bold ${
                   ativo ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface text-ink-2"
                 }`}
               >
@@ -233,10 +233,10 @@ export function FormMatricula({
         </div>
         {dados.horarios.map((h) => (
           <div key={h.dia} className="flex items-center gap-2">
-            <label htmlFor={`mat-hora-${h.dia}`} className="flex-1 text-sm font-semibold">
+            <label htmlFor={`mat-hora-${h.dia}`} className="flex-1 text-[15px] font-semibold">
               {nomeDoDia(h.dia)}
             </label>
-            <span className="text-sm text-ink-2">às</span>
+            <span className="text-[15px] text-ink-2">às</span>
             <select
               id={`mat-hora-${h.dia}`}
               value={h.inicioMin}
@@ -249,12 +249,12 @@ export function FormMatricula({
             </select>
           </div>
         ))}
-        {vezes === 0 && <p className="text-xs text-ink-3">Toque nos dias em que {primeiro} treina.</p>}
+        {vezes === 0 && <p className="text-[13px] text-ink-3">Toque nos dias em que {primeiro} treina.</p>}
         {choques.length > 0 && (
           <Aviso>Já {choques.length === 1 ? "é" : "são"} de outro aluno: {juntarComE(choques)}. Escolha outro horário.</Aviso>
         )}
         {fora.length > 0 && (
-          <p className="rounded-[13px] bg-gold-soft px-3.5 py-2.5 text-[13px] text-gold">
+          <p className="rounded-[13px] bg-gold-soft px-3.5 py-2.5 text-[14px] text-gold">
             Fora do seu horário de trabalho:{" "}
             {juntarComE(fora.map((h) => `${nomeDoDia(h.dia).toLowerCase()} às ${minParaHora(h.inicioMin)}`))}. Pode salvar assim
             mesmo.
@@ -265,7 +265,7 @@ export function FormMatricula({
 
       {!online && (
       <fieldset className="flex flex-col gap-[7px]">
-        <legend className="mb-[7px] text-[13px] font-bold text-ink-2">Duração da aula</legend>
+        <legend className="mb-[7px] text-[14px] font-bold text-ink-2">Duração da aula</legend>
         <div className="flex flex-wrap gap-2">
           {DURACOES.map((d) => (
             <Chip key={d} ativo={dados.duracao === d} onClick={() => mudar({ duracao: d })}>
@@ -289,7 +289,7 @@ export function FormMatricula({
       )}
 
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Mensalidade">
-        <p className="text-[13px] font-bold text-ink-2">{online ? "Plano online" : "Mensalidade"}</p>
+        <p className="text-[14px] font-bold text-ink-2">{online ? "Plano online" : "Mensalidade"}</p>
         {!presencial && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Plano">
             {PLANOS_ONLINE.map((pl) => (
@@ -319,7 +319,7 @@ export function FormMatricula({
               <button
                 type="button"
                 onClick={() => mudar({ valorForaDoPadrao: false })}
-                className="self-start text-[13px] font-semibold text-brand"
+                className="self-start text-[14px] font-semibold text-brand"
               >
                 Usar o valor da minha tabela
               </button>
@@ -334,10 +334,10 @@ export function FormMatricula({
                     {centavosParaReais(doPlano)}
                     {ciclo === 1 ? " por mês" : ` a cada ${ciclo} meses`}
                   </p>
-                  <p className="text-xs text-ink-3">Plano {nomeDoPlano.toLowerCase()} da sua tabela online</p>
+                  <p className="text-[13px] text-ink-3">Plano {nomeDoPlano.toLowerCase()} da sua tabela online</p>
                 </div>
               ) : (
-                <p className="text-[13px] text-ink-2">
+                <p className="text-[14px] text-ink-2">
                   {tabelaOnlineVazia
                     ? "Cadastre seus planos online e o valor sai pronto."
                     : `Sua tabela online não tem o plano ${nomeDoPlano.toLowerCase()}.`}{" "}
@@ -347,21 +347,21 @@ export function FormMatricula({
                 </p>
               )
             ) : vezes === 0 ? (
-              <p className="text-[13px] text-ink-3">Marque os dias para ver o valor.</p>
+              <p className="text-[14px] text-ink-3">Marque os dias para ver o valor.</p>
             ) : daTabela != null ? (
               <div>
                 <p className="text-[20px] font-extrabold tabular-nums">
                   {centavosParaReais(daTabela * ciclo)}
                   {ciclo === 1 ? " por mês" : ` a cada ${ciclo} meses`}
                 </p>
-                <p className="text-xs text-ink-3">
+                <p className="text-[13px] text-ink-3">
                   {centavosParaReais(tabela[vezes] ?? 0)} por aula × {noMes} aula{noMes === "1" ? "" : "s"} no mês
                   {noMes.includes(",") && " (média)"}
                   {ciclo > 1 && ` × ${ciclo} meses`}
                 </p>
               </div>
             ) : (
-              <p className="text-[13px] text-ink-2">
+              <p className="text-[14px] text-ink-2">
                 {tabelaVazia
                   ? "Cadastre seus valores por aula e a mensalidade sai pronta."
                   : `Sua tabela não tem valor para ${vezes}x por semana.`}{" "}
@@ -373,13 +373,13 @@ export function FormMatricula({
             <button
               type="button"
               onClick={() => mudar({ valorForaDoPadrao: true })}
-              className="self-start text-[13px] font-semibold text-brand"
+              className="self-start text-[14px] font-semibold text-brand"
             >
               Valor fora do padrão
             </button>
           </>
         )}
-        <p className="text-xs text-ink-3">As cobranças saem sozinhas a partir daqui (tela Cobranças).</p>
+        <p className="text-[13px] text-ink-3">As cobranças saem sozinhas a partir daqui (tela Cobranças).</p>
       </section>
 
       <section className="flex flex-col gap-3" aria-label="Datas">
@@ -430,18 +430,18 @@ export function FormMatricula({
           </Campo>
         </div>
         {mudaCiclo && (
-          <p className="-mt-1 text-xs text-ink-3">
+          <p className="-mt-1 text-[13px] text-ink-3">
             As aulas seguem {dados.intervaloSemanas === 2 ? "de 15 em 15 dias" : `a cada ${dados.intervaloSemanas} semanas`} a
             partir da próxima aula. Trocar essa data muda o ciclo inteiro; as aulas que já passaram ficam como estão.
           </p>
         )}
         {dados.diaVencimento != null && (
-          <p className="-mt-1 rounded-[12px] bg-surface-2 px-3 py-2 text-xs text-ink-2">
+          <p className="-mt-1 rounded-[12px] bg-surface-2 px-3 py-2 text-[13px] text-ink-2">
             {textoDosVencimentos(dados.inicio, dados.diaVencimento, ciclo, atual ? hoje : null)}
           </p>
         )}
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-[13px] font-bold text-ink-2">Duração da matrícula</legend>
+          <legend className="mb-2 text-[14px] font-bold text-ink-2">Duração da matrícula</legend>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Duração da matrícula">
             <Chip
               ativo={!temFim}
@@ -477,7 +477,7 @@ export function FormMatricula({
                 className={ESTILO_CAIXA}
               />
               {dados.fim && (
-                <p className="text-xs text-ink-3">
+                <p className="text-[13px] text-ink-3">
                   Última aula até {dados.fim.slice(8, 10)}/{dados.fim.slice(5, 7)}/{dados.fim.slice(0, 4)}. Depois disso as
                   aulas saem da agenda e as cobranças param.
                 </p>
@@ -495,7 +495,7 @@ export function FormMatricula({
       {atual &&
         (encerrando ? (
           <div className="flex flex-col gap-3 rounded-2xl border border-bad/40 bg-surface p-3.5">
-            <p className="text-[13px] text-ink-2">
+            <p className="text-[14px] text-ink-2">
               Ao encerrar, as aulas futuras de {primeiro} saem da agenda e os horários dele ficam livres. {primeiro} continua
               sendo seu aluno.
             </p>
@@ -503,7 +503,7 @@ export function FormMatricula({
               <button
                 type="button"
                 onClick={() => setEncerrando(false)}
-                className="flex-1 rounded-[13px] border border-line px-3 py-2.5 text-[13px] font-bold"
+                className="flex-1 rounded-[13px] border border-line px-3 py-2.5 text-[14px] font-bold"
               >
                 Manter
               </button>
@@ -518,14 +518,14 @@ export function FormMatricula({
                     router.refresh();
                   })
                 }
-                className="flex-1 rounded-[13px] bg-bad px-3 py-2.5 text-[13px] font-bold text-white disabled:opacity-60"
+                className="flex-1 rounded-[13px] bg-bad px-3 py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
               >
                 {ocupado ? "Encerrando…" : "Encerrar"}
               </button>
             </div>
           </div>
         ) : (
-          <button type="button" onClick={() => setEncerrando(true)} className="self-start text-[13px] font-semibold text-bad">
+          <button type="button" onClick={() => setEncerrando(true)} className="self-start text-[14px] font-semibold text-bad">
             Encerrar matrícula
           </button>
         ))}

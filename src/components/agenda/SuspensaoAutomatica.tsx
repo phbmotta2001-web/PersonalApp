@@ -36,8 +36,8 @@ export function SuspensaoAutomatica({ vinculoId, ligada }: { vinculoId: string; 
         className="flex items-center gap-3 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-[13px] font-bold">Suspender se não pagar</span>
-          <span className="block text-xs text-ink-3">
+          <span className="block text-[14px] font-bold">Suspender se não pagar</span>
+          <span className="block text-[13px] text-ink-3">
             No dia seguinte ao vencimento, a matrícula fica suspensa até você marcar como paga.
           </span>
         </span>

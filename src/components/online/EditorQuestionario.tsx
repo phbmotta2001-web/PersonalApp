@@ -15,7 +15,7 @@ import {
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
 
-const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-sm";
+const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-[15px]";
 
 /** Criar ou editar um modelo de questionário. */
 export function EditorQuestionario({
@@ -76,7 +76,7 @@ export function EditorQuestionario({
           {perguntas.map((q, i) => (
             <li key={q.id} className="flex flex-col gap-2.5 rounded-[18px] border border-line bg-surface p-3.5">
               <div className="flex items-center gap-2">
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand">
+                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand-soft text-[13px] font-bold text-brand">
                   {i + 1}
                 </span>
                 <label htmlFor={`q-tipo-${q.id}`} className="sr-only">
@@ -139,7 +139,7 @@ export function EditorQuestionario({
                         placeholder={`Opção ${k + 1}`}
                         aria-label={`Opção ${k + 1}`}
                         onChange={(e) => mudar(i, { opcoes: (q.opcoes ?? []).map((x, y) => (y === k ? e.target.value : x)) })}
-                        className={`${ESTILO_CAIXA} min-h-10 flex-1 text-sm`}
+                        className={`${ESTILO_CAIXA} min-h-10 flex-1 text-[15px]`}
                       />
                       {(q.opcoes ?? []).length > 2 && (
                         <button
@@ -157,14 +157,14 @@ export function EditorQuestionario({
                     <button
                       type="button"
                       onClick={() => mudar(i, { opcoes: [...(q.opcoes ?? []), ""] })}
-                      className="self-start text-[13px] font-semibold text-brand"
+                      className="self-start text-[14px] font-semibold text-brand"
                     >
                       + opção
                     </button>
                   )}
                 </div>
               )}
-              <div className="flex flex-wrap items-center gap-3 text-[13px]">
+              <div className="flex flex-wrap items-center gap-3 text-[14px]">
                 {q.tipo === "numero" && (
                   <label className="flex items-center gap-1.5 text-ink-2">
                     Unidade
@@ -173,7 +173,7 @@ export function EditorQuestionario({
                       maxLength={12}
                       placeholder="kg, h…"
                       onChange={(e) => mudar(i, { unidade: e.target.value })}
-                      className="min-h-9 w-20 rounded-[10px] border border-line bg-surface px-2 text-sm"
+                      className="min-h-9 w-20 rounded-[10px] border border-line bg-surface px-2 text-[15px]"
                     />
                   </label>
                 )}
@@ -195,7 +195,7 @@ export function EditorQuestionario({
           <button
             type="button"
             onClick={adicionar}
-            className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] border border-dashed border-brand text-sm font-bold text-brand"
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-[14px] border border-dashed border-brand text-[15px] font-bold text-brand"
           >
             <Icone nome="mais" className="size-4" /> Adicionar pergunta
           </button>
@@ -203,7 +203,7 @@ export function EditorQuestionario({
 
         {id &&
           (apagando ? (
-            <div className="flex flex-col gap-2 rounded-[14px] border border-bad/40 p-3 text-[13px] text-ink-2">
+            <div className="flex flex-col gap-2 rounded-[14px] border border-bad/40 p-3 text-[14px] text-ink-2">
               Apagar este questionário? As programações dele param de enviar. As respostas que já chegaram continuam
               guardadas.
               <div className="flex gap-2">
@@ -228,7 +228,7 @@ export function EditorQuestionario({
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => setApagando(true)} className="self-start text-[13px] font-semibold text-bad">
+            <button type="button" onClick={() => setApagando(true)} className="self-start text-[14px] font-semibold text-bad">
               Apagar questionário
             </button>
           ))}

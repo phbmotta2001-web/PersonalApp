@@ -49,7 +49,7 @@ async function Conteudo() {
     <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
       <h1 className="text-[24px] font-extrabold">Minhas aulas</h1>
       {blocos.length === 0 && (
-        <p className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
+        <p className="rounded-[20px] border border-dashed border-line p-4 text-[14px] text-ink-3">
           Você ainda não treina com nenhum personal pelo Pienel. Peça o link de convite ao seu personal.
         </p>
       )}
@@ -59,8 +59,8 @@ async function Conteudo() {
           <section key={p.vinculoId} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label={`Aulas com ${primeiro}`}>
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
-                <h2 className="text-[16px] font-bold">Com {primeiro}</h2>
-                <p className="text-[12.5px] text-ink-3">
+                <h2 className="text-[17px] font-bold">Com {primeiro}</h2>
+                <p className="text-[14px] text-ink-3">
                   {matricula
                     ? matricula.modalidade === "online"
                       ? resumoDaModalidade(matricula)
@@ -68,14 +68,14 @@ async function Conteudo() {
                     : "Sem horários fixos ainda"}
                 </p>
               </div>
-              <Link href={`/aluno/personal/${p.vinculoId}`} className="text-[13px] font-semibold text-brand">
+              <Link href={`/aluno/personal/${p.vinculoId}`} className="text-[14px] font-semibold text-brand">
                 Detalhes ›
               </Link>
             </div>
             {suspensas[p.vinculoId] ? (
               <Link
                 href="/aluno/pagamentos"
-                className="flex items-center gap-2 rounded-[14px] border-2 border-bad bg-bad/5 p-3 text-[13px] text-bad"
+                className="flex items-center gap-2 rounded-[14px] border-2 border-bad bg-bad/5 p-3 text-[14px] text-bad"
               >
                 <Icone nome="cadeado" className="size-5 shrink-0" />
                 <span>
@@ -101,7 +101,7 @@ async function Conteudo() {
                 agora={agora}
               />
             ) : (
-              <p className="text-[13px] text-ink-3">Nenhuma aula marcada. Quando {primeiro} marcar, elas aparecem aqui.</p>
+              <p className="text-[14px] text-ink-3">Nenhuma aula marcada. Quando {primeiro} marcar, elas aparecem aqui.</p>
             )}
           </section>
         );

@@ -47,13 +47,13 @@ async function Conteudo() {
     <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
       <h1 className="text-[24px] font-extrabold">Pagamentos</h1>
       {comCobranca.length === 0 && (
-        <p className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
+        <p className="rounded-[20px] border border-dashed border-line p-4 text-[14px] text-ink-3">
           Nenhuma cobrança por enquanto. Quando a sua matrícula tiver mensalidade, ela aparece aqui com o Pix.
         </p>
       )}
       {comCobranca.map(({ p, cobrancas, pix }) => (
         <section key={p.vinculoId} className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label={`Pagamentos para ${p.nome}`}>
-          {comCobranca.length > 1 && <h2 className="text-[15px] font-bold">Para {p.nome.split(" ")[0]}</h2>}
+          {comCobranca.length > 1 && <h2 className="text-[16px] font-bold">Para {p.nome.split(" ")[0]}</h2>}
           <CobrancasDoAluno cobrancas={cobrancas} pix={pix} nomePersonal={p.nome} hoje={hoje} />
         </section>
       ))}

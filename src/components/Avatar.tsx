@@ -18,8 +18,8 @@ export function corPorId(id: string): CorAvatar {
 }
 
 const TAMANHOS = {
-  pequeno: "size-9 text-[13px]",
-  normal: "size-11 text-[15px]",
+  pequeno: "size-9 text-[14px]",
+  normal: "size-11 text-[16px]",
   grande: "size-[76px] text-[26px] font-display",
 };
 

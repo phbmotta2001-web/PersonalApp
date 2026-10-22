@@ -52,7 +52,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
   const aluno = alunos.find((a) => a.vinculoId === vinculo && a.situacao === "ativo");
   if (!aluno)
     return (
-      <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+      <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
         <p>Este aluno não está mais ligado a você.</p>
         <Link href="/agenda/online" className="font-semibold text-brand">
           Ver alunos online
@@ -69,21 +69,21 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
       <header className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <h2 className="truncate text-[20px] font-extrabold">{aluno.nome}</h2>
-          <p className="text-xs font-bold text-info">{matricula ? resumoDaModalidade(matricula) : "Sem matrícula"}</p>
+          <p className="text-[13px] font-bold text-info">{matricula ? resumoDaModalidade(matricula) : "Sem matrícula"}</p>
         </div>
-        <Link href={`/agenda/alunos/${vinculo}`} className="text-[13px] font-semibold text-brand">
+        <Link href={`/agenda/alunos/${vinculo}`} className="text-[14px] font-semibold text-brand">
           Ficha ›
         </Link>
       </header>
 
       {pendentes.length > 0 && (
         <section className="flex flex-col gap-2" aria-label="Questionários pendentes">
-          <h2 className="text-[15px] font-semibold">Aguardando resposta</h2>
+          <h2 className="text-[16px] font-semibold">Aguardando resposta</h2>
           {pendentes.map((c) => (
             <div key={c.id} className="flex items-center gap-3 rounded-[16px] border border-gold bg-gold-soft p-3">
-              <span className="min-w-0 flex-1 text-sm">
+              <span className="min-w-0 flex-1 text-[15px]">
                 <span className="block font-bold text-gold">{c.titulo}</span>
-                <span className="block text-xs text-ink-2">
+                <span className="block text-[13px] text-ink-2">
                   desde {quando(c.disponivelEm)}
                   {c.enviadoEm ? ` · link enviado em ${quando(c.enviadoEm)}` : " · link ainda não enviado"}
                 </span>
@@ -100,7 +100,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
 
       {aluno.semConta ? (
         // Sem conta, o aluno não tem como abrir o questionário (precisa entrar no Pienel).
-        <p className="rounded-[16px] border border-dashed border-line p-3 text-[13px] text-ink-3">
+        <p className="rounded-[16px] border border-dashed border-line p-3 text-[14px] text-ink-3">
           {primeiro} não usa o app, então não recebe questionários. Para isso, convide-o para ter conta (na ficha do aluno).
         </p>
       ) : (
@@ -116,19 +116,19 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
       <Evolucao respondidos={respondidos} />
 
       <section className="flex flex-col gap-2" aria-label="Respostas">
-        <h2 className="text-[15px] font-semibold">Respostas</h2>
+        <h2 className="text-[16px] font-semibold">Respostas</h2>
         {respondidos.length === 0 ? (
-          <p className="text-[13px] text-ink-3">{primeiro} ainda não respondeu nenhum questionário.</p>
+          <p className="text-[14px] text-ink-3">{primeiro} ainda não respondeu nenhum questionário.</p>
         ) : (
           respondidos.map((c) => (
             <details key={c.id} className="rounded-[16px] border border-line bg-surface p-3">
-              <summary className="cursor-pointer text-sm font-bold">
+              <summary className="cursor-pointer text-[15px] font-bold">
                 {c.titulo} <span className="font-normal text-ink-3">· respondido em {quando(c.respondidoEm!)}</span>
               </summary>
-              <dl className="mt-3 flex flex-col gap-2 text-sm">
+              <dl className="mt-3 flex flex-col gap-2 text-[15px]">
                 {c.perguntas.map((q) => (
                   <div key={q.id}>
-                    <dt className="text-xs text-ink-3">{q.texto}</dt>
+                    <dt className="text-[13px] text-ink-3">{q.texto}</dt>
                     <dd className="font-semibold whitespace-pre-line">{textoDaResposta(q, c.respostas?.[q.id])}</dd>
                   </div>
                 ))}
@@ -151,7 +151,7 @@ function Evolucao({ respondidos }: { respondidos: Checkin[] }) {
 
   return (
     <section className="flex flex-col gap-3" aria-label="Evolução">
-      <h2 className="text-[15px] font-semibold">Evolução</h2>
+      <h2 className="text-[16px] font-semibold">Evolução</h2>
       {[...perguntas.values()].map((q) => {
         const valores = ultimos.map((c) => {
           const v = c.respostas?.[q.id];
@@ -160,11 +160,11 @@ function Evolucao({ respondidos }: { respondidos: Checkin[] }) {
         const maximo = q.tipo === "nota" ? 10 : Math.max(1, ...valores.map((v) => v ?? 0));
         return (
           <div key={q.id} className="rounded-[16px] border border-line bg-surface p-3">
-            <p className="text-xs text-ink-2">{q.texto}</p>
+            <p className="text-[13px] text-ink-2">{q.texto}</p>
             <div className="mt-2 flex h-16 items-end gap-1.5">
               {valores.map((v, i) => (
                 <div key={i} className="flex flex-1 flex-col items-center justify-end gap-0.5">
-                  <span className="text-[10px] font-bold tabular-nums">{v == null ? "–" : String(v).replace(".", ",")}</span>
+                  <span className="text-[11.5px] font-bold tabular-nums">{v == null ? "–" : String(v).replace(".", ",")}</span>
                   <span
                     className="w-full rounded-t-[4px] bg-info"
                     style={{ height: `${v == null ? 0 : Math.max(6, (v / maximo) * 44)}px` }}

@@ -34,7 +34,7 @@ export function ConvidarParaConta({
   if (convite)
     return (
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-ink-3">
+        <p className="text-[13px] text-ink-3">
           Convite para ter conta{convite.expiraEm ? ` (${prazoDoConvite(convite.expiraEm)})` : ""}. Quando{" "}
           {nome.split(" ")[0]} aceitar, tudo passa para a conta dele.
         </p>
@@ -59,7 +59,7 @@ export function ConvidarParaConta({
             }
           })
         }
-        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[13px]"}
+        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[14px]"}
       >
         {ocupado ? "Criando…" : "Convidar para ter conta no Pienel"}
       </button>

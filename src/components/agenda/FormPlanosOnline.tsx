@@ -30,7 +30,7 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           Para alunos <strong>online e híbridos</strong>. Digite o valor <strong>total</strong> de cada plano (ex.: trimestral
           R$ 900 = uma cobrança de R$ 900 a cada 3 meses). Deixe em branco o que você não oferece.
         </p>
@@ -39,11 +39,11 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
             const valor = tabela[p.meses];
             return (
               <li key={p.meses} className="flex items-center gap-3 py-3">
-                <label htmlFor={`plano-${p.meses}`} className="w-[86px] shrink-0 text-sm font-bold">
+                <label htmlFor={`plano-${p.meses}`} className="w-[86px] shrink-0 text-[15px] font-bold">
                   {p.rotulo}
                 </label>
                 <div className="relative min-w-0 flex-1">
-                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-ink-3">R$</span>
+                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-[15px] text-ink-3">R$</span>
                   <input
                     id={`plano-${p.meses}`}
                     inputMode="decimal"
@@ -56,7 +56,7 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
                     className={`${ESTILO_CAIXA} min-h-11 pl-9 tabular-nums`}
                   />
                 </div>
-                <span className="w-[84px] shrink-0 text-right text-[11px] leading-tight text-ink-3 tabular-nums">
+                <span className="w-[84px] shrink-0 text-right text-[12.5px] leading-tight text-ink-3 tabular-nums">
                   {valor != null && !Number.isNaN(valor) && p.meses > 1 ? (
                     <>
                       {centavosParaReais(Math.round(valor / p.meses))}
@@ -95,7 +95,7 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
         >
           {salvando ? "Salvando…" : "Salvar planos online"}
         </button>
-        <p aria-live="polite" className="min-h-4 text-center text-xs text-ink-3">
+        <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {invalido
             ? "Confira os valores (a partir de R$ 1,00)."
             : aviso?.tipo === "erro"

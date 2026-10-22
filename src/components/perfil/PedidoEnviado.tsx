@@ -82,17 +82,17 @@ export function PedidoEnviado({
                   {p.feito && <Icone nome="certo" className="size-3.5 [stroke-width:3]" />}
                 </span>
                 <div>
-                  <p className="text-[14.5px] font-bold">
+                  <p className="text-[15.5px] font-bold">
                     {p.titulo}
                     <span className="sr-only">{p.feito ? " (feito)" : " (próximo passo)"}</span>
                   </p>
-                  <p className="text-[12.5px] text-ink-3 tabular-nums">{p.detalhe}</p>
+                  <p className="text-[14px] text-ink-3 tabular-nums">{p.detalhe}</p>
                 </div>
               </li>
             ))}
           </ol>
 
-          <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[13px] text-ink-2">
+          <div className="flex items-start gap-2.5 rounded-[14px] bg-surface-2 px-3.5 py-3 text-[14px] text-ink-2">
             <span className="mt-px text-brand">
               <Icone nome="cadeado" />
             </span>

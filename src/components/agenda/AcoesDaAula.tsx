@@ -68,7 +68,7 @@ export function AcoesDaAula({
       <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-ink-3">{ROTULO_ORIGEM[aula.origem]}</p>
+            <p className="text-[13px] text-ink-3">{ROTULO_ORIGEM[aula.origem]}</p>
             {aula.vinculoId ? (
               <Link href={`/agenda/alunos/${aula.vinculoId}`} className="text-[19px] font-extrabold hover:text-brand">
                 {aula.nome}
@@ -77,36 +77,36 @@ export function AcoesDaAula({
               <p className="text-[19px] font-extrabold">{aula.nome}</p>
             )}
           </div>
-          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${COR_SITUACAO[efetiva]}`}>
+          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[13px] font-bold ${COR_SITUACAO[efetiva]}`}>
             {ROTULO_SITUACAO[efetiva].split(" (")[0]}
           </span>
         </div>
-        <p className={`text-[15px] font-semibold ${naoAcontece(efetiva) ? "text-ink-3 line-through" : ""}`}>
+        <p className={`text-[16px] font-semibold ${naoAcontece(efetiva) ? "text-ink-3 line-through" : ""}`}>
           {textoDaAula(aula.inicio, aula.local)}
         </p>
-        <p className="text-xs text-ink-3">
+        <p className="text-[13px] text-ink-3">
           {emBrasilia(aula.inicio).hora} às {emBrasilia(aula.fim).hora} · {duracao} min
         </p>
         {efetiva !== aula.situacao && efetiva === "realizada" && (
-          <p className="text-xs text-ink-3">Passou sem marcação, então conta como dada.</p>
+          <p className="text-[13px] text-ink-3">Passou sem marcação, então conta como dada.</p>
         )}
         {aula.situacao === "cancelada_com_aviso" && (
-          <p className="text-xs text-ink-3">
+          <p className="text-[13px] text-ink-3">
             Cancelada {aula.canceladaPor === "personal" ? "por você" : "pelo aluno, com antecedência"}. {primeiro} ganhou uma
             reposição.
           </p>
         )}
         {aula.situacao === "cancelada_em_cima" && (
-          <p className="text-xs text-ink-3">Cancelada pelo aluno em cima da hora: conta como dada, sem reposição.</p>
+          <p className="text-[13px] text-ink-3">Cancelada pelo aluno em cima da hora: conta como dada, sem reposição.</p>
         )}
         {aula.remarcadaPara && (
-          <Link href={`/agenda/aula/${aula.remarcadaPara.id}`} className="text-[13px] font-semibold text-brand">
+          <Link href={`/agenda/aula/${aula.remarcadaPara.id}`} className="text-[14px] font-semibold text-brand">
             {aula.situacao === "remarcada" ? "Remarcada para" : "Pedido de troca para"}{" "}
             {textoDaAula(aula.remarcadaPara.inicio, null)} ›
           </Link>
         )}
         {aula.remarcadaDe && (
-          <Link href={`/agenda/aula/${aula.remarcadaDe.id}`} className="text-xs text-ink-3">
+          <Link href={`/agenda/aula/${aula.remarcadaDe.id}`} className="text-[13px] text-ink-3">
             {aula.situacao === "pendente" ? "Pedido para trocar a aula de" : "Remarcada de"}{" "}
             {textoDaAula(aula.remarcadaDe.inicio, null)}
           </Link>
@@ -117,7 +117,7 @@ export function AcoesDaAula({
 
       {aula.situacao === "pendente" &&
         (aula.propostaPor === "personal" ? (
-          <p className="rounded-[14px] bg-gold-soft p-3 text-[13px] text-gold">
+          <p className="rounded-[14px] bg-gold-soft p-3 text-[14px] text-gold">
             Você sugeriu este horário. Aguardando {primeiro} aceitar ou recusar. Sem resposta, o pedido expira 2 horas antes.
           </p>
         ) : (
@@ -132,7 +132,7 @@ export function AcoesDaAula({
         ))}
 
       {aula.situacao === "recusada" && (
-        <p className="rounded-[14px] bg-surface-2 p-3 text-[13px] text-ink-2">
+        <p className="rounded-[14px] bg-surface-2 p-3 text-[14px] text-ink-2">
           Pedido recusado{aula.resposta ? `: ${aula.resposta}` : "."} O horário ficou livre e, se era reposição, ela voltou para{" "}
           {primeiro}.
         </p>
@@ -252,7 +252,7 @@ function Cancelar({
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
-      <p className="text-[13px] font-bold text-ink-2">Quem cancelou?</p>
+      <p className="text-[14px] font-bold text-ink-2">Quem cancelou?</p>
       <div className="grid grid-cols-2 gap-2">
         {(["aluno", "personal"] as const).map((q) => (
           <button
@@ -260,7 +260,7 @@ function Cancelar({
             type="button"
             aria-pressed={por === q}
             onClick={() => setPor(q)}
-            className={`min-h-11 rounded-[13px] border text-sm font-bold ${por === q ? "border-ink bg-ink text-app" : "border-line"}`}
+            className={`min-h-11 rounded-[13px] border text-[15px] font-bold ${por === q ? "border-ink bg-ink text-app" : "border-line"}`}
           >
             {q === "aluno" ? primeiro : "Eu"}
           </button>
@@ -283,7 +283,7 @@ function Cancelar({
           />
         </div>
       ) : (
-        <p className="text-[13px] text-ink-2">
+        <p className="text-[14px] text-ink-2">
           Quando você cancela, {primeiro} sempre ganha uma reposição, válida até o próximo vencimento da mensalidade.
         </p>
       )}
@@ -316,8 +316,8 @@ function Opcao({ ativo, onClick, titulo, texto }: { ativo: boolean; onClick: () 
         {ativo && <span className="size-2.5 rounded-full bg-brand" />}
       </span>
       <span>
-        <span className="block text-sm font-bold">{titulo}</span>
-        <span className="block text-xs text-ink-3">{texto}</span>
+        <span className="block text-[15px] font-bold">{titulo}</span>
+        <span className="block text-[13px] text-ink-3">{texto}</span>
       </span>
     </button>
   );
@@ -353,7 +353,7 @@ function Remarcar({
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
-      <label htmlFor="rem-data" className="text-[13px] font-bold text-ink-2">
+      <label htmlFor="rem-data" className="text-[14px] font-bold text-ink-2">
         Para qual dia?
       </label>
       <input
@@ -367,11 +367,11 @@ function Remarcar({
         }}
         className={ESTILO_CAIXA}
       />
-      <p className="text-[13px] font-bold text-ink-2">Seus horários livres</p>
+      <p className="text-[14px] font-bold text-ink-2">Seus horários livres</p>
       {livres === null ? (
-        <p className="text-xs text-ink-3">Carregando…</p>
+        <p className="text-[13px] text-ink-3">Carregando…</p>
       ) : livres.length === 0 ? (
-        <p className="text-xs text-ink-3">Nenhum horário livre neste dia. Escolha outro dia ou um horário abaixo.</p>
+        <p className="text-[13px] text-ink-3">Nenhum horário livre neste dia. Escolha outro dia ou um horário abaixo.</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {livres.map((m) => (
@@ -380,19 +380,19 @@ function Remarcar({
               type="button"
               aria-pressed={hora === m}
               onClick={() => setHora(m)}
-              className={`rounded-lg px-2.5 py-1.5 text-sm font-bold tabular-nums ${hora === m ? "bg-ink text-app" : "bg-brand-soft text-brand"}`}
+              className={`rounded-lg px-2.5 py-1.5 text-[15px] font-bold tabular-nums ${hora === m ? "bg-ink text-app" : "bg-brand-soft text-brand"}`}
             >
               {minParaHora(m)}
             </button>
           ))}
         </div>
       )}
-      <label className="flex items-center gap-2 text-xs text-ink-3">
+      <label className="flex items-center gap-2 text-[13px] text-ink-3">
         Outro horário:
         <select
           value={hora ?? ""}
           onChange={(e) => setHora(e.target.value === "" ? null : Number(e.target.value))}
-          className="min-h-10 rounded-[11px] border border-line bg-surface px-2 text-sm tabular-nums text-ink"
+          className="min-h-10 rounded-[11px] border border-line bg-surface px-2 text-[15px] tabular-nums text-ink"
         >
           <option value="">—</option>
           {opcoesDeHora(0, 1440 - duracao).map((m) => (
@@ -437,11 +437,11 @@ function Pedido({
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border-2 border-gold bg-surface p-4">
-      <p className="text-[14px]">
+      <p className="text-[15px]">
         <strong>{primeiro}</strong> pediu {tipo} para este horário.
         {aula.remarcadaDe && " A aula original continua marcada até você aceitar."}
       </p>
-      <p className="text-xs text-ink-3">Sem resposta, o pedido expira 2 horas antes do horário.</p>
+      <p className="text-[13px] text-ink-3">Sem resposta, o pedido expira 2 horas antes do horário.</p>
       <button type="button" disabled={ocupado} onClick={onAceitar} className={ESTILO_BOTAO_PRINCIPAL}>
         <Icone nome="certo" className="size-4" /> {ocupado ? "Salvando…" : "Aceitar"}
       </button>
@@ -466,7 +466,7 @@ function Pedido({
       {modo === "sugerir" && <Remarcar aula={aula} duracao={duracao} ocupado={ocupado} onConfirmar={onSugerir} rotulo="Sugerir" />}
       {modo === "recusar" && (
         <div className="flex flex-col gap-2">
-          <label htmlFor="motivo" className="text-[13px] font-bold text-ink-2">
+          <label htmlFor="motivo" className="text-[14px] font-bold text-ink-2">
             Motivo (opcional, {primeiro} vai ver)
           </label>
           <input
@@ -485,7 +485,7 @@ function Pedido({
           >
             {ocupado ? "Salvando…" : "Recusar pedido"}
           </button>
-          <p className="text-xs text-ink-3">{aula.remarcadaDe ? "A aula original continua marcada." : `A reposição volta para ${primeiro}.`}</p>
+          <p className="text-[13px] text-ink-3">{aula.remarcadaDe ? "A aula original continua marcada." : `A reposição volta para ${primeiro}.`}</p>
         </div>
       )}
     </section>

@@ -50,7 +50,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     return (
       <>
 
-        <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
+        <div className="flex flex-col gap-3 px-[18px] pt-4 text-[15px] text-ink-2">
           <p>Você não está mais ligado a este personal.</p>
           <Link href="/aluno" className="font-semibold text-brand">
             Voltar para a minha área
@@ -89,7 +89,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           <Avatar nome={p.nome} cor="av1" />
           <div className="min-w-0 flex-1">
             <p className="text-[17px] font-extrabold">{p.nome}</p>
-            <p className="text-[13px] text-on-deep-2">
+            <p className="text-[14px] text-on-deep-2">
               Seu personal desde {new Date(p.aceitoEm).toLocaleDateString("pt-BR")} · CREF {p.cref}
             </p>
           </div>
@@ -99,22 +99,22 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           href={linkWhatsapp(p.whatsapp, `Oi, ${primeiro}!`)}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] border border-line bg-surface px-3 text-[13px] font-bold"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] border border-line bg-surface px-3 text-[14px] font-bold"
         >
           <Icone nome="conversa" className="size-4" /> Mensagem no WhatsApp · {formatarWhatsapp(p.whatsapp)}
         </a>
 
         {suspensaDesde && (
           <section className="flex flex-col gap-2 rounded-[20px] border-2 border-bad bg-bad/5 p-4" role="alert">
-            <p className="flex items-center gap-2 text-[16px] font-extrabold text-bad">
+            <p className="flex items-center gap-2 text-[17px] font-extrabold text-bad">
               <Icone nome="cadeado" className="size-5" /> Matrícula suspensa
             </p>
-            <p className="text-[13px] text-ink-2">
+            <p className="text-[14px] text-ink-2">
               Sua matrícula venceu sem pagamento e está suspensa desde{" "}
               {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR")}. Enquanto isso, você não consegue
               cancelar, remarcar nem marcar aulas, nem responder questionários.
             </p>
-            <p className="text-[13px] font-semibold">
+            <p className="text-[14px] font-semibold">
               Pague abaixo e toque em &quot;Já paguei&quot;. Quando {primeiro} confirmar, tudo volta ao normal.
             </p>
           </section>
@@ -127,25 +127,25 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
             className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
           >
             <span className="flex-1">
-              <span className="block text-sm font-bold text-gold">{q.titulo}</span>
-              <span className="block text-xs text-ink-2">{primeiro} está esperando suas respostas. Leva uns 2 minutos.</span>
+              <span className="block text-[15px] font-bold text-gold">{q.titulo}</span>
+              <span className="block text-[13px] text-ink-2">{primeiro} está esperando suas respostas. Leva uns 2 minutos.</span>
             </span>
-            <span className="rounded-[11px] bg-brand px-3 py-2 text-[13px] font-bold text-brand-ink">Responder</span>
+            <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
           </Link>
         ))}
 
         {suspensaDesde ? null : matricula ? (
           <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
             <div>
-              <p className="text-xs font-semibold text-ink-3">{resumoDaModalidade(matricula)}</p>
+              <p className="text-[13px] font-semibold text-ink-3">{resumoDaModalidade(matricula)}</p>
               {matricula.modalidade === "online" ? (
-                <p className="text-[15px] font-bold">Acompanhamento online com {primeiro}</p>
+                <p className="text-[16px] font-bold">Acompanhamento online com {primeiro}</p>
               ) : (
                 <>
                   <p className="text-[17px] font-extrabold">
                     {resumoDosHorarios(matricula.horarios, matricula.intervaloSemanas)}
                   </p>
-                  <p className="text-[13px] text-ink-2">
+                  <p className="text-[14px] text-ink-2">
                     {[`Aulas de ${matricula.duracao} min`, matricula.local].filter(Boolean).join(" · ")}
                   </p>
                 </>
@@ -153,7 +153,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
             </div>
           </section>
         ) : (
-          <section className="rounded-[20px] border border-dashed border-line p-4 text-[13px] text-ink-3">
+          <section className="rounded-[20px] border border-dashed border-line p-4 text-[14px] text-ink-3">
             {primeiro} ainda não marcou seus horários fixos. Quando marcar, suas aulas aparecem aqui.
           </section>
         )}
@@ -186,7 +186,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </section>
         )}
 
-        <p className="text-xs text-ink-3">
+        <p className="text-[13px] text-ink-3">
           {primeiro} vê o seu perfil completo (objetivo, nível, restrições, medidas, endereço e WhatsApp), sua idade e o
           dia do seu aniversário. Nunca o seu e-mail.
         </p>
