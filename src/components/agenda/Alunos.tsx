@@ -242,7 +242,7 @@ export function Alunos({
             setEscolhendo(true);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
         >
           <Icone nome="mais" className="size-4" /> Novo aluno
         </button>

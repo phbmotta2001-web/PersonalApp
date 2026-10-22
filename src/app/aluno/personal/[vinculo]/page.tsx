@@ -27,7 +27,7 @@ export const metadata: Metadata = {
 
 export default function PaginaMeuPersonal({ params }: PageProps<"/aluno/personal/[vinculo]">) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col pb-24">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col pb-28">
       <Cabecalho titulo="Seu personal">
         <BotaoVoltar reserva="/aluno" className="hover:bg-surface-2" />
       </Cabecalho>

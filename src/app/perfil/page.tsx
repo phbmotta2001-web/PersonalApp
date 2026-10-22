@@ -20,7 +20,7 @@ export default function PaginaPerfilAluno({ searchParams }: PageProps<"/perfil">
       <Suspense fallback={<Carregando />}>
         <Conteudo searchParams={searchParams} />
       </Suspense>
-      <div className="h-24" aria-hidden="true" />
+      <div className="h-28" aria-hidden="true" />
       <BarraDoAluno />
     </div>
   );

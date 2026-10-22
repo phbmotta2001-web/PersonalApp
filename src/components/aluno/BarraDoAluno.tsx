@@ -44,11 +44,11 @@ function Barra({ caminho }: { caminho: string }) {
               <Link
                 href={a.href}
                 aria-current={ativa ? "page" : undefined}
-                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[12.5px] ${
+                className={`aba-macia flex min-h-[64px] flex-col items-center justify-center gap-1 pt-2.5 pb-2 text-[14px] ${
                   ativa ? "font-bold text-brand" : "font-semibold text-ink-3"
                 }`}
               >
-                <Icone nome={a.icone} className="size-6" />
+                <Icone nome={a.icone} className="size-7" />
                 {a.rotulo}
               </Link>
             </li>
