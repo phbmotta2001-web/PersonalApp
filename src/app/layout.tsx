@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Abertura } from "@/components/Abertura";
 import { RegistrarApp } from "@/components/RegistrarApp";
 import "./globals.css";
 
@@ -35,8 +36,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="pt-BR"
       className={`${figtree.variable} ${bricolage.variable} h-full antialiased`}
+      // O script da abertura põe uma classe aqui antes do React assumir.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <Abertura />
         {children}
         <RegistrarApp />
       </body>
