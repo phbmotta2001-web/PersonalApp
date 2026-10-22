@@ -27,7 +27,7 @@ export function FormCobrancaAvulsa({ alunos, hoje }: { alunos: { vinculoId: stri
           try {
             const r = await criarCobrancaAvulsa(vinculoId, descricao, valor, vencimento);
             if (!r.ok) return setErro(r.erro);
-            router.replace("/agenda/cobrancas");
+            router.replace("/agenda/financeiro");
             router.refresh();
           } catch {
             setErro("Não foi possível criar agora. Confira sua internet.");

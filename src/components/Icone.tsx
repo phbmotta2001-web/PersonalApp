@@ -68,6 +68,12 @@ const CAMINHOS = {
       <path d="M4 21a8 8 0 0 1 16 0" />
     </>
   ),
+  dinheiro: (
+    <>
+      <rect x="3" y="6" width="18" height="12" rx="2.5" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
   pessoas: (
     <>
       <circle cx="9" cy="8" r="3.5" />

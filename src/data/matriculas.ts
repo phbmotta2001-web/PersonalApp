@@ -305,3 +305,11 @@ export async function definirSuspensaoAutomatica(vinculoId: string, ligada: bool
   const { error } = await supabase.rpc("definir_suspensao_automatica", { p_vinculo: vinculoId, p_ligada: ligada });
   return error ? { ok: false, erro: "Não foi possível mudar agora." } : { ok: true };
 }
+
+/** Matrículas ativas do personal logado, por vínculo (para a lista de alunos). */
+export async function matriculasAtivasPorAluno(): Promise<Record<string, Matricula>> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return {};
+  const { data } = await supabase.from("matriculas").select(CAMPOS_MATRICULA).eq("personal_id", id).eq("situacao", "ativa");
+  return Object.fromEntries(((data ?? []) as LinhaMatricula[]).map((l) => [l.vinculo_id, paraMatricula(l)]));
+}

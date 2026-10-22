@@ -2,24 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
+import { Avatar } from "@/components/Avatar";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
-import { financeiroDoMes, lerPix } from "@/data/cobrancas";
 import { sair } from "@/data/conta";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { lerTabelaDeValores } from "@/data/precos";
+import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { textoDeHoras } from "@/lib/aula";
-import { agoraEmBrasilia } from "@/lib/expediente";
-import { centavosParaReais } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
-import { aPartirDe } from "@/lib/precos";
 
 export const metadata: Metadata = {
-  title: "Minha conta",
+  title: "Conta",
 };
 
-export default function PaginaMinhaConta() {
+export default function PaginaConta() {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       <Suspense fallback={<Carregando />}>
@@ -30,73 +27,45 @@ export default function PaginaMinhaConta() {
   );
 }
 
-// Aba "Minha conta" do personal: dados, configurações de cobrança e regras, sair.
+// Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const hoje = agoraEmBrasilia().data;
-  const [tabela, antecedencia, pix, financeiro] = await Promise.all([
-    lerTabelaDeValores(),
-    lerAntecedencia(),
-    lerPix(),
-    financeiroDoMes(hoje),
-  ]);
-  const menorValor = aPartirDe(tabela);
-  const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
+  const [antecedencia, expediente, bloqueios] = await Promise.all([lerAntecedencia(), lerExpediente(), listarBloqueios()]);
 
   return (
-    <div className="flex flex-col gap-5 px-[18px] pt-5 pb-28">
-      <h1 className="text-[24px] font-extrabold">Minha conta</h1>
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
+      <h1 className="text-[24px] font-extrabold">Conta</h1>
 
-      <section className="rounded-[20px] border border-line bg-surface p-4 text-[13px] text-ink-2">
-        <p className="text-[17px] font-bold text-ink">{personal.nomeCompleto}</p>
-        <p>{personal.email}</p>
-        <p>WhatsApp {formatarWhatsapp(personal.whatsapp)}</p>
-        <p>
-          CREF {personal.cref}/{personal.crefUf}
-        </p>
+      <section className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4">
+        <Avatar nome={personal.nomeCompleto} cor="av1" />
+        <div className="min-w-0 text-[13px] text-ink-2">
+          <p className="truncate text-[16px] font-bold text-ink">{personal.nomeCompleto}</p>
+          <p className="truncate">{personal.email}</p>
+          <p>
+            WhatsApp {formatarWhatsapp(personal.whatsapp)} · CREF {personal.cref}/{personal.crefUf}
+          </p>
+        </div>
       </section>
 
-      <Link href="/agenda/cobrancas" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Financeiro do mês">
-        <span className="flex items-center gap-2">
-          <span className="flex-1 text-[15px] font-semibold">Financeiro de {nomeDoMes}</span>
-          <span className="text-[13px] font-semibold text-brand">Cobranças ›</span>
-        </span>
-        <span className="grid grid-cols-2 gap-2">
-          <span className="flex flex-col gap-0.5 rounded-[14px] bg-ok-soft p-3">
-            <span className="text-xs text-ok">Recebido</span>
-            <span className="text-[18px] font-extrabold text-ok tabular-nums">{centavosParaReais(financeiro.recebido)}</span>
-          </span>
-          <span className="flex flex-col gap-0.5 rounded-[14px] bg-surface-2 p-3">
-            <span className="text-xs text-ink-3">A receber até o fim do mês</span>
-            <span className="text-[18px] font-extrabold tabular-nums">{centavosParaReais(financeiro.aReceber)}</span>
-          </span>
-        </span>
-        {financeiro.atrasado > 0 && (
-          <span className="text-[13px] font-bold text-bad">{centavosParaReais(financeiro.atrasado)} atrasado</span>
-        )}
-        {financeiro.previsto > 0 && (
-          <span className="text-xs text-ink-3">
-            Inclui {centavosParaReais(financeiro.previsto)} de mensalidades que ainda vão ser geradas.
-          </span>
-        )}
-      </Link>
+      <Grupo titulo="Agenda">
+        <Linha
+          href="/agenda/horarios"
+          icone="relogio"
+          titulo="Horários de trabalho"
+          texto={expediente?.faixas.length ? `Aulas de ${expediente.duracao} min` : "Configure seus horários"}
+        />
+        <Linha
+          href="/agenda/bloqueios"
+          icone="calendario"
+          titulo="Bloqueios"
+          texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"}
+        />
+        <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+      </Grupo>
 
-      <nav className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4" aria-label="Configurações">
-        <Linha
-          href="/agenda/valores"
-          icone="estrela"
-          titulo="Valores"
-          texto={menorValor != null ? `Aulas a partir de ${centavosParaReais(menorValor)}` : "Cadastre seus valores"}
-        />
-        <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo Pienel"} />
-        <Linha href="/agenda/regras" icone="escudo" titulo="Regras" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
-        <Linha
-          href="/agenda/online/questionarios"
-          icone="conversa"
-          titulo="Questionários dos alunos online"
-          texto="Modelos de check-in e acompanhamento"
-        />
-      </nav>
+      <Grupo titulo="Alunos online">
+        <Linha href="/agenda/online/questionarios" icone="conversa" titulo="Questionários" texto="Modelos de check-in e acompanhamento" />
+      </Grupo>
 
       <form action={sair}>
         <button type="submit" className={ESTILO_BOTAO_SECUNDARIO}>
@@ -107,6 +76,15 @@ async function Conteudo() {
         Excluir minha conta
       </Link>
     </div>
+  );
+}
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-2" aria-label={titulo}>
+      <h2 className="text-[11.5px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">{titulo}</h2>
+      <nav className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">{children}</nav>
+    </section>
   );
 }
 

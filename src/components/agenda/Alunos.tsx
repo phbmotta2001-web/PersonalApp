@@ -13,30 +13,57 @@ import {
   type AlunoDaLista,
 } from "@/lib/convite";
 import { frase } from "@/lib/formato";
-import { textoDaAula } from "@/lib/matricula";
-import { Avatar } from "../Avatar";
+import { Avatar, corPorId } from "../Avatar";
+import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
 
-/** Lista de alunos do personal + "Convidar aluno". */
+export type FiltroAluno = "atrasados" | "online" | "sem_app" | "pausa" | "sem_aulas";
+export type TomEtiqueta = "ok" | "bad" | "neu" | "info" | "gold";
+
+/** O que a lista mostra de cada aluno ativo (montado no servidor). */
+export interface DetalheDoAluno {
+  /** Ex.: "Seg e Qui às 07:00", "Online · plano trimestral". */
+  subtitulo: string;
+  etiqueta: { texto: string; tom: TomEtiqueta };
+  filtros: FiltroAluno[];
+  atrasado: boolean;
+}
+
+const FILTROS: { valor: FiltroAluno; rotulo: string }[] = [
+  { valor: "atrasados", rotulo: "Atrasados" },
+  { valor: "online", rotulo: "Online" },
+  { valor: "sem_app", rotulo: "Sem app" },
+  { valor: "pausa", rotulo: "Em pausa" },
+  { valor: "sem_aulas", rotulo: "Sem matrícula" },
+];
+
+const COR_ETIQUETA: Record<TomEtiqueta, string> = {
+  ok: "bg-ok-soft text-ok",
+  bad: "bg-bad/10 text-bad",
+  neu: "bg-surface-2 text-ink-2",
+  info: "bg-info-soft text-info",
+  gold: "bg-gold-soft text-gold",
+};
+
+/** Sem acento e em minúsculas, para a busca achar "Joao" em "João". */
+const simples = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Aba "Alunos" do personal: busca, filtros, lista; convites e "Novo aluno". */
 export function Alunos({
   alunos,
   origem,
-  proximas,
-  comAtraso = [],
-  suspensos = [],
+  detalhes,
 }: {
   alunos: AlunoDaLista[];
   origem: string;
-  /** Próxima aula de cada aluno ativo, por vínculo. */
-  proximas: Record<string, { inicio: string; local: string | null }>;
-  /** Vínculos com cobrança atrasada: o nome fica em vermelho. */
-  comAtraso?: string[];
-  /** Vínculos com a matrícula suspensa por falta de pagamento. */
-  suspensos?: string[];
+  detalhes: Record<string, DetalheDoAluno>;
 }) {
   const router = useRouter();
   const [abrindo, setAbrindo] = useState(alunos.length === 0);
+  const [escolhendo, setEscolhendo] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState<FiltroAluno | null>(null);
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [tentou, setTentou] = useState(false);
@@ -45,6 +72,10 @@ export function Alunos({
   const [ocupado, iniciar] = useTransition();
 
   const ativos = alunos.filter((a) => a.situacao === "ativo");
+  const contagem = (f: FiltroAluno) => ativos.filter((a) => detalhes[a.vinculoId]?.filtros.includes(f)).length;
+  const visiveis = ativos.filter(
+    (a) => (!busca.trim() || simples(a.nome).includes(simples(busca.trim()))) && (!filtro || detalhes[a.vinculoId]?.filtros.includes(filtro)),
+  );
   const aguardando = alunos.filter((a) => a.situacao === "convidado");
   const antigos = alunos.filter((a) => a.situacao === "expirado" || a.situacao === "cancelado" || a.situacao === "encerrado");
   const problemas = problemasDoConvite(nome, whatsapp);
@@ -63,7 +94,7 @@ export function Alunos({
   }
 
   return (
-    <div className="flex flex-col gap-6 px-[18px] pt-2 pb-6">
+    <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
       {novo && (
         <section className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
           <p className="font-bold">Convite criado para {novo.nome}</p>
@@ -125,65 +156,97 @@ export function Alunos({
           )}
         </form>
       ) : (
-        <div className="flex flex-col gap-2">
-          <button type="button" onClick={() => setAbrindo(true)} className={ESTILO_BOTAO_PRINCIPAL}>
-            <Icone nome="mais" className="size-4" /> Convidar aluno
-          </button>
-          <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[13px]"}>
-            Cadastrar aluno que não usa o app
-          </Link>
-        </div>
+        escolhendo && (
+          <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Novo aluno">
+            <h2 className="text-[17px] font-semibold">Novo aluno</h2>
+            <button
+              type="button"
+              onClick={() => {
+                setEscolhendo(false);
+                setAbrindo(true);
+              }}
+              className={ESTILO_BOTAO_PRINCIPAL}
+            >
+              <Icone nome="enviar" className="size-4" /> Convidar pelo link
+            </button>
+            <p className="-mt-1 text-xs text-ink-3">O aluno cria a conta dele e vê aulas, avisos e pagamentos no app.</p>
+            <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[14px]"}>
+              Cadastrar quem não usa o app
+            </Link>
+            <p className="-mt-1 text-xs text-ink-3">Você cuida da agenda e das cobranças dele (ex.: aluno menor de idade).</p>
+            <button type="button" onClick={() => setEscolhendo(false)} className="text-[13px] font-semibold text-ink-3">
+              Cancelar
+            </button>
+          </section>
+        )
       )}
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="text-[17px] font-semibold">Alunos ativos ({ativos.length})</h2>
+      <section className="flex flex-col gap-2.5" aria-label="Alunos ativos">
+        {ativos.length > 0 && (
+          <>
+            <label className="flex min-h-11 items-center gap-2 rounded-[13px] border border-line bg-surface px-3.5 text-ink-3">
+              <Icone nome="busca" className="size-[18px]" />
+              <span className="sr-only">Buscar aluno</span>
+              <input
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar aluno"
+                className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-ink-3"
+              />
+            </label>
+            <div className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1" role="group" aria-label="Filtrar alunos">
+              <Chip ativo={filtro === null} onClick={() => setFiltro(null)}>
+                Todos {ativos.length}
+              </Chip>
+              {FILTROS.filter((f) => contagem(f.valor) > 0).map((f) => (
+                <Chip key={f.valor} ativo={filtro === f.valor} onClick={() => setFiltro(filtro === f.valor ? null : f.valor)}>
+                  {f.rotulo} {contagem(f.valor)}
+                </Chip>
+              ))}
+            </div>
+          </>
+        )}
         {ativos.length === 0 ? (
-          <p className="text-sm text-ink-3">Nenhum aluno ainda. Convide seus alunos para o Pienel.</p>
+          <p className="text-sm text-ink-3">Nenhum aluno ainda. Toque em &quot;Novo aluno&quot; para convidar ou cadastrar.</p>
+        ) : visiveis.length === 0 ? (
+          <p className="text-sm text-ink-3">Nenhum aluno com esse filtro.</p>
         ) : (
-          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
-            {ativos.map((a) => (
-              <li key={a.vinculoId}>
-                <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex flex-col gap-2 py-3">
-                  <span className="flex items-center gap-3">
-                    <Avatar nome={a.nome} cor="av6" />
+          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
+            {visiveis.map((a) => {
+              const d = detalhes[a.vinculoId];
+              return (
+                <li key={a.vinculoId}>
+                  <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex items-center gap-3 py-2.5">
+                    <Avatar nome={a.nome} cor={corPorId(a.vinculoId)} tamanho="pequeno" />
                     <span className="min-w-0 flex-1">
-                      <span className={`block truncate font-bold ${comAtraso.includes(a.vinculoId) ? "text-bad" : ""}`}>
-                        {a.nome}
-                        {comAtraso.includes(a.vinculoId) && (
-                          <span className="ml-1.5 text-[11px] font-bold">
-                            · {suspensos.includes(a.vinculoId) ? "matrícula suspensa" : "mensalidade atrasada"}
-                          </span>
-                        )}
-                      </span>
-                      <span className="block text-[12.5px] text-ink-3">
-                        Aluno desde {new Date(a.aceitoEm ?? a.criadoEm).toLocaleDateString("pt-BR")}
-                        {a.semConta && (
-                          <span className="ml-1.5 rounded-full bg-surface-2 px-1.5 py-px text-[11px] font-bold text-ink-2">
-                            {a.menor ? "Menor · sem app" : "Sem app"}
-                          </span>
-                        )}
-                      </span>
+                      <span className={`block truncate text-[15px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
+                      <span className="block truncate text-[12.5px] text-ink-3">{d?.subtitulo}</span>
                     </span>
-                    <span className="text-ink-3" aria-hidden="true">›</span>
-                  </span>
-                  {proximas[a.vinculoId] ? (
-                    <span className="flex items-start gap-2 rounded-[12px] bg-brand-soft px-3 py-2 text-[12.5px] text-brand">
-                      <Icone nome="calendario" className="mt-px size-4 shrink-0" />
-                      <span>
-                        <strong>Próxima aula:</strong> {textoDaAula(proximas[a.vinculoId].inicio, proximas[a.vinculoId].local)}
+                    {d && (
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_ETIQUETA[d.etiqueta.tom]}`}>
+                        {d.etiqueta.texto}
                       </span>
-                    </span>
-                  ) : (
-                    <span className="rounded-[12px] border border-dashed border-line px-3 py-2 text-[12.5px] text-ink-3">
-                      Sem aulas marcadas. Toque para criar a matrícula.
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
+
+      {!abrindo && !escolhendo && (
+        <button
+          type="button"
+          onClick={() => {
+            setEscolhendo(true);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[14px] font-extrabold text-brand-ink"
+        >
+          <Icone nome="mais" className="size-4" /> Novo aluno
+        </button>
+      )}
 
       {aguardando.length > 0 && (
         <section className="flex flex-col gap-2.5">

@@ -35,7 +35,7 @@ export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; n
             const r = await salvarPix(pix);
             if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
             // Volta para Cobranças já com a chave (sem mostrar a tela antiga guardada).
-            router.replace("/agenda/cobrancas");
+            router.replace("/agenda/financeiro");
             router.refresh();
           } catch {
             setAviso({ tipo: "erro", texto: "Não foi possível salvar agora. Confira sua internet." });

@@ -4,25 +4,22 @@ import { Suspense } from "react";
 import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
-import { Icone } from "@/components/Icone";
+import { Icone, type NomeIcone } from "@/components/Icone";
 import { InstalarApp } from "@/components/InstalarApp";
 import { pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
-import { listarCobrancas, resumoDasCobrancas } from "@/data/cobrancas";
-import { aniversariantesDoMes } from "@/data/convites";
+import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
+import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
-import { situacaoDaCobranca, textoDoVencimento } from "@/lib/cobranca";
+import { linkWhatsapp } from "@/lib/convite";
+import { situacaoDaCobranca } from "@/lib/cobranca";
 import { agoraEmBrasilia, emBrasilia, somarDias } from "@/lib/expediente";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 
 export const metadata: Metadata = {
   title: "Início",
 };
-
-// Quantas aulas e mensalidades o Início mostra (o resto fica nas abas e telas próprias).
-const PROXIMAS = 5;
-const DIAS_PARA_VENCER = 7;
 
 export default function PaginaInicio() {
   return (
@@ -35,35 +32,49 @@ export default function PaginaInicio() {
   );
 }
 
-// Aba "Início" do personal: o que pede atenção agora.
+// Aba "Início" do personal (redesign "Foco no hoje", 22/10/2026): primeiro a próxima
+// aula, depois o resto do dia, o que precisa de você e o dinheiro do mês.
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [naoLidos, pedidos, aulas, resumo, cobrancas, aniversarios, suspensas] = await Promise.all([
+  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),
     listarAulas(agora.toISOString(), new Date(agora.getTime() + 7 * 86_400_000).toISOString()),
-    resumoDasCobrancas(hoje),
+    financeiroDoMes(hoje),
     listarCobrancas(),
     aniversariantesDoMes(hoje),
     matriculasSuspensas(),
+    listarMeusAlunos(),
   ]);
-  const proximas = aulas
-    .filter((a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime())
-    .slice(0, PROXIMAS);
-  const vencendo = cobrancas
-    .filter((c) => c.situacao === "aberta" && c.vencimento <= somarDias(hoje, DIAS_PARA_VENCER))
-    .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
-  const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
-  const quando = (inicio: string) => {
+  const vindouras = aulas.filter(
+    (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
+  );
+  const [proxima, ...resto] = vindouras;
+  const deHoje = resto.filter((a) => emBrasilia(a.inicio).data === hoje);
+  const aulasHoje = vindouras.filter((a) => emBrasilia(a.inicio).data === hoje).length;
+  const depois = deHoje.length > 0 ? deHoje : resto.slice(0, 3);
+  const avisaram = cobrancas.filter((c) => c.situacao === "aberta" && c.alunoAvisouEm);
+  const atrasadas = cobrancas.filter((c) => c.situacao === "aberta" && !c.alunoAvisouEm && situacaoDaCobranca(c, hoje) === "atrasada");
+  const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", "");
+  const whatsappDe = (vinculo: string | null) => alunos.find((a) => a.vinculoId === vinculo)?.whatsapp ?? null;
+  const aniversariosProximos = aniversarios.filter((a) => a.dia >= Number(hoje.slice(8, 10)));
+
+  // "Agora", "em 25 min", "hoje às 18:00", "amanhã às 07:00", "qui, 23/10 às 07:00"
+  const quando = (inicio: string, fim: string) => {
+    const ms = Date.parse(inicio) - agora.getTime();
+    if (ms <= 0 && Date.parse(fim) > agora.getTime()) return "Acontecendo agora";
+    if (ms < 2 * 3_600_000) return `Começa em ${Math.max(1, Math.round(ms / 60_000))} min`;
     const d = emBrasilia(inicio);
-    return d.data === hoje ? `Hoje ${d.hora}` : d.data === somarDias(hoje, 1) ? `Amanhã ${d.hora}` : textoDaAula(inicio, null);
+    if (d.data === hoje) return `Hoje às ${d.hora}`;
+    if (d.data === somarDias(hoje, 1)) return `Amanhã às ${d.hora}`;
+    return textoDaAula(inicio, null);
   };
 
   return (
-    <div className="flex flex-col gap-5 px-[18px] pt-5 pb-28">
-      <header className="flex items-start gap-3">
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
+      <header className="flex items-center gap-3">
         <div className="flex-1">
           <p className="text-[12.5px] text-ink-3">Área do personal</p>
           <h1 className="text-[24px] font-extrabold">Olá, {personal.nomeCompleto.split(" ")[0]}</h1>
@@ -93,18 +104,87 @@ async function Conteudo() {
         </section>
       )}
 
-      {pedidos.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-[20px] border-2 border-gold bg-gold-soft p-4" aria-label="Pedidos aguardando você">
-          <h2 className="text-[15px] font-bold text-gold">
-            {pedidos.length === 1 ? "1 pedido aguardando você" : `${pedidos.length} pedidos aguardando você`}
-          </h2>
-          <ul className="flex flex-col gap-1.5">
-            {pedidos.map((p) => (
-              <li key={p.id}>
-                <Link href={`/agenda/aula/${p.id}`} className="flex items-center gap-2 rounded-[12px] bg-surface px-3 py-2 text-[13px]">
+      {/* Próxima aula em destaque. */}
+      <section className="flex flex-col gap-3 rounded-[22px] bg-deep p-4 text-on-deep" aria-label="Próxima aula">
+        {proxima ? (
+          <>
+            <div>
+              <p className="text-[12.5px] text-on-deep-2">{quando(proxima.inicio, proxima.fim)}</p>
+              <p className="font-display text-[24px] leading-tight font-extrabold">
+                {emBrasilia(proxima.inicio).hora} · {proxima.nome.split(" ")[0]}
+              </p>
+              <p className="text-[13px] text-on-deep-2">
+                {[proxima.local, proxima.vinculoId && suspensas[proxima.vinculoId] ? "matrícula suspensa" : null]
+                  .filter(Boolean)
+                  .join(" · ") || proxima.nome}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href={`/agenda/aula/${proxima.id}`}
+                className="flex min-h-11 items-center justify-center rounded-[13px] bg-on-deep text-[13.5px] font-bold text-deep"
+              >
+                Ver aula
+              </Link>
+              {whatsappDe(proxima.vinculoId) ? (
+                <a
+                  href={linkWhatsapp(whatsappDe(proxima.vinculoId), `Oi, ${proxima.nome.split(" ")[0]}!`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-11 items-center justify-center gap-1.5 rounded-[13px] border border-on-deep/30 text-[13.5px] font-bold"
+                >
+                  <Icone nome="conversa" className="size-4" /> WhatsApp
+                </a>
+              ) : (
+                <Link
+                  href="/agenda/calendario"
+                  className="flex min-h-11 items-center justify-center rounded-[13px] border border-on-deep/30 text-[13.5px] font-bold"
+                >
+                  Ver agenda
+                </Link>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="font-display text-[20px] font-extrabold">Nenhuma aula nos próximos 7 dias</p>
+            <Link
+              href="/agenda/aula/nova"
+              className="flex min-h-11 items-center justify-center rounded-[13px] bg-on-deep text-[13.5px] font-bold text-deep"
+            >
+              Marcar uma aula
+            </Link>
+          </>
+        )}
+      </section>
+
+      {depois.length > 0 && (
+        <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Próximas aulas">
+          <div className="flex items-center gap-2 pb-1">
+            <h2 className="flex-1 text-[15px] font-semibold">
+              {deHoje.length > 0 ? "Ainda hoje" : "Próximas"}
+              {aulasHoje > 0 && (
+                <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] font-bold text-ink-2">
+                  {aulasHoje} aula{aulasHoje > 1 ? "s" : ""} hoje
+                </span>
+              )}
+            </h2>
+            <Link href="/agenda/calendario" className="text-[13px] font-semibold text-brand">
+              Agenda ›
+            </Link>
+          </div>
+          <ul className="flex flex-col divide-y divide-line">
+            {depois.map((a) => (
+              <li key={a.id}>
+                <Link href={`/agenda/aula/${a.id}`} className="flex items-center gap-3 py-2">
+                  <span className="w-[52px] shrink-0 text-[13.5px] font-extrabold tabular-nums">
+                    {deHoje.length > 0 ? emBrasilia(a.inicio).hora : textoDaAula(a.inicio, null).split(" às ")[0]}
+                  </span>
                   <span className="min-w-0 flex-1">
-                    <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
-                    {textoDaAula(p.inicio, null)}
+                    <span className="block truncate text-sm font-semibold">{a.nome}</span>
+                    <span className="block truncate text-xs text-ink-3">
+                      {deHoje.length > 0 ? a.local : `às ${emBrasilia(a.inicio).hora}${a.local ? ` · ${a.local}` : ""}`}
+                    </span>
                   </span>
                   <span className="text-ink-3" aria-hidden="true">›</span>
                 </Link>
@@ -114,99 +194,68 @@ async function Conteudo() {
         </section>
       )}
 
-      <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Próximas aulas">
-        <div className="flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold">Próximas aulas</h2>
-          <Link href="/agenda/calendario" className="text-[13px] font-semibold text-brand">
-            Ver agenda
-          </Link>
-        </div>
-        {proximas.length === 0 ? (
-          <p className="text-[13px] text-ink-3">Nenhuma aula nos próximos 7 dias.</p>
+      <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Precisa de você">
+        <h2 className="pb-1 text-[15px] font-semibold">Precisa de você</h2>
+        {pedidos.length + avisaram.length + atrasadas.length === 0 ? (
+          <p className="flex items-center gap-2 pb-1 text-[13px] text-ok">
+            <Icone nome="certo" className="size-4" /> Tudo em dia por aqui.
+          </p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
-            {proximas.map((a) => (
-              <li key={a.id}>
-                <Link href={`/agenda/aula/${a.id}`} className="flex items-center gap-3 py-2">
-                  <span className="w-[104px] shrink-0 text-[13px] font-bold tabular-nums">{quando(a.inicio)}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{a.nome}</span>
-                    {a.vinculoId && suspensas[a.vinculoId] ? (
-                      <span className="block text-xs font-semibold text-bad">Matrícula suspensa</span>
-                    ) : (
-                      a.local && <span className="block truncate text-xs text-ink-3">{a.local}</span>
-                    )}
-                  </span>
-                  <span className="text-ink-3" aria-hidden="true">›</span>
-                </Link>
-              </li>
+            {pedidos.map((p) => (
+              <Pendencia key={p.id} href={`/agenda/aula/${p.id}`} icone="calendario" tom="text-gold">
+                <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
+                {textoDaAula(p.inicio, null)}
+              </Pendencia>
             ))}
+            {avisaram.map((c) => (
+              <Pendencia key={c.id} href="/agenda/financeiro" icone="certo" tom="text-ok">
+                <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}
+              </Pendencia>
+            ))}
+            {atrasadas.slice(0, 3).map((c) => (
+              <Pendencia key={c.id} href={`/agenda/cobrancas/${c.id}`} icone="dinheiro" tom="text-bad">
+                <strong>{c.nome.split(" ")[0]}</strong> · {centavosParaReais(c.valorCentavos)} em atraso
+              </Pendencia>
+            ))}
+            {atrasadas.length > 3 && (
+              <Pendencia href="/agenda/financeiro" icone="dinheiro" tom="text-bad">
+                e mais {atrasadas.length - 3} em atraso
+              </Pendencia>
+            )}
           </ul>
         )}
       </section>
 
-      <Link href="/agenda/cobrancas" className="grid grid-cols-2 gap-2" aria-label="Cobranças">
+      <Link href="/agenda/financeiro" className="grid grid-cols-2 gap-2" aria-label="Financeiro do mês">
         <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
           <span className="text-xs text-ink-3">Recebido em {nomeDoMes}</span>
-          <span className="text-[19px] font-extrabold text-ok tabular-nums">{centavosParaReais(resumo.recebido)}</span>
+          <span className="font-display text-[19px] font-extrabold text-ok tabular-nums">{centavosParaReais(financeiro.recebido)}</span>
         </span>
         <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
           <span className="text-xs text-ink-3">A receber</span>
-          <span className="text-[19px] font-extrabold tabular-nums">{centavosParaReais(resumo.aReceber)}</span>
-          {resumo.atrasado > 0 && (
-            <span className="text-xs font-bold text-bad">+ {centavosParaReais(resumo.atrasado)} atrasado</span>
-          )}
+          <span className="font-display text-[19px] font-extrabold tabular-nums">{centavosParaReais(financeiro.aReceber)}</span>
         </span>
       </Link>
 
-      <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Mensalidades perto do vencimento">
-        <div className="flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold">Vencimentos</h2>
-          <Link href="/agenda/cobrancas" className="text-[13px] font-semibold text-brand">
-            Ver cobranças
-          </Link>
-        </div>
-        {vencendo.length === 0 ? (
-          <p className="text-[13px] text-ink-3">Nada vencendo nos próximos {DIAS_PARA_VENCER} dias.</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-line">
-            {vencendo.map((c) => {
-              const atrasada = situacaoDaCobranca(c, hoje) === "atrasada";
-              return (
-                <li key={c.id}>
-                  <Link href={`/agenda/cobrancas/${c.id}`} className="flex items-center gap-3 py-2">
-                    <span className="min-w-0 flex-1">
-                      <span className={`block truncate text-sm font-semibold ${atrasada ? "text-bad" : ""}`}>{c.nome}</span>
-                      <span className={`block text-xs ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
-                        {c.alunoAvisouEm ? "Avisou que pagou · confira" : textoDoVencimento(c.vencimento, hoje)}
-                      </span>
-                    </span>
-                    <span className="text-sm font-bold tabular-nums">{centavosParaReais(c.valorCentavos)}</span>
-                    <span className="text-ink-3" aria-hidden="true">›</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      {aniversarios.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Aniversários do mês">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
-            <Icone nome="estrela" className="size-[18px] text-gold" /> Aniversários de {nomeDoMes}
+      {aniversariosProximos.length > 0 && (
+        <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Aniversários do mês">
+          <h2 className="flex items-center gap-2 pb-1 text-[15px] font-semibold">
+            <Icone nome="estrela" className="size-[18px] text-gold" /> Aniversários
           </h2>
-          <ul className="flex flex-col gap-1">
-            {aniversarios.map((a) => {
-              const data = `${hoje.slice(0, 8)}${String(a.dia).padStart(2, "0")}`;
-              const passou = data < hoje;
+          <ul className="flex flex-col">
+            {aniversariosProximos.map((a) => {
+              const ehHoje = a.dia === Number(hoje.slice(8, 10));
               return (
                 <li key={a.vinculoId}>
-                  <Link href={`/agenda/alunos/${a.vinculoId}`} className={`flex items-center gap-3 py-1 text-sm ${passou ? "text-ink-3" : ""}`}>
+                  <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex items-center gap-3 py-1.5 text-sm">
                     <span className="w-14 shrink-0 font-bold tabular-nums">dia {a.dia}</span>
                     <span className="min-w-0 flex-1 truncate">{a.nome}</span>
-                    <span className="shrink-0 text-xs text-ink-3">faz {a.fazAnos}</span>
-                    {data === hoje && <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-gold">hoje</span>}
+                    {ehHoje ? (
+                      <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-[11px] font-bold text-gold">hoje · {a.fazAnos}</span>
+                    ) : (
+                      <span className="shrink-0 text-xs text-ink-3">faz {a.fazAnos}</span>
+                    )}
                   </Link>
                 </li>
               );
@@ -215,5 +264,17 @@ async function Conteudo() {
         </section>
       )}
     </div>
+  );
+}
+
+function Pendencia({ href, icone, tom, children }: { href: string; icone: NomeIcone; tom: string; children: React.ReactNode }) {
+  return (
+    <li>
+      <Link href={href} className="flex items-center gap-2.5 py-2 text-[13.5px]">
+        <Icone nome={icone} className={`size-[18px] shrink-0 ${tom}`} />
+        <span className="min-w-0 flex-1">{children}</span>
+        <span className="text-ink-3" aria-hidden="true">›</span>
+      </Link>
+    </li>
   );
 }

@@ -29,7 +29,9 @@ export default function PaginaNovaAula({ searchParams }: PageProps<"/agenda/aula
 
 async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/aula/nova">["searchParams"] }) {
   await exigirPersonal("/agenda/aula/nova");
-  const { dia } = await searchParams;
+  const { dia, hora } = await searchParams;
+  // Vindo de um horário livre da agenda: já escolhido (minutos desde 00:00).
+  const horaInicial = typeof hora === "string" && /^\d{1,4}$/.test(hora) && Number(hora) < 1440 ? Number(hora) : -1;
   const hoje = agoraEmBrasilia().data;
   const diaInicial = typeof dia === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dia) && dia >= hoje ? dia : hoje;
 
@@ -45,6 +47,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/aul
       reposicoes={reposicoes}
       duracaoPadrao={expediente?.duracao ?? DURACAO_PADRAO}
       diaInicial={diaInicial}
+      horaInicial={horaInicial}
     />
   );
 }

@@ -4,14 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icone, type NomeIcone } from "../Icone";
 
+// Decisão de 22/10/2026: cinco abas (a Agenda vem logo depois do Início, mais perto do polegar).
 const ABAS: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/agenda", rotulo: "Início", icone: "casa" },
-  { href: "/agenda/alunos", rotulo: "Alunos", icone: "pessoas" },
   { href: "/agenda/calendario", rotulo: "Agenda", icone: "calendario" },
-  { href: "/agenda/conta", rotulo: "Minha conta", icone: "usuario" },
+  { href: "/agenda/alunos", rotulo: "Alunos", icone: "pessoas" },
+  { href: "/agenda/financeiro", rotulo: "Financeiro", icone: "dinheiro" },
+  { href: "/agenda/conta", rotulo: "Conta", icone: "usuario" },
 ];
 
-/** Barra fixa embaixo com as quatro abas do personal (como num app). */
+/** Barra fixa embaixo com as abas do personal (como num app). */
 export function BarraDoPersonal() {
   const caminho = usePathname();
   return (
@@ -19,7 +21,7 @@ export function BarraDoPersonal() {
       aria-label="Principal"
       className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-4">
+      <ul className="mx-auto grid max-w-md grid-cols-5">
         {ABAS.map((a) => {
           const ativa = a.href === "/agenda" ? caminho === "/agenda" : caminho.startsWith(a.href);
           return (
@@ -27,7 +29,7 @@ export function BarraDoPersonal() {
               <Link
                 href={a.href}
                 aria-current={ativa ? "page" : undefined}
-                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[11px] ${
+                className={`aba-macia flex flex-col items-center gap-0.5 pt-2 pb-1.5 text-[10.5px] ${
                   ativa ? "font-bold text-brand" : "font-semibold text-ink-3"
                 }`}
               >

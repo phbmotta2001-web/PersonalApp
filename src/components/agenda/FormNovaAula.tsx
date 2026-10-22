@@ -19,12 +19,15 @@ export function FormNovaAula({
   reposicoes,
   duracaoPadrao,
   diaInicial,
+  horaInicial = -1,
 }: {
   alunos: { vinculoId: string; nome: string; local: string | null }[];
   reposicoes: Record<string, Reposicao[]>;
   duracaoPadrao: Duracao;
   /** "AAAA-MM-DD" */
   diaInicial: string;
+  /** Horário já escolhido (minutos), ou -1. */
+  horaInicial?: number;
 }) {
   const router = useRouter();
   const [nova, setNova] = useState<NovaAula>({
@@ -32,7 +35,7 @@ export function FormNovaAula({
     nome: "",
     origem: "avulsa",
     data: diaInicial,
-    inicioMin: -1,
+    inicioMin: horaInicial,
     duracao: duracaoPadrao,
     local: alunos[0]?.local ?? "",
   });

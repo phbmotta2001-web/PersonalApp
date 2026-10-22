@@ -87,3 +87,17 @@ export async function cancelarPausa(
   const r = data as { ocupadas: number; desconto_ja_usado: boolean };
   return { ok: true, ocupadas: r.ocupadas, descontoJaUsado: r.desconto_ja_usado };
 }
+
+/** Alunos do personal logado em pausa hoje: vínculo → último dia da pausa. */
+export async function alunosEmPausa(hoje: string): Promise<Record<string, string>> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return {};
+  const { data } = await supabase
+    .from("pausas")
+    .select("vinculo_id, fim")
+    .eq("personal_id", id)
+    .is("cancelada_em", null)
+    .lte("inicio", hoje)
+    .gte("fim", hoje);
+  return Object.fromEntries((data ?? []).map((p) => [p.vinculo_id, p.fim]));
+}

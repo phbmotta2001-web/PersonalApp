@@ -313,3 +313,27 @@ export async function alunoAvisarPagamento(cobrancaId: string): Promise<Resposta
   const { error } = await supabase.rpc("aluno_avisar_pagamento", { p_cobranca: cobrancaId });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível avisar. Tente de novo.") } : { ok: true };
 }
+
+/** Recebido em cada um dos últimos `meses` meses (o atual por último): [{ mes: "AAAA-MM", centavos }]. */
+export async function recebidoPorMes(hoje: string, meses = 6): Promise<{ mes: string; centavos: number }[]> {
+  const [a, m] = hoje.split("-").map(Number);
+  const lista = Array.from({ length: meses }, (_, i) => {
+    const d = new Date(Date.UTC(a, m - 1 - (meses - 1 - i), 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  });
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return lista.map((mes) => ({ mes, centavos: 0 }));
+  const { data } = await supabase
+    .from("cobrancas")
+    .select("pago_em, valor_pago_centavos, valor_centavos")
+    .eq("personal_id", id)
+    .eq("situacao", "paga")
+    .gte("pago_em", `${lista[0]}-01`);
+  const soma = new Map<string, number>();
+  for (const c of data ?? []) {
+    if (!c.pago_em) continue;
+    const mes = c.pago_em.slice(0, 7);
+    soma.set(mes, (soma.get(mes) ?? 0) + (c.valor_pago_centavos ?? c.valor_centavos));
+  }
+  return lista.map((mes) => ({ mes, centavos: soma.get(mes) ?? 0 }));
+}

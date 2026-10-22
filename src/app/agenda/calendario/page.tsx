@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Carregando } from "@/components/Formulario";
 import { CalendarioDoMes, mesValido, paraCalendario, somarMes } from "@/components/agenda/CalendarioDoMes";
-import { Icone, type NomeIcone } from "@/components/Icone";
+import { Icone } from "@/components/Icone";
 import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { aniversariantesDoMes } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
@@ -109,10 +109,20 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const caiEmBloqueio = (a: { inicio: string; fim: string }) =>
     bloqueios.some((b) => Date.parse(b.inicio) < Date.parse(a.fim) && Date.parse(b.fim) > Date.parse(a.inicio));
   const rotuloDoDia = dia === hoje ? "Hoje" : dia === somarDias(hoje, 1) ? "Amanhã" : nomeDoDia(doDia.diaSemana);
+  // Linha do tempo do dia (redesign "Foco no hoje", 22/10/2026): aulas, pausas e horários livres em ordem.
+  const minutoDe = (iso: string) => {
+    const [h, m] = emBrasilia(iso).hora.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const linhas = [
+    ...aulasDoDia.map((a) => ({ min: minutoDe(a.inicio), tipo: a.situacao === "pausada" ? ("pausa" as const) : ("aula" as const), aula: a })),
+    ...(dia >= hoje ? doDia.livres.filter((m) => !pausaNoHorario(m)).map((m) => ({ min: m, tipo: "livre" as const, aula: null })) : []),
+  ].sort((x, y) => x.min - y.min || (x.tipo === "livre" ? 1 : -1));
+  const novaAula = (min?: number) => `/agenda/aula/nova?dia=${dia}${min != null ? `&hora=${min}` : ""}`;
   const totalLivres = semana.reduce((n, d) => n + d.livres.length, 0);
 
   return (
-    <div className="flex flex-col gap-5 px-[18px] pt-5 pb-28">
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32">
       <h1 className="text-[24px] font-extrabold">Agenda</h1>
 
       <section className="flex flex-col gap-3" aria-label="Agenda da semana">
@@ -205,20 +215,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         </nav>
         )}
 
-        <div className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
-          <div className="flex items-center gap-2">
-            <p className="flex-1 text-sm font-bold">
-              {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
-            </p>
-            {dia >= hoje && (
-              <Link
-                href={`/agenda/aula/nova?dia=${dia}`}
-                className="inline-flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-[13px] font-bold text-brand-ink"
-              >
-                <Icone nome="mais" className="size-4" /> Aula
-              </Link>
-            )}
-          </div>
+        <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Dia escolhido">
+          <h2 className="text-[16px] font-bold">
+            {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
+          </h2>
           {aniversariosDoDia.map((a) => (
             <Link
               key={a.vinculoId}
@@ -234,101 +234,82 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
           {doDia.bloqueios.length > 0 && (
             <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-xs text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
           )}
-          {aulasDoDia.length > 0 ? (
-            <ul className="flex flex-col divide-y divide-line">
-              {aulasDoDia.map((a) => {
-                const s = situacaoEfetiva(a.situacao, a.fim, agora);
-                const riscada = naoAcontece(s);
-                if (s === "pausada")
-                  return (
-                    <li key={a.id}>
-                      <div className="my-1.5 flex items-start gap-3 rounded-[12px] border border-dashed border-info bg-info-soft/60 px-2.5 py-2 text-info">
-                        <span className="w-[82px] shrink-0 text-sm font-bold tabular-nums">
-                          {emBrasilia(a.inicio).hora}–{emBrasilia(a.fim).hora}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold">{a.nome} · em pausa</span>
-                          <span className="block text-xs">Horário livre para reposição ou aula avulsa</span>
-                        </span>
-                      </div>
-                    </li>
-                  );
-                return (
-                  <li key={a.id}>
-                    <Link href={`/agenda/aula/${a.id}`} className="flex items-start gap-3 py-2.5">
-                      <span className={`w-[92px] shrink-0 text-sm font-bold tabular-nums ${riscada ? "text-ink-3 line-through" : ""}`}>
-                        {emBrasilia(a.inicio).hora}–{emBrasilia(a.fim).hora}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={`block truncate text-sm font-semibold ${riscada ? "text-ink-3 line-through" : ""}`}>
-                          {a.nome}
-                        </span>
-                        {a.local && !riscada && <span className="block truncate text-xs text-ink-3">{a.local}</span>}
-                        {a.origem !== "fixa" && !riscada && (
-                          <span className="block text-xs text-ink-3">{ROTULO_ORIGEM[a.origem as OrigemAula]}</span>
-                        )}
-                        {!riscada && caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
-                        {!riscada && a.vinculoId && suspensas[a.vinculoId] && (
-                          <span className="block text-xs font-semibold text-bad">Matrícula suspensa (mensalidade vencida)</span>
-                        )}
-                      </span>
-                      {s !== "agendada" && s !== "confirmada" && (
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>
-                          {s === "pendente"
-                            ? a.propostaPor === "personal"
-                              ? "Aguardando aluno"
-                              : "Aguardando você"
-                            : ROTULO_SITUACAO[s].split(" (")[0]}
-                        </span>
-                      )}
-                      <span className="text-ink-3" aria-hidden="true">›</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="text-[13px] text-ink-3">Nenhuma aula neste dia.</p>
-          )}
-          {faixas.length === 0 ? (
-            <p className="border-t border-line pt-2.5 text-[13px] text-ink-3">
+          {faixas.length === 0 && (
+            <p className="text-[13px] text-ink-3">
               Você ainda não configurou seus horários de trabalho.{" "}
               <Link href="/agenda/horarios" className="font-semibold text-brand">
                 Configurar agora
               </Link>
             </p>
-          ) : doDia.livres.length > 0 ? (
-            <div className="flex flex-col gap-1.5 border-t border-line pt-2.5">
-              <p className="text-xs font-semibold text-ink-3">Horários livres</p>
-              <span className="flex flex-wrap gap-1.5">
-                {doDia.livres.map((m) => {
-                  const pausa = pausaNoHorario(m);
-                  return pausa ? (
-                    <span
-                      key={m}
-                      title={`Horário de ${pausa.nome} (em pausa): só reposição ou aula avulsa`}
-                      className="rounded-lg border border-dashed border-info bg-info-soft px-2 py-0.5 text-xs font-bold text-info tabular-nums"
-                    >
-                      {minParaHora(m)}*
-                    </span>
-                  ) : (
-                    <span key={m} className="rounded-lg bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand tabular-nums">
-                      {minParaHora(m)}
-                    </span>
-                  );
-                })}
-              </span>
-              {pausasDoDia.length > 0 && (
-                <p className="text-xs text-info">
-                  * Horário de {[...new Set(pausasDoDia.map((a) => a.nome.split(" ")[0]))].join(" e ")} (em pausa): use só
-                  para reposição ou aula avulsa. O horário fixo continua dele.
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="border-t border-line pt-2.5 text-xs text-ink-3">{doDia.trabalha ? "Sem horários livres." : "Folga."}</p>
           )}
-        </div>
+          {linhas.length === 0 ? (
+            <p className="text-[13px] text-ink-3">{doDia.trabalha ? "Nenhuma aula neste dia." : "Folga."}</p>
+          ) : (
+            <ol className="flex flex-col">
+              {linhas.map((l) => {
+                const a = l.aula;
+                const s = a ? situacaoEfetiva(a.situacao, a.fim, agora) : null;
+                const riscada = s ? naoAcontece(s) : false;
+                return (
+                  <li
+                    key={a ? a.id : `livre-${l.min}`}
+                    className="grid grid-cols-[46px_1fr] items-start gap-2 border-t border-dashed border-line py-1.5 first:border-t-0"
+                  >
+                    <span className={`pt-2 text-[12.5px] font-bold tabular-nums ${l.tipo === "livre" ? "text-ink-3" : ""}`}>
+                      {minParaHora(l.min)}
+                    </span>
+                    {l.tipo === "livre" ? (
+                      <Link href={novaAula(l.min)} className="flex min-h-9 items-center gap-1.5 text-[12.5px] text-ink-3">
+                        livre <span className="font-semibold text-brand">· marcar aula</span>
+                      </Link>
+                    ) : l.tipo === "pausa" && a ? (
+                      <Link
+                        href={novaAula(l.min)}
+                        className="flex flex-col rounded-[12px] border border-dashed border-info bg-info-soft/60 px-3 py-2 text-info"
+                      >
+                        <span className="truncate text-sm font-bold">{a.nome.split(" ")[0]} · em pausa</span>
+                        <span className="text-xs">Livre para reposição ou aula avulsa · marcar aqui</span>
+                      </Link>
+                    ) : a && s ? (
+                      <Link
+                        href={`/agenda/aula/${a.id}`}
+                        className={`flex items-start gap-2 rounded-[12px] px-3 py-2 ${
+                          riscada ? "bg-surface-2 text-ink-3" : "border-l-[3px] border-brand bg-brand-soft/70"
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className={`block truncate text-sm font-bold ${riscada ? "line-through" : ""}`}>{a.nome}</span>
+                          <span className="block truncate text-xs text-ink-3">
+                            {[
+                              `até ${emBrasilia(a.fim).hora}`,
+                              !riscada && a.local,
+                              !riscada && a.origem !== "fixa" && ROTULO_ORIGEM[a.origem as OrigemAula],
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                          {!riscada && caiEmBloqueio(a) && <span className="block text-xs font-semibold text-gold">Cai num bloqueio</span>}
+                          {!riscada && a.vinculoId && suspensas[a.vinculoId] && (
+                            <span className="block text-xs font-semibold text-bad">Matrícula suspensa</span>
+                          )}
+                        </span>
+                        {s !== "agendada" && s !== "confirmada" && (
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${COR_SITUACAO[s]}`}>
+                            {s === "pendente"
+                              ? a.propostaPor === "personal"
+                                ? "Aguardando aluno"
+                                : "Aguardando você"
+                              : ROTULO_SITUACAO[s].split(" (")[0]}
+                          </span>
+                        )}
+                      </Link>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </section>
         {!expandida && (
         <p className="text-xs text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário
@@ -337,24 +318,17 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         )}
       </section>
 
-      <nav className="grid grid-cols-2 gap-2" aria-label="Configurar agenda">
-        <Atalho href="/agenda/horarios" icone="relogio" titulo="Horários" texto={faixas.length ? `Aulas de ${duracao} min` : "Configure aqui"} />
-        <Atalho href="/agenda/bloqueios" icone="calendario" titulo="Bloqueios" texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"} />
-      </nav>
+      {dia >= hoje && (
+        <Link
+          href={novaAula()}
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[14px] font-extrabold text-brand-ink"
+        >
+          <Icone nome="mais" className="size-4" /> Aula
+        </Link>
+      )}
 
       <BarraDoPersonal />
     </div>
   );
 }
 
-function Atalho({ href, icone, titulo, texto }: { href: string; icone: NomeIcone; titulo: string; texto: string }) {
-  return (
-    <Link href={href} className="flex flex-col gap-1.5 rounded-[18px] border border-line bg-surface p-3 hover:border-brand">
-      <span className="grid size-9 place-items-center rounded-full bg-brand-soft text-brand">
-        <Icone nome={icone} className="size-[18px]" />
-      </span>
-      <span className="text-sm font-bold">{titulo}</span>
-      <span className="text-xs text-ink-3">{texto}</span>
-    </Link>
-  );
-}
