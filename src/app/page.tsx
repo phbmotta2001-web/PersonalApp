@@ -119,7 +119,7 @@ export default function Home() {
               Seu aluno também ganha.
             </h2>
             <p className="max-w-[52ch] text-[17px] text-on-deep-2">
-              Ele recebe um convite seu e passa a ter tudo no celular, sem baixar nada da loja de aplicativos:
+              Ele recebe um convite seu e passa a ter tudo no celular:
             </p>
             <ul className="flex flex-col gap-3">
               {PARA_O_ALUNO.map((t) => (
