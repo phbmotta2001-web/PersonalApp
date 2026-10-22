@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { Icone, type NomeIcone } from "../Icone";
 
 // Decisão de 22/10/2026: cinco abas (a Agenda vem logo depois do Início, mais perto do polegar).
@@ -15,7 +16,18 @@ const ABAS: { href: string; rotulo: string; icone: NomeIcone }[] = [
 
 /** Barra fixa embaixo com as abas do personal (como num app). */
 export function BarraDoPersonal() {
-  const caminho = usePathname();
+  return (
+    <Suspense fallback={<Barra caminho="" />}>
+      <BarraNoCaminho />
+    </Suspense>
+  );
+}
+
+function BarraNoCaminho() {
+  return <Barra caminho={usePathname()} />;
+}
+
+function Barra({ caminho }: { caminho: string }) {
   return (
     <nav
       aria-label="Principal"

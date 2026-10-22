@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
-import { AbasAluno } from "@/components/aluno/AbasAluno";
+import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
+import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Avatar } from "@/components/Avatar";
-import { Carregando } from "@/components/Formulario";
+import { Cabecalho, Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -26,10 +27,14 @@ export const metadata: Metadata = {
 
 export default function PaginaMeuPersonal({ params }: PageProps<"/aluno/personal/[vinculo]">) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col pb-24">
+      <Cabecalho titulo="Seu personal">
+        <BotaoVoltar reserva="/aluno" className="hover:bg-surface-2" />
+      </Cabecalho>
       <Suspense fallback={<Carregando />}>
         <Conteudo params={params} />
       </Suspense>
+      <BarraDoAluno />
     </div>
   );
 }
@@ -44,7 +49,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
   if (!p)
     return (
       <>
-        <AbasAluno personais={personais} ativa="" />
+
         <div className="flex flex-col gap-3 px-[18px] pt-4 text-sm text-ink-2">
           <p>Você não está mais ligado a este personal.</p>
           <Link href="/aluno" className="font-semibold text-brand">
@@ -78,7 +83,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
 
   return (
     <>
-      <AbasAluno personais={personais} ativa={p.vinculoId} />
+
       <div className="flex flex-col gap-5 px-[18px] pt-3 pb-6">
         <div className="flex items-center gap-3 rounded-[20px] bg-deep p-4 text-on-deep">
           <Avatar nome={p.nome} cor="av1" />
