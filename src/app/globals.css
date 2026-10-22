@@ -243,9 +243,9 @@ input[type="checkbox"]:checked {
   }
 }
 
-/* ─── Abertura do app (decisão de 22/10/2026) ───────────────────────────────
-   Tela verde-escura, ícone com pulo de mola, nome subindo; some sozinha.
-   Não bloqueia toques (pointer-events: none) e some de vez no fim. */
+/* ─── Abertura do app (decisão de 22/10/2026, opção "Traço") ────────────────
+   Cobre a tela enquanto o app carrega; quando a página termina de carregar, a classe
+   "abertura-toca" no <html> dispara a animação. Não bloqueia toques. */
 .abertura {
   position: fixed;
   inset: 0;
@@ -258,33 +258,69 @@ input[type="checkbox"]:checked {
   background: var(--deep);
   color: var(--on-deep);
   pointer-events: none;
-  animation: pienel-abertura-some 0.45s ease-in 0.95s forwards;
+  clip-path: circle(150% at 50% 50%);
+  /* Segurança: se a animação não começar, some sozinha. */
+  animation: pienel-abertura-some 0.4s ease 7s forwards;
 }
-.abertura-icone {
-  width: 96px;
-  height: 96px;
-  border-radius: 26px;
-  box-shadow: 0 14px 30px -12px rgb(0 0 0 / 0.5);
-  animation: pienel-abertura-icone 0.7s var(--mola) both;
+.abertura-traco {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+}
+.abertura-ponto {
+  fill: var(--lime);
+  opacity: 0;
 }
 .abertura-nome {
+  display: flex;
   font-family: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
-  font-size: 30px;
+  font-size: 36px;
   letter-spacing: -0.01em;
-  animation: pienel-abertura-nome 0.5s ease-out 0.25s both;
+}
+.abertura-nome span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(16px);
+}
+.abertura-frase {
+  font-size: 15px;
+  color: var(--on-deep-2);
+  opacity: 0;
+}
+.abertura-toca .abertura {
+  animation: pienel-abertura-revela 1.2s cubic-bezier(0.45, 0, 0.2, 1) 3s forwards;
+}
+.abertura-toca .abertura-traco {
+  animation: pienel-abertura-desenha 1.6s cubic-bezier(0.45, 0, 0.2, 1) 0.25s forwards;
+}
+.abertura-toca .abertura-ponto {
+  animation: pienel-abertura-aparece 0.6s ease-out 1.7s forwards;
+}
+.abertura-toca .abertura-nome span {
+  animation: pienel-abertura-sobe 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.abertura-toca .abertura-frase {
+  animation: pienel-abertura-aparece 0.8s ease-out 2.3s forwards;
 }
 .sem-abertura .abertura {
   display: none;
 }
-@keyframes pienel-abertura-icone {
-  0% { transform: scale(0.4) rotate(-12deg); opacity: 0; }
-  60% { transform: scale(1.12) rotate(3deg); opacity: 1; }
-  100% { transform: none; opacity: 1; }
+@keyframes pienel-abertura-desenha {
+  to { stroke-dashoffset: 0; }
 }
-@keyframes pienel-abertura-nome {
-  from { transform: translateY(14px); opacity: 0; }
-  to { transform: none; opacity: 1; }
+@keyframes pienel-abertura-aparece {
+  to { opacity: 1; }
+}
+@keyframes pienel-abertura-sobe {
+  to { opacity: 1; transform: none; }
+}
+@keyframes pienel-abertura-revela {
+  to { clip-path: circle(0% at 50% 50%); visibility: hidden; }
 }
 @keyframes pienel-abertura-some {
   to { opacity: 0; visibility: hidden; }
