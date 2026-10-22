@@ -30,6 +30,10 @@ function traduzirErro(mensagem: string | undefined): string {
   if (m.includes("database error saving new user"))
     return "Não foi possível criar a conta. Confira a data de nascimento: o cadastro é só para maiores de 18 anos.";
   if (m.includes("already") && m.includes("registered")) return "Este e-mail já tem conta. Use a opção Entrar.";
+  if (m.includes("sending") || m.includes("not authorized") || m.includes("smtp"))
+    return "Não conseguimos enviar o e-mail de confirmação agora. Tente mais tarde ou fale com a equipe do Pienel.";
+  // Fica registrado nos logs do servidor (sem senha), para descobrir o motivo.
+  console.error("Supabase recusou a conta:", mensagem);
   return "Algo deu errado. Tente de novo em instantes.";
 }
 
