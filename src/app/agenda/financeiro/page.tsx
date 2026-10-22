@@ -24,7 +24,7 @@ const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "o
 
 export default function PaginaFinanceiro() {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-[1200px]">
       <Suspense fallback={<Carregando />}>
         <Conteudo />
       </Suspense>
@@ -61,26 +61,66 @@ async function Conteudo() {
   const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", timeZone: "UTC" });
   const menorValor = aPartirDe(tabela);
 
+  // No computador (opção C): à esquerda o que pede ação (avisos de pagamento e listas), à
+  // direita os números e o gráfico. No celular, uma coluna só, com os números primeiro.
   return (
-    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32">
-      <header className="flex items-end gap-2">
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-6 lg:px-8 lg:pt-8 lg:pb-12">
+      <header className="flex items-end gap-2 lg:col-span-2">
         <h1 className="flex-1 text-[24px] font-extrabold">Financeiro</h1>
         <span className="rounded-full bg-surface-2 px-3 py-1 text-[14px] font-semibold text-ink-2 first-letter:uppercase">
           {nomeDoMes}
         </span>
       </header>
 
-      <section className="grid grid-cols-2 gap-2" aria-label="Resumo do mês">
+      <div className="contents lg:col-start-2 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
+      <section className="grid grid-cols-2 gap-2 lg:grid-cols-3" aria-label="Resumo do mês">
         <Numero titulo="Recebido no mês" valor={financeiro.recebido} cor="text-ok" grande />
         <Numero titulo="A receber" valor={financeiro.aReceber} />
         <Numero titulo="Atrasado" valor={financeiro.atrasado} cor={financeiro.atrasado > 0 ? "text-bad" : undefined} />
       </section>
       {financeiro.previsto > 0 && (
-        <p className="-mt-2 text-[13px] text-ink-3">
+        <p className="-mt-2 text-[13px] text-ink-3 lg:mt-[-8px]">
           A receber inclui {centavosParaReais(financeiro.previsto)} de mensalidades que ainda vão ser geradas.
         </p>
       )}
 
+      <section className="order-1 flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4 lg:order-none" aria-label="Recebido por mês">
+        <h2 className="text-[16px] font-semibold">Recebido por mês</h2>
+        <div className="flex h-36 items-end gap-2 lg:h-56 lg:gap-4">
+          {meses.map((m, i) => {
+            const atual = i === meses.length - 1;
+            return (
+              <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+                <span className={`text-[12px] tabular-nums ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
+                  {m.centavos > 0 ? curto(m.centavos) : ""}
+                </span>
+                <span
+                  className={`w-full rounded-t-[7px] rounded-b-[3px] ${atual ? "botao-macio bg-brand" : "bg-brand-soft"}`}
+                  style={{ height: `${Math.max(3, Math.round((m.centavos / maior) * 100))}%` }}
+                  title={`${MESES[Number(m.mes.slice(5)) - 1]}: ${centavosParaReais(m.centavos)}`}
+                />
+                <span className={`text-[12.5px] ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
+                  {MESES[Number(m.mes.slice(5)) - 1]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <nav className="order-1 flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4 lg:order-none" aria-label="Mais do financeiro">
+        <Linha href="/agenda/cobrancas" icone="dinheiro" titulo="Todas as cobranças" texto="Em aberto, pagas e canceladas" />
+        <Linha
+          href="/agenda/valores"
+          icone="estrela"
+          titulo="Valores das aulas"
+          texto={menorValor != null ? `Aulas a partir de ${centavosParaReais(menorValor)}` : "Cadastre seus valores"}
+        />
+        <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo Pienel"} />
+      </nav>
+      </div>
+
+      <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
       {avisaram.map((c) => (
         <section key={c.id} className="flex flex-col gap-2.5 rounded-[20px] bg-ok-soft p-4" aria-label="Aluno avisou que pagou">
           <p className="flex items-start gap-2 text-[15px] text-ok">
@@ -105,44 +145,11 @@ async function Conteudo() {
         hoje={hoje}
       />
 
-      <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Recebido por mês">
-        <h2 className="text-[16px] font-semibold">Recebido por mês</h2>
-        <div className="flex h-36 items-end gap-2">
-          {meses.map((m, i) => {
-            const atual = i === meses.length - 1;
-            return (
-              <div key={m.mes} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-                <span className={`text-[12px] tabular-nums ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
-                  {m.centavos > 0 ? curto(m.centavos) : ""}
-                </span>
-                <span
-                  className={`w-full rounded-t-[7px] rounded-b-[3px] ${atual ? "botao-macio bg-brand" : "bg-brand-soft"}`}
-                  style={{ height: `${Math.max(3, Math.round((m.centavos / maior) * 100))}%` }}
-                  title={`${MESES[Number(m.mes.slice(5)) - 1]}: ${centavosParaReais(m.centavos)}`}
-                />
-                <span className={`text-[12.5px] ${atual ? "font-bold text-ink" : "text-ink-3"}`}>
-                  {MESES[Number(m.mes.slice(5)) - 1]}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <nav className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4" aria-label="Mais do financeiro">
-        <Linha href="/agenda/cobrancas" icone="dinheiro" titulo="Todas as cobranças" texto="Em aberto, pagas e canceladas" />
-        <Linha
-          href="/agenda/valores"
-          icone="estrela"
-          titulo="Valores das aulas"
-          texto={menorValor != null ? `Aulas a partir de ${centavosParaReais(menorValor)}` : "Cadastre seus valores"}
-        />
-        <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo Pienel"} />
-      </nav>
+      </div>
 
       <Link
         href="/agenda/cobrancas/nova"
-        className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
+        className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 lg:right-8 lg:bottom-8 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
       >
         <Icone nome="mais" className="size-4" /> Cobrança
       </Link>
@@ -152,7 +159,7 @@ async function Conteudo() {
 
 function Numero({ titulo, valor, cor, grande = false }: { titulo: string; valor: number; cor?: string; grande?: boolean }) {
   return (
-    <div className={`flex flex-col gap-1 rounded-[18px] border border-line bg-surface px-4 py-3.5 ${grande ? "col-span-2" : ""}`}>
+    <div className={`flex flex-col gap-1 rounded-[18px] border border-line bg-surface px-4 py-3.5 ${grande ? "col-span-2 lg:col-span-1" : ""}`}>
       <span className="text-[13px] text-ink-3">{titulo}</span>
       <span className={`font-display ${grande ? "text-[30px]" : "text-[21px]"} leading-tight font-extrabold tabular-nums ${cor ?? ""}`}>
         {centavosParaReais(valor)}

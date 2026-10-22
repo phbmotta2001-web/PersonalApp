@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cancelarConvite, criarConvite } from "@/data/convites";
 import {
@@ -60,6 +60,8 @@ export function Alunos({
   detalhes: Record<string, DetalheDoAluno>;
 }) {
   const router = useRouter();
+  // No computador a lista fica ao lado da ficha: destaca o aluno aberto.
+  const aberto = usePathname().split("/")[3];
   const [abrindo, setAbrindo] = useState(alunos.length === 0);
   const [escolhendo, setEscolhendo] = useState(false);
   const [busca, setBusca] = useState("");
@@ -216,7 +218,11 @@ export function Alunos({
               const d = detalhes[a.vinculoId];
               return (
                 <li key={a.vinculoId}>
-                  <Link href={`/agenda/alunos/${a.vinculoId}`} className="flex items-center gap-3 py-2.5">
+                  <Link
+                    href={`/agenda/alunos/${a.vinculoId}`}
+                    aria-current={aberto === a.vinculoId ? "page" : undefined}
+                    className={`-mx-2 flex items-center gap-3 rounded-[14px] px-2 py-2.5 lg:hover:bg-surface-2 ${aberto === a.vinculoId ? "lg:bg-brand-soft lg:hover:bg-brand-soft" : ""}`}
+                  >
                     <Avatar nome={a.nome} cor={corPorId(a.vinculoId)} tamanho="pequeno" />
                     <span className="min-w-0 flex-1">
                       <span className={`block truncate text-[16px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
@@ -242,7 +248,7 @@ export function Alunos({
             setEscolhendo(true);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 lg:right-8 lg:bottom-8 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
         >
           <Icone nome="mais" className="size-4" /> Novo aluno
         </button>

@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function PaginaInicio() {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-[1200px]">
       <Suspense fallback={<Carregando />}>
         <Conteudo />
       </Suspense>
@@ -72,8 +72,11 @@ async function Conteudo() {
     return textoDaAula(inicio, null);
   };
 
+  // No computador (opção C): à esquerda o que precisa de você; à direita a próxima aula,
+  // o dinheiro do mês e o resto do dia. No celular, uma coluna só (a ordem vem do "order").
   return (
-    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:items-start lg:gap-x-6 lg:px-8 lg:pt-8 lg:pb-12">
+      <div className="flex flex-col gap-4 lg:col-span-2">
       <header className="flex items-center gap-3">
         <div className="flex-1">
           <p className="text-[14px] text-ink-3">Área do personal</p>
@@ -104,6 +107,9 @@ async function Conteudo() {
         </section>
       )}
 
+      </div>
+
+      <div className="contents lg:col-start-2 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
       {/* Próxima aula em destaque. */}
       <section className="flex flex-col gap-3 rounded-[24px] bg-deep p-5 text-on-deep" aria-label="Próxima aula">
         {proxima ? (
@@ -194,7 +200,20 @@ async function Conteudo() {
         </section>
       )}
 
-      <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Precisa de você">
+      <Link href="/agenda/financeiro" className="order-2 grid grid-cols-2 gap-2 lg:order-none" aria-label="Financeiro do mês">
+        <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
+          <span className="text-[13px] text-ink-3">Recebido em {nomeDoMes}</span>
+          <span className="font-display text-[23px] font-extrabold text-ok tabular-nums">{centavosParaReais(financeiro.recebido)}</span>
+        </span>
+        <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
+          <span className="text-[13px] text-ink-3">A receber</span>
+          <span className="font-display text-[23px] font-extrabold tabular-nums">{centavosParaReais(financeiro.aReceber)}</span>
+        </span>
+      </Link>
+      </div>
+
+      <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
+      <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Precisa de você">
         <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
         {pedidos.length + avisaram.length + atrasadas.length === 0 ? (
           <p className="flex items-center gap-2 pb-1 text-[14px] text-ok">
@@ -227,19 +246,9 @@ async function Conteudo() {
         )}
       </section>
 
-      <Link href="/agenda/financeiro" className="grid grid-cols-2 gap-2" aria-label="Financeiro do mês">
-        <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
-          <span className="text-[13px] text-ink-3">Recebido em {nomeDoMes}</span>
-          <span className="font-display text-[23px] font-extrabold text-ok tabular-nums">{centavosParaReais(financeiro.recebido)}</span>
-        </span>
-        <span className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3.5">
-          <span className="text-[13px] text-ink-3">A receber</span>
-          <span className="font-display text-[23px] font-extrabold tabular-nums">{centavosParaReais(financeiro.aReceber)}</span>
-        </span>
-      </Link>
 
       {aniversariosProximos.length > 0 && (
-        <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Aniversários do mês">
+        <section className="order-3 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Aniversários do mês">
           <h2 className="flex items-center gap-2 pb-1 text-[16px] font-semibold">
             <Icone nome="estrela" className="size-[18px] text-gold" /> Aniversários
           </h2>
@@ -263,6 +272,7 @@ async function Conteudo() {
           </ul>
         </section>
       )}
+      </div>
     </div>
   );
 }

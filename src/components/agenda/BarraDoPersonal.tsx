@@ -14,7 +14,7 @@ const ABAS: { href: string; rotulo: string; icone: NomeIcone }[] = [
   { href: "/agenda/conta", rotulo: "Conta", icone: "usuario" },
 ];
 
-/** Barra fixa embaixo com as abas do personal (como num app). */
+/** Barra fixa embaixo com as abas do personal (como num app). No computador, o TrilhoDoPersonal. */
 export function BarraDoPersonal() {
   return (
     <Suspense fallback={<Barra caminho="" />}>
@@ -31,7 +31,7 @@ function Barra({ caminho }: { caminho: string }) {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className="fixed inset-x-0 bottom-0 z-20 border-t lg:hidden border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5">
         {ABAS.map((a) => {

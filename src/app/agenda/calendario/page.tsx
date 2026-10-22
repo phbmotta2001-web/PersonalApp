@@ -43,7 +43,7 @@ const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}
 
 export default function PaginaAgenda({ searchParams }: PageProps<"/agenda/calendario">) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-[1400px]">
       <Suspense fallback={<Carregando />}>
         <Conteudo searchParams={searchParams} />
       </Suspense>
@@ -122,11 +122,12 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const totalLivres = semana.reduce((n, d) => n + d.livres.length, 0);
 
   return (
-    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32">
+    <div className="flex flex-col gap-4 px-[18px] pt-5 pb-32 lg:px-8 lg:pt-8 lg:pb-12">
       <h1 className="text-[24px] font-extrabold">Agenda</h1>
 
-      <section className="flex flex-col gap-3" aria-label="Agenda da semana">
-        <div className="flex items-center gap-2">
+      {/* No computador (opção C): a semana em grade à esquerda e o dia escolhido à direita. */}
+      <section className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-6 lg:gap-y-4" aria-label="Agenda da semana">
+        <div className="flex items-center gap-2 lg:col-span-2">
           {expandida ? (
             <>
               <Link
@@ -156,6 +157,33 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               {semanaN === 0 ? "Próximos 7 dias" : `${dataCurta(inicioSemana)} a ${dataCurta(somarDias(inicioSemana, 6))}`}
             </h2>
           )}
+          {!expandida && (
+            <span className="hidden gap-1 lg:flex">
+              <Link
+                href={`/agenda/calendario?dia=${somarDias(inicioSemana, -7)}`}
+                scroll={false}
+                aria-label="Semana anterior"
+                className="grid size-9 place-items-center rounded-full border border-line bg-surface"
+              >
+                ‹
+              </Link>
+              {semanaN !== 0 && (
+                <Link href="/agenda/calendario" scroll={false} className="rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-semibold">
+                  Hoje
+                </Link>
+              )}
+              {somarDias(inicioSemana, 7).slice(0, 7) <= ultimoMes && (
+                <Link
+                  href={`/agenda/calendario?dia=${somarDias(inicioSemana, 7)}`}
+                  scroll={false}
+                  aria-label="Próxima semana"
+                  className="grid size-9 place-items-center rounded-full border border-line bg-surface"
+                >
+                  ›
+                </Link>
+              )}
+            </span>
+          )}
           <Link
             href={expandida ? `/agenda/calendario?dia=${dia}` : `/agenda/calendario?ver=mes&dia=${dia}`}
             scroll={false}
@@ -166,7 +194,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         </div>
 
         {expandida ? (
-          <>
+          <div className="flex flex-col gap-3 lg:col-start-1">
             <CalendarioDoMes
               mes={mes}
               dia={dia}
@@ -186,9 +214,18 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 Marcada
               </span>
             </p>
-          </>
+          </div>
         ) : (
-        <nav className="grid grid-cols-7 gap-1" aria-label="Dias da semana">
+        <>
+        <GradeDaSemana
+          dias={semana}
+          aulas={aulas.filter((a) => a.situacao !== "recusada")}
+          duracao={duracao}
+          dia={dia}
+          hoje={hoje}
+          agora={agora}
+        />
+        <nav className="grid grid-cols-7 gap-1 lg:hidden" aria-label="Dias da semana">
           {semana.map((d) => {
             const n = aulasDe(d.data).length;
             const p = pausasDe(d.data).length;
@@ -213,8 +250,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             );
           })}
         </nav>
+        </>
         )}
 
+        <div className="flex flex-col gap-3 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-2">
         <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Dia escolhido">
           <h2 className="text-[17px] font-bold">
             {rotuloDoDia} <span className="font-normal text-ink-3 tabular-nums">{dataCurta(dia)}</span>
@@ -316,12 +355,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.
         </p>
         )}
+        </div>
       </section>
 
       {dia >= hoje && (
         <Link
           href={novaAula()}
-          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
+          className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 lg:right-8 lg:bottom-8 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"
         >
           <Icone nome="mais" className="size-4" /> Aula
         </Link>
@@ -332,3 +372,139 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   );
 }
 
+
+type AulaDaSemana = Awaited<ReturnType<typeof listarAulas>>[number];
+// Altura de 1 minuto na grade (px): 1 hora = 54 px.
+const PX_POR_MIN = 0.9;
+
+/**
+ * Semana em grade de horários (só no computador): uma coluna por dia, as aulas na
+ * altura do horário, horários livres em tracejado (clique para marcar) e pausas em azul.
+ */
+function GradeDaSemana({
+  dias,
+  aulas,
+  duracao,
+  dia,
+  hoje,
+  agora,
+}: {
+  dias: { data: string; diaSemana: number; livres: number[]; trabalha: boolean }[];
+  aulas: AulaDaSemana[];
+  duracao: number;
+  dia: string;
+  hoje: string;
+  agora: Date;
+}) {
+  const minutoDe = (iso: string) => {
+    const [h, m] = emBrasilia(iso).hora.split(":").map(Number);
+    return h * 60 + m;
+  };
+  const doDia = (data: string) => aulas.filter((a) => emBrasilia(a.inicio).data === data);
+  // Faixa de horas: do primeiro ao último compromisso ou horário livre da semana (padrão 7h–20h).
+  const inicios = [...aulas.map((a) => minutoDe(a.inicio)), ...dias.flatMap((d) => d.livres)];
+  const fins = [
+    ...aulas.map((a) => Math.max(minutoDe(a.inicio) + 30, minutoDe(a.fim) || 24 * 60)),
+    ...dias.flatMap((d) => d.livres.map((m) => m + duracao)),
+  ];
+  const de = inicios.length ? Math.floor(Math.min(...inicios) / 60) * 60 : 7 * 60;
+  const ate = fins.length ? Math.min(24 * 60, Math.ceil(Math.max(...fins) / 60) * 60) : 20 * 60;
+  const horas = Array.from({ length: Math.max(1, (ate - de) / 60) }, (_, i) => de + i * 60);
+  const altura = (ate - de) * PX_POR_MIN;
+
+  return (
+    <div className="hidden overflow-hidden rounded-[20px] border border-line bg-surface lg:col-start-1 lg:row-start-2 lg:block" aria-label="Grade da semana">
+      <div className="grid grid-cols-[56px_repeat(7,minmax(0,1fr))] border-b border-line">
+        <span />
+        {dias.map((d) => (
+          <Link
+            key={d.data}
+            href={`/agenda/calendario?dia=${d.data}`}
+            scroll={false}
+            aria-current={d.data === dia ? "date" : undefined}
+            className={`flex flex-col items-center py-2.5 text-[13px] font-semibold ${
+              d.data === dia ? "bg-ink text-app" : d.trabalha ? "text-ink-2 hover:bg-surface-2" : "text-ink-3 hover:bg-surface-2"
+            }`}
+          >
+            {curtoDoDia(d.diaSemana)}
+            <span className={`text-[19px] font-extrabold tabular-nums ${d.data === hoje && d.data !== dia ? "text-brand" : ""}`}>
+              {d.data.slice(8, 10)}
+            </span>
+          </Link>
+        ))}
+      </div>
+      <div className="grid grid-cols-[56px_repeat(7,minmax(0,1fr))]" style={{ height: altura }}>
+        <div className="relative">
+          {horas.map((h) => (
+            <span
+              key={h}
+              className="absolute right-2 -translate-y-1/2 text-[12px] text-ink-3 tabular-nums first:translate-y-0"
+              style={{ top: (h - de) * PX_POR_MIN }}
+            >
+              {minParaHora(h)}
+            </span>
+          ))}
+        </div>
+        {dias.map((d) => {
+          const lista = doDia(d.data);
+          const ocupado = (m: number) =>
+            lista.some((a) => m < Math.max(minutoDe(a.fim), minutoDe(a.inicio) + 1) && m + duracao > minutoDe(a.inicio));
+          return (
+            <div
+              key={d.data}
+              className={`relative border-l border-line ${d.data === dia ? "bg-brand-soft/30" : ""}`}
+              style={{
+                backgroundImage: `repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px ${60 * PX_POR_MIN}px)`,
+              }}
+            >
+              {d.data >= hoje &&
+                d.livres
+                  .filter((m) => !ocupado(m))
+                  .map((m) => (
+                    <Link
+                      key={`l${m}`}
+                      href={`/agenda/aula/nova?dia=${d.data}&hora=${m}`}
+                      title={`Livre às ${minParaHora(m)}: marcar aula`}
+                      className="absolute inset-x-1 flex items-start rounded-[8px] border border-dashed border-line px-1.5 pt-0.5 text-[11.5px] text-ink-3 hover:border-brand hover:bg-brand-soft/50 hover:text-brand"
+                      style={{ top: (m - de) * PX_POR_MIN + 1, height: duracao * PX_POR_MIN - 2 }}
+                    >
+                      {minParaHora(m)} livre
+                    </Link>
+                  ))}
+              {lista.map((a) => {
+                const ini = minutoDe(a.inicio);
+                const fim = Math.max(ini + 20, minutoDe(a.fim) || 24 * 60);
+                const s = situacaoEfetiva(a.situacao, a.fim, agora);
+                const pausa = a.situacao === "pausada";
+                const riscada = !pausa && naoAcontece(s);
+                const pendente = s === "pendente";
+                return (
+                  <Link
+                    key={a.id}
+                    href={pausa ? `/agenda/aula/nova?dia=${d.data}&hora=${ini}` : `/agenda/aula/${a.id}`}
+                    title={`${emBrasilia(a.inicio).hora} · ${a.nome}${pausa ? " (em pausa)" : ""}`}
+                    className={`absolute inset-x-1 overflow-hidden rounded-[8px] px-1.5 py-1 text-[12px] leading-tight font-bold ${
+                      pausa
+                        ? "border border-dashed border-info bg-info-soft text-info"
+                        : riscada
+                          ? "bg-surface-2 text-ink-3 line-through"
+                          : pendente
+                            ? "border-l-[3px] border-gold bg-gold-soft text-gold"
+                            : "border-l-[3px] border-brand bg-brand-soft text-brand hover:brightness-95"
+                    }`}
+                    style={{ top: (ini - de) * PX_POR_MIN + 1, height: (fim - ini) * PX_POR_MIN - 2 }}
+                  >
+                    <span className="block truncate">{a.nome.split(" ")[0]}</span>
+                    <span className="block truncate text-[11px] font-semibold opacity-80">
+                      {pausa ? "pausa · livre" : pendente ? "pedido" : emBrasilia(a.inicio).hora}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
