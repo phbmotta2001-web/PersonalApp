@@ -1,6 +1,6 @@
 // Animação de abertura (decisão de 22/10/2026, opção "Traço"): uma linha verde-limão
 // desenha o símbolo, as letras de "Pienel" sobem uma a uma, aparece "Sua agenda em dia"
-// e um círculo se fecha no centro revelando o app. Uns 4 segundos, movimentos suaves.
+// e um círculo se abre do centro revelando o app (o símbolo cresce e some). Uns 4 segundos, movimentos suaves.
 //
 // Vem pronta do servidor (sem esperar o JavaScript), cobrindo a tela enquanto o app
 // carrega; a animação só começa quando a página termina de carregar (classe
@@ -18,18 +18,28 @@ export function Abertura() {
     <>
       <script dangerouslySetInnerHTML={{ __html: SCRIPT }} />
       <div className="abertura" aria-hidden="true">
-        <svg width="100" height="100" viewBox="0 0 100 100" className="abertura-simbolo">
-          <path className="abertura-traco" d="M30 85V18h26a20 20 0 0 1 0 40H30" />
-          <circle className="abertura-ponto" cx="70" cy="80" r="7" />
-        </svg>
-        <span className="abertura-nome">
-          {[...NOME].map((letra, i) => (
-            <span key={i} style={{ animationDelay: `${1.3 + i * 0.12}s` }}>
-              {letra}
-            </span>
-          ))}
-        </span>
-        <span className="abertura-frase">Sua agenda em dia</span>
+        <div className="abertura-marca">
+          <svg
+            width="100"
+            height="100"
+            viewBox="0 0 100 100"
+            className="abertura-simbolo"
+          >
+            <path
+              className="abertura-traco"
+              d="M30 85V18h26a20 20 0 0 1 0 40H30"
+            />
+            <circle className="abertura-ponto" cx="70" cy="80" r="7" />
+          </svg>
+          <span className="abertura-nome">
+            {[...NOME].map((letra, i) => (
+              <span key={i} style={{ animationDelay: `${1.3 + i * 0.12}s` }}>
+                {letra}
+              </span>
+            ))}
+          </span>
+          <span className="abertura-frase">Sua agenda em dia</span>
+        </div>
       </div>
     </>
   );

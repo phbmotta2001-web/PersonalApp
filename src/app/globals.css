@@ -243,6 +243,13 @@ input[type="checkbox"]:checked {
   }
 }
 
+/* Raio do "buraco" que abre no centro da abertura, revelando o app. */
+@property --pienel-raio {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
 /* ─── Abertura do app (decisão de 22/10/2026, opção "Traço") ────────────────
    Cobre a tela enquanto o app carrega; quando a página termina de carregar, a classe
    "abertura-toca" no <html> dispara a animação. Não bloqueia toques. */
@@ -258,7 +265,9 @@ input[type="checkbox"]:checked {
   background: var(--deep);
   color: var(--on-deep);
   pointer-events: none;
-  clip-path: circle(150% at 50% 50%);
+  /* Um círculo transparente que cresce do centro (o app aparece por ele). */
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--pienel-raio), #000 calc(var(--pienel-raio) + 0.5%));
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--pienel-raio), #000 calc(var(--pienel-raio) + 0.5%));
   /* Segurança: se a animação não começar, some sozinha. */
   animation: pienel-abertura-some 0.4s ease 7s forwards;
 }
@@ -293,7 +302,17 @@ input[type="checkbox"]:checked {
   opacity: 0;
 }
 .abertura-toca .abertura {
-  animation: pienel-abertura-revela 1.2s cubic-bezier(0.45, 0, 0.2, 1) 3s forwards;
+  animation: pienel-abertura-revela 1.3s cubic-bezier(0.45, 0, 0.2, 1) 3s forwards;
+}
+/* Enquanto o círculo abre, o símbolo, o nome e a frase crescem um pouco e somem. */
+.abertura-marca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.abertura-toca .abertura-marca {
+  animation: pienel-abertura-cresce 1.1s cubic-bezier(0.45, 0, 0.2, 1) 2.95s forwards;
 }
 .abertura-toca .abertura-traco {
   animation: pienel-abertura-desenha 1.6s cubic-bezier(0.45, 0, 0.2, 1) 0.25s forwards;
@@ -317,7 +336,10 @@ input[type="checkbox"]:checked {
   to { opacity: 1; transform: none; }
 }
 @keyframes pienel-abertura-revela {
-  to { clip-path: circle(0% at 50% 50%); visibility: hidden; }
+  to { --pienel-raio: 101%; visibility: hidden; }
+}
+@keyframes pienel-abertura-cresce {
+  to { transform: scale(1.25); opacity: 0; }
 }
 @keyframes pienel-abertura-some {
   to { opacity: 0; visibility: hidden; }
