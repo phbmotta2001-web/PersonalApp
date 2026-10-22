@@ -307,9 +307,6 @@ input[type="checkbox"]:checked {
 .abertura-toca .abertura-frase {
   animation: pienel-abertura-aparece 0.8s ease-out 2.3s forwards;
 }
-.sem-abertura .abertura {
-  display: none;
-}
 @keyframes pienel-abertura-desenha {
   to { stroke-dashoffset: 0; }
 }
