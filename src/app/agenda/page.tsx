@@ -6,7 +6,7 @@ import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { InstalarApp } from "@/components/InstalarApp";
-import { aulasParaDecidir, pedidosPendentes } from "@/data/aulas";
+import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
@@ -14,7 +14,7 @@ import { exigirPersonal } from "@/data/exigir-personal";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { situacaoDaCobranca } from "@/lib/cobranca";
-import { agoraEmBrasilia, emBrasilia, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, curtoDoDia, dataCurta, diaDaSemana, emBrasilia, somarDias } from "@/lib/expediente";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 
 export const metadata: Metadata = {
@@ -38,7 +38,7 @@ async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir] = await Promise.all([
+  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),
     listarAulas(agora.toISOString(), new Date(agora.getTime() + 7 * 86_400_000).toISOString()),
@@ -48,6 +48,7 @@ async function Conteudo() {
     matriculasSuspensas(),
     listarMeusAlunos(),
     aulasParaDecidir(),
+    reposicoesPorAluno(),
   ]);
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
@@ -60,6 +61,17 @@ async function Conteudo() {
   const atrasadas = cobrancas.filter((c) => c.situacao === "aberta" && !c.alunoAvisouEm && situacaoDaCobranca(c, hoje) === "atrasada");
   const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", "");
   const whatsappDe = (vinculo: string | null) => alunos.find((a) => a.vinculoId === vinculo)?.whatsapp ?? null;
+  // Reposições que o aluno ainda não marcou (decisão de 28/10/2026): o personal lembra o aluno antes
+  // que vençam, senão vira pedido de desconto ou é esquecida. A que vence primeiro vem em cima.
+  const pendentes = Object.entries(reposicoes)
+    .map(([vinculoId, lista]) => ({
+      vinculoId,
+      quantas: lista.length,
+      venceEm: lista.map((c) => c.validoAte).sort()[0],
+      aluno: alunos.find((a) => a.vinculoId === vinculoId),
+    }))
+    .filter((p) => p.quantas > 0 && p.aluno && p.aluno.situacao === "ativo")
+    .sort((x, y) => x.venceEm.localeCompare(y.venceEm));
   const aniversariosProximos = aniversarios.filter((a) => a.dia >= Number(hoje.slice(8, 10)));
 
   // "Agora", "em 25 min", "hoje às 18:00", "amanhã às 07:00", "qui, 23/10 às 07:00"
@@ -184,14 +196,14 @@ async function Conteudo() {
             {depois.map((a) => (
               <li key={a.id}>
                 <Link href={`/agenda/aula/${a.id}`} className="flex items-center gap-3 py-2">
-                  <span className="w-[52px] shrink-0 text-[14.5px] font-extrabold tabular-nums">
-                    {deHoje.length > 0 ? emBrasilia(a.inicio).hora : textoDaAula(a.inicio, null).split(" às ")[0]}
+                  {/* Hoje: só a hora. Outros dias: o dia em cima e a hora embaixo (não cabem lado a lado). */}
+                  <span className="flex w-[64px] shrink-0 flex-col leading-tight tabular-nums">
+                    <span className="text-[15px] font-extrabold">{emBrasilia(a.inicio).hora}</span>
+                    {deHoje.length === 0 && <span className="text-[12.5px] font-semibold text-ink-3">{diaCurto(a.inicio)}</span>}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold">{a.nome}</span>
-                    <span className="block truncate text-[13px] text-ink-3">
-                      {deHoje.length > 0 ? a.local : `às ${emBrasilia(a.inicio).hora}${a.local ? ` · ${a.local}` : ""}`}
-                    </span>
+                    {a.local && <span className="block truncate text-[13px] text-ink-3">{a.local}</span>}
                   </span>
                   <span className="text-ink-3" aria-hidden="true">›</span>
                 </Link>
@@ -252,6 +264,51 @@ async function Conteudo() {
         )}
       </section>
 
+      {pendentes.length > 0 && (
+        <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Reposições pendentes">
+          <h2 className="pb-1 text-[16px] font-semibold">
+            Reposições pendentes
+            <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-[13px] font-bold text-ink-2">
+              {pendentes.reduce((n, p) => n + p.quantas, 0)}
+            </span>
+          </h2>
+          <p className="pb-1 text-[13px] text-ink-3">Lembre o aluno de marcar antes de vencer.</p>
+          <ul className="flex flex-col divide-y divide-line">
+            {pendentes.map((p) => {
+              const nome = p.aluno!.nome;
+              const primeiro = nome.split(" ")[0];
+              const logo = p.venceEm <= somarDias(hoje, 7);
+              const texto = `${p.quantas} reposiç${p.quantas > 1 ? "ões" : "ão"} · ${p.quantas > 1 ? "a primeira vence" : "vence"} ${p.venceEm === hoje ? "hoje" : `em ${dataCurta(p.venceEm)}`}`;
+              const mensagem = `Oi, ${primeiro}! Você tem ${p.quantas === 1 ? "uma reposição" : `${p.quantas} reposições`} para marcar até ${dataCurta(p.venceEm)}. Vamos combinar um horário?`;
+              return (
+                <li key={p.vinculoId} className="flex items-center gap-2.5 py-2">
+                  <Link href={`/agenda/alunos/${p.vinculoId}`} className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold">{nome}</span>
+                    <span className={`block text-[13px] ${logo ? "font-semibold text-gold" : "text-ink-3"}`}>{texto}</span>
+                  </Link>
+                  {p.aluno!.whatsapp ? (
+                    <a
+                      href={linkWhatsapp(p.aluno!.whatsapp, mensagem)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-[12px] border border-line px-3 text-[14px] font-bold"
+                    >
+                      <Icone nome="conversa" className="size-4" /> Lembrar
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/agenda/alunos/${p.vinculoId}`}
+                      className="flex min-h-10 shrink-0 items-center rounded-[12px] border border-line px-3 text-[14px] font-bold"
+                    >
+                      Ver
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {aniversariosProximos.length > 0 && (
         <section className="order-3 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Aniversários do mês">
@@ -281,6 +338,12 @@ async function Conteudo() {
       </div>
     </div>
   );
+}
+
+/** "qui 23/10" */
+function diaCurto(inicio: string): string {
+  const { data } = emBrasilia(inicio);
+  return `${curtoDoDia(diaDaSemana(data)).toLowerCase()} ${dataCurta(data)}`;
 }
 
 function Pendencia({ href, icone, tom, children }: { href: string; icone: NomeIcone; tom: string; children: React.ReactNode }) {
