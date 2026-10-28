@@ -36,11 +36,17 @@ export interface DetalheDaAula {
   nome: string;
   /** Aula que foi remarcada para esta, e para qual aula esta foi remarcada. */
   remarcadaDe: { id: string; inicio: string } | null;
-  remarcadaPara: { id: string; inicio: string } | null;
+  remarcadaPara: { id: string; inicio: string; situacao: string; propostaPor: "aluno" | "personal" | null } | null;
+  /** O aluno tem conta no app (dá para pedir a remarcação a ele). */
+  alunoComApp: boolean;
+  /** Cancelada sozinha: feriado em que o personal não trabalha. */
+  porFeriado: boolean;
+  /** O aluno recusou (ou deixou expirar) o pedido para remarcar: falta decidir entre cancelar e manter. */
+  recusaRemarcacao: boolean;
 }
 
 const CAMPOS_AULA =
-  "id, inicio, fim, local, situacao, origem, cancelada_por, vinculo_id, nome_avulso, aula_original_id, proposta_por, resposta";
+  "id, inicio, fim, local, situacao, origem, cancelada_por, vinculo_id, nome_avulso, aula_original_id, proposta_por, resposta, aluno_id, por_feriado, recusa_remarcacao_em";
 
 interface LinhaAula {
   id: string;
@@ -55,6 +61,9 @@ interface LinhaAula {
   vinculo_id: string | null;
   nome_avulso: string | null;
   aula_original_id: string | null;
+  aluno_id: string | null;
+  por_feriado: boolean;
+  recusa_remarcacao_em: string | null;
 }
 
 /** Uma aula do personal logado, com o nome do aluno e as remarcações ligadas a ela. */
@@ -71,7 +80,7 @@ export async function lerAula(aulaId: string): Promise<DetalheDaAula | null> {
       : Promise.resolve({ data: null }),
     supabase
       .from("aulas")
-      .select("id, inicio")
+      .select("id, inicio, situacao, proposta_por")
       .eq("aula_original_id", a.id)
       .neq("situacao", "recusada")
       .order("criada_em", { ascending: false })
@@ -91,7 +100,12 @@ export async function lerAula(aulaId: string): Promise<DetalheDaAula | null> {
     vinculoId: a.vinculo_id,
     nome: (a.vinculo_id && alunos.find((x) => x.vinculoId === a.vinculo_id)?.nome) || a.nome_avulso || "Aluno",
     remarcadaDe: original.data ?? null,
-    remarcadaPara: nova.data ?? null,
+    remarcadaPara: nova.data
+      ? { id: nova.data.id, inicio: nova.data.inicio, situacao: nova.data.situacao, propostaPor: nova.data.proposta_por }
+      : null,
+    alunoComApp: a.aluno_id != null,
+    porFeriado: a.por_feriado,
+    recusaRemarcacao: a.recusa_remarcacao_em != null,
   };
 }
 
@@ -118,6 +132,46 @@ export async function responderPedido(aulaId: string, aceitar: boolean, resposta
     p_resposta: resposta?.trim() || null,
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível responder. Tente de novo.") } : { ok: true };
+}
+
+/** Pedir ao aluno para remarcar (ele aceita ou recusa; até lá, a aula fica onde está). */
+export async function pedirRemarcacao(aulaId: string, data: string, inicioMin: number): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("pedir_remarcacao", { p_aula: aulaId, p_data: data, p_inicio_min: inicioMin });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível enviar o pedido. Tente de novo.") } : { ok: true };
+}
+
+/** Desistir do pedido de remarcação ainda sem resposta (aulaId: o pedido). */
+export async function desistirRemarcacao(aulaId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("desistir_remarcacao", { p_aula: aulaId });
+  return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível desistir agora. Tente de novo.") } : { ok: true };
+}
+
+/** O aluno recusou a remarcação e o personal decidiu manter a aula como está. */
+export async function manterAula(aulaId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("manter_aula", { p_aula: aulaId });
+  return error ? { ok: false, erro: "Não foi possível salvar. Tente de novo." } : { ok: true };
+}
+
+/** Aulas em que o aluno recusou (ou não respondeu) o pedido para remarcar: o personal decide. */
+export async function aulasParaDecidir(): Promise<{ id: string; inicio: string; nome: string }[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const [{ data }, alunos] = await Promise.all([
+    supabase
+      .from("aulas")
+      .select("id, inicio, vinculo_id")
+      .eq("personal_id", id)
+      .in("situacao", ["agendada", "confirmada"])
+      .not("recusa_remarcacao_em", "is", null)
+      .gt("inicio", new Date().toISOString())
+      .order("inicio"),
+    listarMeusAlunos(),
+  ]);
+  const nomes = new Map(alunos.map((a) => [a.vinculoId, a.nome]));
+  return (data ?? []).map((a) => ({ id: a.id, inicio: a.inicio, nome: (a.vinculo_id && nomes.get(a.vinculo_id)) || "Aluno" }));
 }
 
 /** Em vez de aceitar o horário pedido, sugerir outro; o aluno aceita ou recusa. */

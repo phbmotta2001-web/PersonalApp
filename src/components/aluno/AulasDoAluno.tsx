@@ -149,7 +149,9 @@ export function AulasDoAluno({
                         <span className="font-bold">{hora}</span>
                         <span className="block text-[13px] text-gold">
                           {a.propostaPor === "personal"
-                            ? `${primeiro} sugeriu este horário`
+                            ? a.aulaOriginalId
+                              ? `${primeiro} pediu para remarcar sua aula para este horário`
+                              : `${primeiro} sugeriu este horário`
                             : `${a.aulaOriginalId ? "Remarcação" : "Reposição"} pedida · aguardando ${primeiro}`}
                         </span>
                       </span>
@@ -169,7 +171,12 @@ export function AulasDoAluno({
                         <button
                           type="button"
                           disabled={ocupado}
-                          onClick={() => executar(() => alunoResponderSugestao(a.id, false), "Sugestão recusada.")}
+                          onClick={() =>
+                            executar(
+                              () => alunoResponderSugestao(a.id, false),
+                              a.aulaOriginalId ? "Recusado: a aula continua no horário de antes." : "Sugestão recusada.",
+                            )
+                          }
                           className="flex-1 rounded-[12px] border border-line px-3 py-2.5 text-[14px] font-bold"
                         >
                           Recusar

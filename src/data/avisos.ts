@@ -14,6 +14,7 @@ export type TipoAviso =
   | "pediu_remarcacao"
   | "aceitou_sugestao"
   | "recusou_sugestao"
+  | "sugestao_expirou"
   | "avisou_pagamento"
   | "respondeu_checkin";
 

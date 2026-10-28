@@ -8,7 +8,7 @@ import { PLANOS_ONLINE, type TabelaOnline } from "@/lib/precos";
 import { ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 /** Planos dos alunos online e híbridos: valor TOTAL de cada período. */
-export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
+export function FormPlanosOnline({ inicial, continuar }: { inicial: TabelaOnline; continuar?: string }) {
   const router = useRouter();
   const [textos, setTextos] = useState<Record<number, string>>(() =>
     Object.fromEntries(PLANOS_ONLINE.map((p) => [p.meses, centavosParaCampo(inicial[p.meses] ?? null)])),
@@ -77,12 +77,13 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
       <div className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t border-line bg-surface px-[18px] pt-3 pb-3.5">
         <button
           type="button"
-          disabled={!mudou || invalido || salvando}
+          disabled={(!mudou && !continuar) || invalido || salvando}
           onClick={() =>
             iniciar(async () => {
               try {
                 const r = await salvarTabelaOnline(tabela);
                 if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+                if (continuar) return router.push(continuar);
                 setSalvo(JSON.stringify(tabela));
                 setAviso({ tipo: "ok", texto: "Planos online salvos." });
                 router.refresh();
@@ -93,7 +94,7 @@ export function FormPlanosOnline({ inicial }: { inicial: TabelaOnline }) {
           }
           className={ESTILO_BOTAO_PRINCIPAL}
         >
-          {salvando ? "Salvando…" : "Salvar planos online"}
+          {salvando ? "Salvando…" : continuar ? "Salvar e continuar" : "Salvar planos online"}
         </button>
         <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {invalido

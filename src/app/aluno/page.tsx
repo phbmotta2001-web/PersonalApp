@@ -169,7 +169,9 @@ async function Conteudo() {
             >
               <Icone nome="calendario" className="size-5 shrink-0 text-gold" />
               <span className="min-w-0 flex-1 text-[14.5px]">
-                <strong className="text-gold">{nomeDe(a.vinculoId)} sugeriu outro horário</strong>
+                <strong className="text-gold">
+                  {nomeDe(a.vinculoId)} {a.aulaOriginalId ? "pediu para remarcar sua aula" : "sugeriu outro horário"}
+                </strong>
                 <span className="block text-ink-2">{textoDaAula(a.inicio, null)} · toque para responder</span>
               </span>
             </Link>

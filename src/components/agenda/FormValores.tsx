@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarTabelaDeValores } from "@/data/precos";
 import { frase } from "@/lib/formato";
@@ -8,7 +9,8 @@ import { aPartirDe, problemasDaTabela, SEMANAS_POR_MES, VEZES_POR_SEMANA, type T
 import { ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 /** Tabela de valores: quanto custa cada aula conforme quantas vezes por semana o aluno treina. */
-export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
+export function FormValores({ inicial, continuar }: { inicial: TabelaDeValores; continuar?: string }) {
+  const router = useRouter();
   const [textos, setTextos] = useState<Record<number, string>>(() =>
     Object.fromEntries(VEZES_POR_SEMANA.map((v) => [v, centavosParaCampo(inicial[v] ?? null)])),
   );
@@ -32,6 +34,7 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
       try {
         const r = await salvarTabelaDeValores(tabela);
         if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+        if (continuar) return router.push(continuar);
         setSalvo(JSON.stringify(tabela));
         setAviso({ tipo: "ok", texto: "Valores salvos." });
       } catch {
@@ -100,10 +103,16 @@ export function FormValores({ inicial }: { inicial: TabelaDeValores }) {
         <button
           type="button"
           onClick={salvar}
-          disabled={!mudou || problemas.length > 0 || salvando}
+          disabled={(!mudou && !continuar) || problemas.length > 0 || salvando}
           className={ESTILO_BOTAO_PRINCIPAL}
         >
-          {salvando ? "Salvando…" : "Salvar valores"}
+          {salvando
+            ? "Salvando…"
+            : !continuar
+              ? "Salvar valores"
+              : Object.keys(tabela).length > 0
+                ? "Salvar e continuar"
+                : "Continuar (não dou aulas presenciais)"}
         </button>
         <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {problemas.length > 0

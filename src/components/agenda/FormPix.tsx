@@ -9,7 +9,16 @@ import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 /** Chave Pix do personal: vai nas cobranças como Pix copia e cola e QR Code. */
-export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; nomeSugerido: string }) {
+export function FormPix({
+  inicial,
+  nomeSugerido,
+  continuar,
+}: {
+  inicial: DadosPix | null;
+  nomeSugerido: string;
+  /** Primeiro acesso: depois de salvar, vai para esta etapa (o botão fica sempre ativo). */
+  continuar?: string;
+}) {
   const router = useRouter();
   const [pix, setPix] = useState<DadosPix>(
     inicial ?? { tipo: "cpf", chave: "", nome: nomeSugerido.slice(0, 25), cidade: "" },
@@ -35,6 +44,7 @@ export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; n
             const r = await salvarPix(pix);
             if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
             // Volta para Cobranças já com a chave (sem mostrar a tela antiga guardada).
+            if (continuar) return router.push(continuar);
             router.replace("/agenda/financeiro");
             router.refresh();
           } catch {
@@ -76,7 +86,7 @@ export function FormPix({ inicial, nomeSugerido }: { inicial: DadosPix | null; n
       </Campo>
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
       <button type="submit" disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
-        {ocupado ? "Salvando…" : "Salvar chave Pix"}
+        {ocupado ? "Salvando…" : continuar ? "Salvar e continuar" : "Salvar chave Pix"}
       </button>
     </form>
   );

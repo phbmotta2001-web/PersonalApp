@@ -25,5 +25,5 @@ export default function PaginaBloqueios() {
 
 async function Conteudo() {
   await exigirPersonal("/agenda/bloqueios");
-  return <Bloqueios bloqueios={await listarBloqueios()} />;
+  return <Bloqueios bloqueios={await listarBloqueios(true)} />;
 }

@@ -8,6 +8,7 @@ import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { aniversariantesDoMes } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
+import { lerRegraDeFeriados } from "@/data/feriados";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import {
   CATEGORIAS_HISTORICO,
@@ -31,6 +32,7 @@ import {
   nomeDoDia,
   somarDias,
 } from "@/lib/expediente";
+import { feriadoDoDia, trabalhaNoFeriado } from "@/lib/feriados";
 import { maiuscula } from "@/lib/formato";
 
 export const metadata: Metadata = {
@@ -70,12 +72,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const semanaN = Math.floor(distancia / 7);
   const inicioSemana = somarDias(hoje, semanaN * 7);
 
-  const [expediente, bloqueios, aulas, aniversarios, suspensas] = await Promise.all([
+  const [expediente, bloqueios, aulas, aniversarios, suspensas, regraFeriados] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarAulas(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
     aniversariantesDoMes(dia),
     matriculasSuspensas(),
+    lerRegraDeFeriados(),
   ]);
   const doMes = expandida
     ? paraCalendario(
@@ -84,6 +87,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
       )
     : [];
   const nomeDoMes = new Date(`${mes}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+  const feriado = feriadoDoDia(dia);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
   const faixas = expediente?.faixas ?? [];
   const duracao = expediente?.duracao ?? 60;
@@ -243,7 +247,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 <span>{curtoDoDia(d.diaSemana)}</span>
                 <span className="text-[16px] font-bold tabular-nums">{d.data.slice(8, 10)}</span>
                 <span className={`text-[12px] ${ativo ? "" : "text-ink-3"}`}>
-                  {n > 0 ? `${n} aula${n > 1 ? "s" : ""}` : p > 0 ? "" : d.trabalha ? "livre" : "folga"}
+                  {n > 0 ? `${n} aula${n > 1 ? "s" : ""}` : p > 0 ? "" : feriadoDoDia(d.data) ? "feriado" : d.trabalha ? "livre" : "folga"}
                 </span>
                 {p > 0 && <span className={`text-[11.5px] font-bold ${ativo ? "" : "text-info"}`}>{p === 1 ? "pausa" : `${p} pausas`}</span>}
               </Link>
@@ -270,8 +274,23 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               </span>
             </Link>
           ))}
-          {doDia.bloqueios.length > 0 && (
-            <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold">Bloqueado: {doDia.bloqueios.join(", ")}</p>
+          {feriado && (
+            <Link
+              href="/agenda/feriados"
+              className={`flex flex-col rounded-[12px] px-3 py-2 text-[14px] ${trabalhaNoFeriado(regraFeriados, dia) ? "bg-surface-2 text-ink-2" : "bg-gold-soft text-gold"}`}
+            >
+              <strong>Feriado: {feriado.nome}</strong>
+              <span className="text-[13px]">
+                {trabalhaNoFeriado(regraFeriados, dia)
+                  ? "Você trabalha neste feriado."
+                  : "Folga: as aulas fixas foram canceladas e os alunos ganharam reposição."}
+              </span>
+            </Link>
+          )}
+          {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).length > 0 && (
+            <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold">
+              Bloqueado: {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).join(", ")}
+            </p>
           )}
           {faixas.length === 0 && (
             <p className="text-[14px] text-ink-3">
@@ -320,7 +339,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                           <span className={`block truncate text-[15px] font-bold ${riscada ? "line-through" : ""}`}>{a.nome}</span>
                           <span className="block truncate text-[13px] text-ink-3">
                             {[
-                              `até ${emBrasilia(a.fim).hora}`,
+                              a.porFeriado ? "feriado · o aluno ganhou reposição" : `até ${emBrasilia(a.fim).hora}`,
                               !riscada && a.local,
                               !riscada && a.origem !== "fixa" && ROTULO_ORIGEM[a.origem as OrigemAula],
                             ]
@@ -430,6 +449,11 @@ function GradeDaSemana({
             <span className={`text-[19px] font-extrabold tabular-nums ${d.data === hoje && d.data !== dia ? "text-brand" : ""}`}>
               {d.data.slice(8, 10)}
             </span>
+            {feriadoDoDia(d.data) && (
+              <span className={`max-w-full truncate px-1 text-[11px] font-bold ${d.data === dia ? "" : "text-gold"}`}>
+                {feriadoDoDia(d.data)?.nome}
+              </span>
+            )}
           </Link>
         ))}
       </div>

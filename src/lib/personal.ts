@@ -37,6 +37,8 @@ export interface Personal {
   cref: string;
   crefUf: string;
   situacao: Situacao;
+  /** Já passou pelo primeiro acesso (horários, feriados, regras e valores). */
+  configurado: boolean;
 }
 
 export const soDigitos = (v: string) => v.replace(/\D/g, "");

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarRegras, type Regras } from "@/data/aulas";
 import {
@@ -15,7 +16,8 @@ import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 const valida = (h: number) => Number.isInteger(h) && h >= 0 && h <= 168;
 
 /** Regras de cancelamento, reposição e remarcação do personal. */
-export function FormRegras({ inicial }: { inicial: Regras }) {
+export function FormRegras({ inicial, continuar }: { inicial: Regras; continuar?: string }) {
+  const router = useRouter();
   const [regras, setRegras] = useState(inicial);
   const [salvo, setSalvo] = useState(inicial);
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
@@ -77,6 +79,7 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
         <p>• O aluno cancela, remarca e marca reposição pelo app, e você recebe um aviso no sininho da agenda.</p>
         <p>• Remarcar pelo app só vale com a antecedência de cancelamento; em cima da hora, ele precisa falar com você.</p>
         <p>• Quando você cancela uma aula, o aluno sempre ganha reposição.</p>
+        <p>• Para mudar o horário de uma aula, você pode pedir ao aluno (ele aceita ou recusa pelo app) ou remarcar direto.</p>
         <p>• Falta sem aviso conta como aula dada, sem reposição.</p>
         <p>
           • A reposição vale <strong>até o próximo vencimento da mensalidade</strong> do aluno (sem vencimento na matrícula:
@@ -88,12 +91,13 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto ?? (tudoValido ? null : "Use números de 0 a 168.")}</Aviso>
       <button
         type="button"
-        disabled={!tudoValido || !mudou || salvando}
+        disabled={!tudoValido || (!mudou && !continuar) || salvando}
         onClick={() =>
           iniciar(async () => {
             try {
               const r = await salvarRegras(regras);
               if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+              if (continuar) return router.push(continuar);
               setSalvo(regras);
               setAviso({ tipo: "ok", texto: "Regras salvas." });
             } catch {
@@ -103,7 +107,7 @@ export function FormRegras({ inicial }: { inicial: Regras }) {
         }
         className={ESTILO_BOTAO_PRINCIPAL}
       >
-        {salvando ? "Salvando…" : mudou ? "Salvar regras" : "Regras salvas"}
+        {salvando ? "Salvando…" : continuar ? "Salvar e continuar" : mudou ? "Salvar regras" : "Regras salvas"}
       </button>
     </div>
   );

@@ -153,6 +153,10 @@ export interface AulaDaAgenda {
   aulaOriginalId: string | null;
   /** Pedido recusado: o motivo. */
   resposta: string | null;
+  /** Cancelada sozinha: caiu num feriado em que o personal não trabalha. */
+  porFeriado: boolean;
+  /** O aluno recusou (ou deixou expirar) o pedido do personal para remarcar: falta decidir. */
+  recusaRemarcacao: boolean;
 }
 
 /** Aulas do personal logado entre dois instantes (ISO), com o nome de cada aluno. */
@@ -162,7 +166,7 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
   const [{ data }, alunos] = await Promise.all([
     supabase
       .from("aulas")
-      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta")
+      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta, por_feriado, recusa_remarcacao_em")
       .eq("personal_id", id)
       .lt("inicio", ate)
       .gt("fim", de)
@@ -182,6 +186,8 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
     propostaPor: a.proposta_por as AulaDaAgenda["propostaPor"],
     aulaOriginalId: a.aula_original_id,
     resposta: a.resposta,
+    porFeriado: a.por_feriado,
+    recusaRemarcacao: a.recusa_remarcacao_em != null,
   }));
 }
 
@@ -191,7 +197,7 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
   if (!id) return [];
   const { data } = await supabase
     .from("aulas")
-    .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta")
+    .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta, por_feriado, recusa_remarcacao_em")
     .eq("aluno_id", id)
     .eq("vinculo_id", vinculoId)
     .gt("inicio", new Date().toISOString())
@@ -210,6 +216,8 @@ export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Prom
     propostaPor: a.proposta_por as AulaDaAgenda["propostaPor"],
     aulaOriginalId: a.aula_original_id,
     resposta: a.resposta,
+    porFeriado: a.por_feriado,
+    recusaRemarcacao: a.recusa_remarcacao_em != null,
   }));
 }
 

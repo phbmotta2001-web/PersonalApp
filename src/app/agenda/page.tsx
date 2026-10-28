@@ -6,7 +6,7 @@ import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { InstalarApp } from "@/components/InstalarApp";
-import { pedidosPendentes } from "@/data/aulas";
+import { aulasParaDecidir, pedidosPendentes } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
@@ -38,7 +38,7 @@ async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos] = await Promise.all([
+  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),
     listarAulas(agora.toISOString(), new Date(agora.getTime() + 7 * 86_400_000).toISOString()),
@@ -47,6 +47,7 @@ async function Conteudo() {
     aniversariantesDoMes(hoje),
     matriculasSuspensas(),
     listarMeusAlunos(),
+    aulasParaDecidir(),
   ]);
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
@@ -215,7 +216,7 @@ async function Conteudo() {
       <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
       <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Precisa de você">
         <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
-        {pedidos.length + avisaram.length + atrasadas.length === 0 ? (
+        {pedidos.length + decidir.length + avisaram.length + atrasadas.length === 0 ? (
           <p className="flex items-center gap-2 pb-1 text-[14px] text-ok">
             <Icone nome="certo" className="size-4" /> Tudo em dia por aqui.
           </p>
@@ -225,6 +226,11 @@ async function Conteudo() {
               <Pendencia key={p.id} href={`/agenda/aula/${p.id}`} icone="calendario" tom="text-gold">
                 <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
                 {textoDaAula(p.inicio, null)}
+              </Pendencia>
+            ))}
+            {decidir.map((a) => (
+              <Pendencia key={a.id} href={`/agenda/aula/${a.id}`} icone="calendario" tom="text-bad">
+                <strong>{a.nome.split(" ")[0]}</strong> não aceitou remarcar a aula de {textoDaAula(a.inicio, null)}: cancelar ou manter?
               </Pendencia>
             ))}
             {avisaram.map((c) => (

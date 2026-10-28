@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
+  desistirRemarcacao,
   livresNoDia,
+  manterAula,
   marcarAula,
+  pedirRemarcacao,
   remarcarAula,
   responderPedido,
   sugerirHorario,
@@ -48,6 +51,10 @@ export function AcoesDaAula({
   const marcadaAMao = aula.situacao !== "agendada" && aula.situacao !== "confirmada";
   const duracao = Math.round((Date.parse(aula.fim) - Date.parse(aula.inicio)) / 60_000);
   const primeiro = aula.nome.split(" ")[0];
+  // Pedido de remarcação que o personal fez e o aluno ainda não respondeu.
+  const meuPedido =
+    aula.remarcadaPara?.situacao === "pendente" && aula.remarcadaPara.propostaPor === "personal" ? aula.remarcadaPara : null;
+  const decidir = aula.recusaRemarcacao && !jaComecou && (aula.situacao === "agendada" || aula.situacao === "confirmada");
 
   const executar = (acao: () => Promise<{ ok: boolean; erro?: string }>, depois?: () => void) =>
     iniciar(async () => {
@@ -92,14 +99,16 @@ export function AcoesDaAula({
         )}
         {aula.situacao === "cancelada_com_aviso" && (
           <p className="text-[13px] text-ink-3">
-            Cancelada {aula.canceladaPor === "personal" ? "por você" : "pelo aluno, com antecedência"}. {primeiro} ganhou uma
-            reposição.
+            {aula.porFeriado
+              ? "Cancelada sozinha: feriado em que você não trabalha."
+              : `Cancelada ${aula.canceladaPor === "personal" ? "por você" : "pelo aluno, com antecedência"}.`}{" "}
+            {primeiro} ganhou uma reposição.
           </p>
         )}
         {aula.situacao === "cancelada_em_cima" && (
           <p className="text-[13px] text-ink-3">Cancelada pelo aluno em cima da hora: conta como dada, sem reposição.</p>
         )}
-        {aula.remarcadaPara && (
+        {aula.remarcadaPara && !meuPedido && (
           <Link href={`/agenda/aula/${aula.remarcadaPara.id}`} className="text-[14px] font-semibold text-brand">
             {aula.situacao === "remarcada" ? "Remarcada para" : "Pedido de troca para"}{" "}
             {textoDaAula(aula.remarcadaPara.inicio, null)} ›
@@ -114,6 +123,50 @@ export function AcoesDaAula({
       </section>
 
       <Aviso>{erro}</Aviso>
+
+      {meuPedido && (
+        <section className="flex flex-col gap-2 rounded-[18px] bg-gold-soft p-4 text-gold">
+          <p className="text-[15px]">
+            Você pediu para remarcar para <strong>{textoDaAula(meuPedido.inicio, null)}</strong>. Aguardando {primeiro}{" "}
+            responder; até lá, a aula continua neste horário.
+          </p>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => executar(() => desistirRemarcacao(meuPedido.id))}
+            className="self-start text-[14px] font-bold underline"
+          >
+            Desistir do pedido
+          </button>
+        </section>
+      )}
+
+      {decidir && (
+        <section className="flex flex-col gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4">
+          <p className="text-[15px] text-gold">
+            <strong>{primeiro} não aceitou remarcar.</strong> A aula continua marcada neste horário. O que você prefere?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() => executar(() => marcarAula(aula.id, "cancelada_com_aviso", "personal"))}
+              className="flex min-h-12 items-center justify-center rounded-[14px] bg-bad px-3 text-[15px] font-bold text-white disabled:opacity-60"
+            >
+              Cancelar aula
+            </button>
+            <button
+              type="button"
+              disabled={ocupado}
+              onClick={() => executar(() => manterAula(aula.id))}
+              className={ESTILO_BOTAO_SECUNDARIO}
+            >
+              Manter aula
+            </button>
+          </div>
+          <p className="text-[13px] text-gold">Cancelando, {primeiro} ganha uma reposição e é avisado.</p>
+        </section>
+      )}
 
       {aula.situacao === "pendente" &&
         (aula.propostaPor === "personal" ? (
@@ -183,7 +236,7 @@ export function AcoesDaAula({
               >
                 {jaComecou ? "Foi cancelada" : "Cancelar"}
               </button>
-              {!jaComecou && (
+              {!jaComecou && !meuPedido && (
                 <button
                   type="button"
                   onClick={() => setPainel(painel === "remarcar" ? null : "remarcar")}
@@ -210,18 +263,21 @@ export function AcoesDaAula({
               aula={aula}
               duracao={duracao}
               ocupado={ocupado}
-              onConfirmar={(data, inicioMin) =>
-                iniciar(async () => {
-                  setErro(null);
-                  try {
-                    const r = await remarcarAula(aula.id, data, inicioMin);
-                    if (!r.ok) return setErro(r.erro);
-                    router.replace(`/agenda/calendario?dia=${data}`);
-                    router.refresh();
-                  } catch {
-                    setErro("Não foi possível remarcar agora. Confira sua internet.");
-                  }
-                })
+              podePedir={aula.alunoComApp}
+              onConfirmar={(data, inicioMin, modo) =>
+                modo === "pedir"
+                  ? executar(() => pedirRemarcacao(aula.id, data, inicioMin))
+                  : iniciar(async () => {
+                      setErro(null);
+                      try {
+                        const r = await remarcarAula(aula.id, data, inicioMin);
+                        if (!r.ok) return setErro(r.erro);
+                        router.replace(`/agenda/calendario?dia=${data}`);
+                        router.refresh();
+                      } catch {
+                        setErro("Não foi possível remarcar agora. Confira sua internet.");
+                      }
+                    })
               }
             />
           )}
@@ -329,14 +385,19 @@ function Remarcar({
   ocupado,
   onConfirmar,
   rotulo = "Remarcar para",
+  podePedir = false,
 }: {
   aula: DetalheDaAula;
   duracao: number;
   ocupado: boolean;
-  onConfirmar: (data: string, inicioMin: number) => void;
+  onConfirmar: (data: string, inicioMin: number, modo: "pedir" | "direto") => void;
   /** Texto do botão antes da data: "Remarcar para", "Sugerir". */
   rotulo?: string;
+  /** Aluno com app: dá para pedir a ele (decisão de 28/10/2026) ou remarcar direto. */
+  podePedir?: boolean;
 }) {
+  const [modo, setModo] = useState<"pedir" | "direto">(podePedir ? "pedir" : "direto");
+  const primeiro = aula.nome.split(" ")[0];
   const [data, setData] = useState(emBrasilia(aula.inicio).data);
   const [hora, setHora] = useState<number | null>(null);
   const [livres, setLivres] = useState<number[] | null>(null);
@@ -353,6 +414,28 @@ function Remarcar({
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
+      {podePedir && (
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2" role="group" aria-label="Como remarcar">
+            {(["pedir", "direto"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={modo === m}
+                onClick={() => setModo(m)}
+                className={`min-h-11 rounded-[13px] border px-2 text-[14.5px] font-bold ${modo === m ? "border-ink bg-ink text-app" : "border-line"}`}
+              >
+                {m === "pedir" ? `Pedir a ${primeiro}` : "Já combinamos"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[13px] text-ink-3">
+            {modo === "pedir"
+              ? `${primeiro} recebe o pedido e aceita ou recusa. Até lá, a aula fica no horário de agora.`
+              : `A aula muda de horário agora. Use quando você já combinou com ${primeiro}.`}
+          </p>
+        </div>
+      )}
       <label htmlFor="rem-data" className="text-[14px] font-bold text-ink-2">
         Para qual dia?
       </label>
@@ -405,10 +488,14 @@ function Remarcar({
       <button
         type="button"
         disabled={hora === null || ocupado}
-        onClick={() => hora !== null && onConfirmar(data, hora)}
+        onClick={() => hora !== null && onConfirmar(data, hora, modo)}
         className={ESTILO_BOTAO_PRINCIPAL}
       >
-        {ocupado ? "Remarcando…" : hora === null ? "Escolha o horário" : `${rotulo} ${data.slice(8, 10)}/${data.slice(5, 7)} às ${minParaHora(hora)}`}
+        {ocupado
+          ? "Enviando…"
+          : hora === null
+            ? "Escolha o horário"
+            : `${modo === "pedir" ? "Pedir para" : rotulo} ${data.slice(8, 10)}/${data.slice(5, 7)} às ${minParaHora(hora)}`}
       </button>
     </section>
   );

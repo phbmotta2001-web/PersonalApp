@@ -8,6 +8,7 @@ import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
 import { sair } from "@/data/conta";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { lerRegraDeFeriados } from "@/data/feriados";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { textoDeHoras } from "@/lib/aula";
 import { formatarWhatsapp } from "@/lib/personal";
@@ -30,7 +31,12 @@ export default function PaginaConta() {
 // Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [antecedencia, expediente, bloqueios] = await Promise.all([lerAntecedencia(), lerExpediente(), listarBloqueios()]);
+  const [antecedencia, expediente, bloqueios, feriados] = await Promise.all([
+    lerAntecedencia(),
+    lerExpediente(),
+    listarBloqueios(true),
+    lerRegraDeFeriados(),
+  ]);
 
   return (
     <div className="flex flex-col gap-4 px-[18px] pt-5 pb-28">
@@ -58,7 +64,13 @@ async function Conteudo() {
           href="/agenda/bloqueios"
           icone="calendario"
           titulo="Bloqueios"
-          texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, feriados…"}
+          texto={bloqueios.length ? `${bloqueios.length} marcado${bloqueios.length > 1 ? "s" : ""}` : "Férias, folgas…"}
+        />
+        <Linha
+          href="/agenda/feriados"
+          icone="estrela"
+          titulo="Feriados"
+          texto={`${feriados.trabalha ? "Trabalho" : "Não trabalho"} em feriados${feriados.excecoes.length ? " (com exceções)" : ""}`}
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
       </Grupo>

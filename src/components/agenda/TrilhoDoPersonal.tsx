@@ -30,6 +30,8 @@ function TrilhoNoCaminho() {
 }
 
 function Trilho({ caminho }: { caminho: string }) {
+  // No primeiro acesso, só o passo a passo (sem atalhos para outras telas).
+  if (caminho.startsWith("/agenda/boas-vindas")) return null;
   return (
     <nav
       aria-label="Principal"

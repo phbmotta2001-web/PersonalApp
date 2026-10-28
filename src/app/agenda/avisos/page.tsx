@@ -46,9 +46,15 @@ function texto(a: Aviso): string {
     case "pediu_remarcacao":
       return `${nome} pediu para remarcar a aula de ${aula} para ${nova}. Aceite, recuse ou sugira outro horário.`;
     case "aceitou_sugestao":
-      return `${nome} aceitou o horário que você sugeriu: ${nova}.`;
+      return `${nome} aceitou o novo horário: ${nova}.`;
     case "recusou_sugestao":
-      return `${nome} recusou o horário que você sugeriu (${nova}).`;
+      return a.aula
+        ? `${nome} não aceitou remarcar a aula de ${aula} para ${nova}. A aula continua marcada: cancele ou mantenha.`
+        : `${nome} recusou o horário que você sugeriu (${nova}).`;
+    case "sugestao_expirou":
+      return a.aula
+        ? `${nome} não respondeu o pedido para remarcar a aula de ${aula}. A aula continua marcada: cancele ou mantenha.`
+        : `${nome} não respondeu o horário que você sugeriu (${nova}).`;
     case "respondeu_checkin":
       return `${nome} respondeu o questionário de acompanhamento.`;
     case "avisou_pagamento":
@@ -74,7 +80,9 @@ async function Conteudo() {
     <ul className="flex flex-col gap-2 px-[18px] pt-2 pb-6">
       <MarcarAvisosLidos haNaoLidos={haNaoLidos} />
       {avisos.map((a) => {
-        const alvo = a.cobrancaId ? null : (a.aulaNova?.id ?? a.aula?.id);
+        // Recusa ou falta de resposta ao pedido do personal: a decisão (cancelar ou manter) fica na aula original.
+        const naOriginal = (a.tipo === "recusou_sugestao" || a.tipo === "sugestao_expirou") && a.aula;
+        const alvo = a.cobrancaId ? null : naOriginal ? a.aula?.id : (a.aulaNova?.id ?? a.aula?.id);
         const destino = a.cobrancaId
           ? `/agenda/cobrancas/${a.cobrancaId}`
           : a.checkinId && a.vinculoId

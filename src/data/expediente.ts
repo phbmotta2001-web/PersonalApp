@@ -59,15 +59,17 @@ export async function salvarExpediente(duracao: number, faixas: Faixa[]): Promis
 }
 
 /** Bloqueios que ainda não terminaram, do mais próximo para o mais distante. */
-export async function listarBloqueios(): Promise<Required<Bloqueio>[]> {
+/** Bloqueios que ainda não acabaram. semFeriados: só os que o personal criou (os de feriado o Pienel cria). */
+export async function listarBloqueios(semFeriados = false): Promise<Required<Bloqueio>[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];
-  const { data } = await supabase
+  let consulta = supabase
     .from("bloqueios")
     .select("id, inicio, fim, dia_inteiro, motivo")
     .eq("personal_id", id)
-    .gt("fim", new Date().toISOString())
-    .order("inicio");
+    .gt("fim", new Date().toISOString());
+  if (semFeriados) consulta = consulta.is("feriado", null);
+  const { data } = await consulta.order("inicio");
   return (data ?? []).map((b) => ({
     id: b.id,
     inicio: b.inicio,

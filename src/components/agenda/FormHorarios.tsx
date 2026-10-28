@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarExpediente } from "@/data/expediente";
 import {
@@ -24,7 +25,15 @@ const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2
 const ordenar = (faixas: Faixa[]) => [...faixas].sort((a, b) => a.dia - b.dia || a.inicioMin - b.inicioMin);
 
 /** Editor dos horários de trabalho: dias, faixas e duração padrão da aula. */
-export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas: Faixa[] } }) {
+export function FormHorarios({
+  inicial,
+  continuar,
+}: {
+  inicial: { duracao: Duracao; faixas: Faixa[] };
+  /** Primeiro acesso: depois de salvar, vai para esta etapa (o botão fica sempre ativo). */
+  continuar?: string;
+}) {
+  const router = useRouter();
   const [duracao, setDuracao] = useState<Duracao>(inicial.duracao);
   // Quem ainda não salvou nenhum horário começa com todos os dias ligados (06:00–21:00).
   const nuncaConfigurou = inicial.faixas.length === 0;
@@ -78,6 +87,7 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
       try {
         const r = await salvarExpediente(duracao, faixas);
         if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+        if (continuar) return router.push(continuar);
         setSalvo(JSON.stringify({ duracao, faixas: ordenar(faixas) }));
         setAviso({ tipo: "ok", texto: "Horários salvos." });
       } catch {
@@ -230,8 +240,8 @@ export function FormHorarios({ inicial }: { inicial: { duracao: Duracao; faixas:
       </div>
 
       <div className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t border-line bg-surface px-[18px] pt-3 pb-3.5">
-        <button type="button" onClick={salvar} disabled={!mudou || problemas.length > 0 || salvando} className={ESTILO_BOTAO_PRINCIPAL}>
-          {salvando ? "Salvando…" : "Salvar horários"}
+        <button type="button" onClick={salvar} disabled={(!mudou && !continuar) || problemas.length > 0 || salvando} className={ESTILO_BOTAO_PRINCIPAL}>
+          {salvando ? "Salvando…" : continuar ? "Salvar e continuar" : "Salvar horários"}
         </button>
         <p aria-live="polite" className="min-h-4 text-center text-[13px] text-ink-3">
           {problemas.length > 0
