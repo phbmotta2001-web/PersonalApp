@@ -246,6 +246,8 @@ export async function livresNoDia(data: string, duracao: number, ignorar?: strin
 export interface Reposicao {
   id: string;
   validoAte: string;
+  /** Início (ISO) da aula perdida que gerou a reposição (só em reposicoesPorAluno). */
+  aulaPerdida?: string;
 }
 
 /** Reposições ainda não usadas e dentro da validade (do vínculo, para o personal ou o aluno). */
@@ -269,13 +271,22 @@ export async function reposicoesPorAluno(): Promise<Record<string, Reposicao[]>>
   const hoje = agoraEmBrasilia().data;
   const { data } = await supabase
     .from("creditos_reposicao")
-    .select("id, valido_ate, vinculo_id")
+    .select("id, valido_ate, vinculo_id, aula_origem_id")
     .eq("personal_id", id)
     .is("usado_em_aula_id", null)
     .gte("valido_ate", hoje)
     .order("valido_ate");
+  const creditos = data ?? [];
+  const { data: perdidas } = creditos.length
+    ? await supabase
+        .from("aulas")
+        .select("id, inicio")
+        .in("id", creditos.map((c) => c.aula_origem_id))
+    : { data: [] };
+  const inicioDe = new Map((perdidas ?? []).map((a) => [a.id, a.inicio as string]));
   const r: Record<string, Reposicao[]> = {};
-  for (const c of data ?? []) (r[c.vinculo_id] ??= []).push({ id: c.id, validoAte: c.valido_ate });
+  for (const c of creditos)
+    (r[c.vinculo_id] ??= []).push({ id: c.id, validoAte: c.valido_ate, aulaPerdida: inicioDe.get(c.aula_origem_id) });
   return r;
 }
 

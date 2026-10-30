@@ -68,6 +68,8 @@ async function Conteudo() {
       vinculoId,
       quantas: lista.length,
       venceEm: lista.map((c) => c.validoAte).sort()[0],
+      // Os dias das aulas perdidas que geraram as reposições, do mais antigo ao mais novo.
+      perdidas: lista.flatMap((c) => c.aulaPerdida ?? []).sort().map(diaCurto),
       aluno: alunos.find((a) => a.vinculoId === vinculoId),
     }))
     .filter((p) => p.quantas > 0 && p.aluno && p.aluno.situacao === "ativo")
@@ -285,6 +287,11 @@ async function Conteudo() {
                   <Link href={`/agenda/alunos/${p.vinculoId}`} className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold">{nome}</span>
                     <span className={`block text-[13px] ${logo ? "font-semibold text-gold" : "text-ink-3"}`}>{texto}</span>
+                    {p.perdidas.length > 0 && (
+                      <span className="block text-[13px] text-ink-3">
+                        Aula{p.perdidas.length > 1 ? "s" : ""} de {p.perdidas.join(", ")}
+                      </span>
+                    )}
                   </Link>
                   {p.aluno!.whatsapp ? (
                     <a
