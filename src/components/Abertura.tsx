@@ -3,13 +3,14 @@
 // e um círculo se abre do centro revelando o app (o símbolo cresce e some). Uns 4 segundos, movimentos suaves.
 //
 // Vem pronta do servidor (sem esperar o JavaScript), cobrindo a tela enquanto o app
-// carrega; a animação só começa quando a página termina de carregar (classe
-// "abertura-toca"). Aparece a cada carga completa da página, isto é, ao abrir o app:
+// carrega, e a animação começa logo na primeira pintura (classe "abertura-toca"). Esperar
+// a página terminar de carregar deixava a tela vazia por segundos: com os dados vindo em
+// partes, o "load" só acontece no fim. Aparece a cada carga completa da página, isto é, ao abrir o app:
 // trocar de tela dentro do app não recarrega a página, então não repete. (Antes havia
 // uma memória da sessão, mas no iPhone ela sobrevive ao fechar o app e a abertura
 // deixava de aparecer.) Nunca bloqueia o toque, e quem pediu "reduzir movimento" não
 // vê. Se algo falhar, ela some sozinha em 7 segundos (regras em globals.css).
-const SCRIPT = `try{var h=document.documentElement;var t=function(){setTimeout(function(){h.classList.add("abertura-toca")},60)};if(document.readyState==="complete")t();else addEventListener("load",t)}catch(e){}`;
+const SCRIPT = `try{document.documentElement.classList.add("abertura-toca")}catch(e){}`;
 
 const NOME = "Pienel";
 
