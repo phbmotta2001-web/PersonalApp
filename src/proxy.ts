@@ -23,7 +23,20 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+
+  // O app instalado abre em /inicio. O encaminhamento acontece aqui, antes de qualquer
+  // tela: feito na página, a abertura começava em /inicio e recomeçava na tela de destino.
+  if (request.nextUrl.pathname === "/inicio") {
+    const tipo = data?.claims?.user_metadata?.tipo_conta;
+    const destino = request.nextUrl.clone();
+    // Conta sem o tipo guardado é de aluno (a mesma regra do cadastro no banco).
+    destino.pathname = !data?.claims ? "/entrar" : tipo === "personal" ? "/agenda" : "/aluno";
+    destino.search = "";
+    const redirecionar = NextResponse.redirect(destino);
+    for (const cookie of resposta.cookies.getAll()) redirecionar.cookies.set(cookie);
+    return redirecionar;
+  }
   return resposta;
 }
 
