@@ -50,7 +50,7 @@ async function Conteudo() {
       <h1 className="text-[24px] font-extrabold">Minhas aulas</h1>
       {blocos.length === 0 && (
         <p className="rounded-[20px] border border-dashed border-line p-4 text-[14px] text-ink-3">
-          Você ainda não treina com nenhum personal pelo Pienel. Peça o link de convite ao seu personal.
+          Você ainda não treina com nenhum personal pelo Kout. Peça o link de convite ao seu personal.
         </p>
       )}
       {blocos.map(({ p, matricula, aulas, reposicoes, regras, recusados }) => {

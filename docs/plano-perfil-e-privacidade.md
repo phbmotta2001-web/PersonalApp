@@ -49,7 +49,7 @@ decisão mudar.
 | E-mail, senha, data de nascimento | não | não (o personal vê a idade) |
 
 - **Restrições obrigatórias (decisão de 14/10/2026, substitui a autorização opcional).**
-  Motivo: segurança do aluno e respaldo jurídico do Pienel em caso de lesão.
+  Motivo: segurança do aluno e respaldo jurídico do Kout em caso de lesão.
   - No perfil, o aluno declara "Não tenho" ou "Sim, tenho" + descrição. A data da
     declaração fica guardada e muda só quando a resposta ou o texto mudam.
   - Todo pedido leva a declaração e exige marcar "Confirmo que minhas restrições e

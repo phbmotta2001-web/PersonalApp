@@ -99,7 +99,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/online/[vinculo
       )}
 
       {aluno.semConta ? (
-        // Sem conta, o aluno não tem como abrir o questionário (precisa entrar no Pienel).
+        // Sem conta, o aluno não tem como abrir o questionário (precisa entrar no Kout).
         <p className="rounded-[16px] border border-dashed border-line p-3 text-[14px] text-ink-3">
           {primeiro} não usa o app, então não recebe questionários. Para isso, convide-o para ter conta (na ficha do aluno).
         </p>

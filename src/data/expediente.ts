@@ -59,7 +59,7 @@ export async function salvarExpediente(duracao: number, faixas: Faixa[]): Promis
 }
 
 /** Bloqueios que ainda não terminaram, do mais próximo para o mais distante. */
-/** Bloqueios que ainda não acabaram. semFeriados: só os que o personal criou (os de feriado o Pienel cria). */
+/** Bloqueios que ainda não acabaram. semFeriados: só os que o personal criou (os de feriado o Kout cria). */
 export async function listarBloqueios(semFeriados = false): Promise<Required<Bloqueio>[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];

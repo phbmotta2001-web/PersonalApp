@@ -58,14 +58,14 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-6 pb-6">
       <header className="flex flex-col gap-1">
-        <p className="text-[15px] font-bold text-brand">Pienel</p>
+        <p className="text-[15px] font-bold text-brand">Kout</p>
         <h1 className="text-[24px] leading-tight font-extrabold">
-          {convite.personalNome} convidou você para treinar pelo Pienel
+          {convite.personalNome} convidou você para treinar pelo Kout
         </h1>
         <p className="text-[14px] text-ink-3">CREF {convite.personalCref}</p>
       </header>
       <p className="text-ink-2">
-        Olá, {convite.nomeConvite.split(" ")[0]}! No Pienel você vê seus horários de treino, remarca aulas e recebe
+        Olá, {convite.nomeConvite.split(" ")[0]}! No Kout você vê seus horários de treino, remarca aulas e recebe
         os avisos de {primeiro}. É gratuito para alunos.
       </p>
 
@@ -81,7 +81,7 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
       ) : (
         <>
           <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
-            <p className="font-bold">Já tem conta no Pienel?</p>
+            <p className="font-bold">Já tem conta no Kout?</p>
             <p className="text-[14px] text-ink-3">Por exemplo, se você já treina com outro personal pelo app.</p>
             <Link href={`/entrar?voltar=${encodeURIComponent(aqui)}`} className={ESTILO_BOTAO_SECUNDARIO}>
               Entrar e aceitar o convite
@@ -111,7 +111,7 @@ async function Aluno({ codigo, personal, aqui }: { codigo: string; personal: str
       <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
         <p className="font-bold">Falta pouco: complete seu perfil</p>
         <p className="text-[14px] text-ink-2">
-          Para treinar com um personal pelo Pienel, informe {juntarComE(faltaNoPerfil(conta))}. Assim ele conhece suas
+          Para treinar com um personal pelo Kout, informe {juntarComE(faltaNoPerfil(conta))}. Assim ele conhece suas
           limitações e treina você com segurança.
         </p>
         <Link href={`/perfil?voltar=${encodeURIComponent(aqui)}`} className={ESTILO_BOTAO_PRINCIPAL}>
@@ -126,7 +126,7 @@ async function Aluno({ codigo, personal, aqui }: { codigo: string; personal: str
 function Mensagem({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-3 px-[18px] pt-8 text-ink-2">
-      <p className="text-[15px] font-bold text-brand">Pienel</p>
+      <p className="text-[15px] font-bold text-brand">Kout</p>
       <h1 className="text-[22px] font-extrabold text-ink">{titulo}</h1>
       <div className="flex flex-col gap-3">{children}</div>
     </div>

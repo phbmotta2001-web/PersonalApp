@@ -205,7 +205,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
           <Campo
             id="pf-nascimento"
             rotulo="Data de nascimento"
-            ajuda="Nome e data de nascimento só podem ser corrigidos pelo suporte do Pienel."
+            ajuda="Nome e data de nascimento só podem ser corrigidos pelo suporte do Kout."
           >
             <input id="pf-nascimento" value={dataBr(p.dataNascimento)} disabled className={ESTILO_CAIXA} />
           </Campo>
@@ -214,7 +214,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
         {/* ── Antes do aceite ── */}
         <Bloco
           titulo="Seu treino"
-          descricao="Objetivo e nível são obrigatórios para treinar com um personal pelo Pienel."
+          descricao="Objetivo e nível são obrigatórios para treinar com um personal pelo Kout."
         >
           <Campo id="pf-objetivo" rotulo="Objetivo">
             <textarea
@@ -346,7 +346,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
               <h2 className="text-[17px] font-semibold">Dados de saúde</h2>
               <p className="text-[14px] text-ink-3">
                 Seus personais veem estes dados para treinar você com segurança. A declaração de
-                restrições é obrigatória para treinar com um personal pelo Pienel.
+                restrições é obrigatória para treinar com um personal pelo Kout.
               </p>
             </div>
           </div>

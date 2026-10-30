@@ -55,7 +55,7 @@ export function FormPix({
       className="flex flex-col gap-4 px-[18px] pt-2 pb-6"
     >
       <p className="text-[14px] text-ink-2">
-        O aluno paga direto para a sua chave: o dinheiro cai na sua conta, sem passar pelo Pienel. Cada cobrança já vai com
+        O aluno paga direto para a sua chave: o dinheiro cai na sua conta, sem passar pelo Kout. Cada cobrança já vai com
         o Pix copia e cola e o QR Code com o valor certo.
       </p>
       <fieldset className="flex flex-col gap-[7px]">

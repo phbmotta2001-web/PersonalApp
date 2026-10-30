@@ -5,7 +5,7 @@ import { salvarInscricaoPush, type InscricaoPush } from "@/data/push";
 import { Aviso } from "./Formulario";
 import { Icone } from "./Icone";
 
-const CHAVE = "pienel-notificacoes-dispensado";
+const CHAVE = "kout-notificacoes-dispensado";
 
 type Modo = "escondido" | "pedir" | "bloqueado";
 
@@ -20,7 +20,7 @@ function bytesDaChave(base64: string): Uint8Array<ArrayBuffer> {
 
 /**
  * Convite para ligar as notificações (etapa 4b). Só aparece quando o aparelho aceita
- * notificações e ainda não ligou; no iPhone, só com o Pienel instalado na tela de início.
+ * notificações e ainda não ligou; no iPhone, só com o Kout instalado na tela de início.
  * Quando já está ligado, não mostra nada e só confirma a inscrição no servidor.
  */
 export function AtivarNotificacoes({ texto }: { texto: string }) {
@@ -104,7 +104,7 @@ export function AtivarNotificacoes({ texto }: { texto: string }) {
         <p className="text-[14px] text-ink-2">
           {modo === "pedir"
             ? texto
-            : "Para receber os avisos, libere as notificações do Pienel nos ajustes do celular."}
+            : "Para receber os avisos, libere as notificações do Kout nos ajustes do celular."}
         </p>
         <Aviso>{erro}</Aviso>
         <div className="flex gap-2">

@@ -28,7 +28,7 @@ export interface AlunoDaLista {
   expiraEm: string;
   aceitoEm: string | null;
   encerradoPor: "aluno" | "personal" | "exclusao" | null;
-  /** Aluno cadastrado pelo personal, sem conta no Pienel (etapa 5b). */
+  /** Aluno cadastrado pelo personal, sem conta no Kout (etapa 5b). */
   semConta: boolean;
   /** Sem conta e menor de 18 anos: o WhatsApp acima é o do responsável. */
   menor: boolean;
@@ -51,7 +51,7 @@ export const linkDoConvite = (origem: string, codigo: string) => `${origem}/conv
 export function mensagemDoConvite(nomeAluno: string, link: string): string {
   const primeiro = nomeAluno.trim().split(/\s+/)[0];
   return (
-    `Oi, ${primeiro}! Agora organizo meus treinos pelo Pienel. ` +
+    `Oi, ${primeiro}! Agora organizo meus treinos pelo Kout. ` +
     `Crie sua conta por este link para ver seus horários e receber os avisos: ${link}`
   );
 }

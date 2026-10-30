@@ -1,8 +1,8 @@
-// Service worker do Pienel (etapas 4 e 4b).
+// Service worker do Kout (etapas 4 e 4b).
 // Faz duas coisas: quando a internet cai, mostra a tela "Você está sem internet" em
 // vez do erro do navegador; e mostra as notificações que chegam pelo push. Nenhum dado
 // de aluno, agenda ou cobrança fica guardado no aparelho (LGPD).
-const VERSAO = "pienel-v1";
+const VERSAO = "kout-v1";
 const SEM_INTERNET = "/offline.html";
 
 self.addEventListener("install", (evento) => {
@@ -36,7 +36,7 @@ self.addEventListener("push", (evento) => {
     dados = { corpo: evento.data ? evento.data.text() : "" };
   }
   evento.waitUntil(
-    self.registration.showNotification(dados.titulo || "Pienel", {
+    self.registration.showNotification(dados.titulo || "Kout", {
       body: dados.corpo || "",
       icon: "/icones/icone-192.png",
       badge: "/icones/icone-192.png",
@@ -45,7 +45,7 @@ self.addEventListener("push", (evento) => {
   );
 });
 
-// Toque na notificação: abre (ou traz para a frente) o Pienel na tela certa.
+// Toque na notificação: abre (ou traz para a frente) o Kout na tela certa.
 self.addEventListener("notificationclick", (evento) => {
   evento.notification.close();
   const destino = new URL(evento.notification.data?.url || "/inicio", self.location.origin).href;

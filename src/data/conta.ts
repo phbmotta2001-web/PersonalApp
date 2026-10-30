@@ -1,7 +1,7 @@
 "use server";
 
 // Cadastro, entrar, sair e troca de e-mail. Roda só no servidor.
-// A senha nunca é guardada pelo Pienel: o Supabase guarda só uma versão
+// A senha nunca é guardada pelo Kout: o Supabase guarda só uma versão
 // embaralhada (hash) que não pode ser revertida.
 
 import { redirect } from "next/navigation";
@@ -23,7 +23,7 @@ function traduzirErro(mensagem: string | undefined): string {
   const m = (mensagem ?? "").toLowerCase();
   if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
   if (m.includes("email not confirmed"))
-    return "Confirme seu e-mail antes de entrar. Procure a mensagem do Pienel na sua caixa de entrada (e no spam).";
+    return "Confirme seu e-mail antes de entrar. Procure a mensagem do Kout na sua caixa de entrada (e no spam).";
   if (m.includes("password")) return "Essa senha não foi aceita. Use pelo menos 8 caracteres, misturando letras e números.";
   if (m.includes("rate limit") || m.includes("too many") || m.includes("security purposes"))
     return "Muitas tentativas em pouco tempo. Espere alguns minutos e tente de novo.";
@@ -31,7 +31,7 @@ function traduzirErro(mensagem: string | undefined): string {
     return "Não foi possível criar a conta. Confira a data de nascimento: o cadastro é só para maiores de 18 anos.";
   if (m.includes("already") && m.includes("registered")) return "Este e-mail já tem conta. Use a opção Entrar.";
   if (m.includes("sending") || m.includes("not authorized") || m.includes("smtp"))
-    return "Não conseguimos enviar o e-mail de confirmação agora. Tente mais tarde ou fale com a equipe do Pienel.";
+    return "Não conseguimos enviar o e-mail de confirmação agora. Tente mais tarde ou fale com a equipe do Kout.";
   // Fica registrado nos logs do servidor (sem senha), para descobrir o motivo.
   console.error("Supabase recusou a conta:", mensagem);
   return "Algo deu errado. Tente de novo em instantes.";

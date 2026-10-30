@@ -1,5 +1,5 @@
 // Animação de abertura (decisão de 22/10/2026, opção "Traço"): uma linha verde-limão
-// desenha o símbolo, as letras de "Pienel" sobem uma a uma, aparece "Sua agenda em dia"
+// desenha o símbolo, as letras de "Kout" sobem uma a uma, aparece "Sua agenda em dia"
 // e um círculo se abre do centro revelando o app (o símbolo cresce e some). Uns 4 segundos, movimentos suaves.
 //
 // Vem pronta do servidor (sem esperar o JavaScript), cobrindo a tela enquanto o app
@@ -12,7 +12,7 @@
 // vê. Se algo falhar, ela some sozinha em 7 segundos (regras em globals.css).
 const SCRIPT = `try{document.documentElement.classList.add("abertura-toca")}catch(e){}`;
 
-const NOME = "Pienel";
+const NOME = "Kout";
 
 export function Abertura() {
   return (
@@ -28,9 +28,8 @@ export function Abertura() {
           >
             <path
               className="abertura-traco"
-              d="M30 85V18h26a20 20 0 0 1 0 40H30"
+              d="M30 15V85M72 15 30 56M46 41 74 85"
             />
-            <circle className="abertura-ponto" cx="70" cy="80" r="7" />
           </svg>
           <span className="abertura-nome">
             {[...NOME].map((letra, i) => (

@@ -5,7 +5,7 @@ import { Carregando } from "@/components/Formulario";
 import { tipoDaConta } from "@/data/conta";
 
 export const metadata: Metadata = {
-  title: { absolute: "Pienel" },
+  title: { absolute: "Kout" },
 };
 
 // Onde o app instalado abre: cada um vai para a sua área.

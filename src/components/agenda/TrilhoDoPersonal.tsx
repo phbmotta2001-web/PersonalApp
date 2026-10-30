@@ -39,10 +39,10 @@ function Trilho({ caminho }: { caminho: string }) {
     >
       <Link
         href="/agenda"
-        aria-label="Pienel"
+        aria-label="Kout"
         className="mb-4 grid size-11 place-items-center rounded-[13px] bg-lime font-display text-[20px] font-extrabold text-lime-ink"
       >
-        P
+        K
       </Link>
       {ABAS.map((a) => {
         const ativa = a.href === "/agenda" ? caminho === "/agenda" : caminho.startsWith(a.href);

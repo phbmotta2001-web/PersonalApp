@@ -1,5 +1,5 @@
 // Pix copia e cola (BR Code estático, padrão EMV do Banco Central) — Fase 1, etapa 7.
-// O pagamento cai direto na chave Pix do personal; o Pienel só monta o código.
+// O pagamento cai direto na chave Pix do personal; o Kout só monta o código.
 
 export type TipoChavePix = "cpf" | "cnpj" | "email" | "telefone" | "aleatoria";
 

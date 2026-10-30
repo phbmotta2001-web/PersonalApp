@@ -9,7 +9,7 @@ import webpush from "web-push";
 
 const ARQUIVO = ".env.local";
 if (!fs.existsSync(ARQUIVO)) {
-  console.error("Não achei o .env.local. Rode este comando na pasta do projeto (pienel-app).");
+  console.error("Não achei o .env.local. Rode este comando na pasta do projeto (kout-app).");
   process.exit(1);
 }
 

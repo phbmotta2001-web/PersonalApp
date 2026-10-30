@@ -1,5 +1,5 @@
-// Desenha os ícones do app (PWA) em PNG, sem dependências: fundo verde do Pienel
-// com um "P" branco. Rodar de novo só se o desenho mudar:
+// Desenha os ícones do app (PWA) em PNG, sem dependências: fundo verde do Kout
+// com um "K" branco. Rodar de novo só se o desenho mudar:
 //   node scripts/gerar-icones.mjs
 import fs from "node:fs";
 import zlib from "node:zlib";
@@ -7,19 +7,23 @@ import zlib from "node:zlib";
 const FUNDO = [0x1c, 0x5a, 0x42]; // --brand
 const LETRA = [0xff, 0xff, 0xff];
 
-/** Cobertura (0..1) do "P" no ponto (x, y), num quadrado de 0..1. */
-function noP(x, y, escala) {
-  // Centraliza o P numa área de `escala` do ícone.
+/** Distância do ponto (u, v) ao segmento de (x1, y1) a (x2, y2). */
+function ateSegmento(u, v, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const t = Math.max(0, Math.min(1, ((u - x1) * dx + (v - y1) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(u - (x1 + t * dx), v - (y1 + t * dy));
+}
+
+/** O ponto (x, y), num quadrado de 0..1, está no "K"? */
+function noK(x, y, escala) {
+  // Centraliza o K numa área de `escala` do ícone.
   const u = (x - 0.5) / escala + 0.5;
   const v = (y - 0.5) / escala + 0.5;
-  const haste = u >= 0.26 && u <= 0.42 && v >= 0.14 && v <= 0.86;
-  // Barriga do P: anel (meio círculo à direita + retângulo de ligação).
-  const cx = 0.5, cy = 0.36, rFora = 0.22, rDentro = 0.06;
-  const dx = u - cx, dy = v - cy;
-  const d = Math.hypot(dx, dy);
-  const anel = u >= cx && d <= rFora && d >= rDentro;
-  const ligacao = u >= 0.34 && u <= cx && ((v >= cy - rFora && v <= cy - rDentro) || (v >= cy + rDentro && v <= cy + rFora));
-  return haste || anel || ligacao;
+  if (v < 0.14 || v > 0.86) return false;
+  const haste = u >= 0.25 && u <= 0.41;
+  const bracoDeCima = ateSegmento(u, v, 0.36, 0.52, 0.72, 0.08) <= 0.082;
+  const bracoDeBaixo = ateSegmento(u, v, 0.45, 0.42, 0.76, 0.92) <= 0.082;
+  return haste || bracoDeCima || bracoDeBaixo;
 }
 
 /** Quadrado de cantos arredondados (raio relativo) — ícones normais; maskable usa fundo inteiro. */
@@ -43,7 +47,7 @@ function desenhar(tamanho, { raio, escala }) {
           const y = (py + (sy + 0.5) / AMOSTRAS) / tamanho;
           if (noFundo(x, y, raio)) {
             fundo++;
-            if (noP(x, y, escala)) letra++;
+            if (noK(x, y, escala)) letra++;
           }
         }
       const total = AMOSTRAS * AMOSTRAS;
@@ -95,7 +99,7 @@ fs.mkdirSync(destino, { recursive: true });
 const icones = [
   ["icone-192.png", 192, { raio: 0.22, escala: 0.9 }],
   ["icone-512.png", 512, { raio: 0.22, escala: 0.9 }],
-  // Maskable: o sistema recorta o formato; o P fica na "zona segura" (80% do centro).
+  // Maskable: o sistema recorta o formato; o K fica na "zona segura" (80% do centro).
   ["icone-maskable-512.png", 512, { raio: 0, escala: 0.72 }],
   // iPhone: fundo inteiro (o iOS arredonda sozinho).
   ["apple-touch-icon.png", 180, { raio: 0, escala: 0.82 }],

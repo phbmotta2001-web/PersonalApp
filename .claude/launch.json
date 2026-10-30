@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "pienel-teste",
+      "name": "kout-teste",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
@@ -14,7 +14,7 @@
       "port": 3123
     },
     {
-      "name": "pienel-site",
+      "name": "kout-site",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",

@@ -59,7 +59,7 @@ export async function registrarPausa(
   fim: string,
   comDesconto: boolean,
   motivo: string,
-  /** Valor escolhido pelo personal; null usa a sugestão do Pienel. */
+  /** Valor escolhido pelo personal; null usa a sugestão do Kout. */
   descontoCentavos: number | null = null,
 ): Promise<ResultadoPausa> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(inicio) || !/^\d{4}-\d{2}-\d{2}$/.test(fim) || fim < inicio)

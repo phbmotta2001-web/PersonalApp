@@ -36,7 +36,7 @@ async function Conteudo() {
   return (
     <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
       <section className="flex flex-col gap-2 rounded-[20px] bg-bad/10 p-4 text-[14.5px] text-ink-2">
-        <p className="font-bold text-bad">Isto apaga a sua conta do Pienel de vez</p>
+        <p className="font-bold text-bad">Isto apaga a sua conta do Kout de vez</p>
         <p>Serão apagados:</p>
         <ul className="list-disc pl-5">
           {apagados.map((a) => (

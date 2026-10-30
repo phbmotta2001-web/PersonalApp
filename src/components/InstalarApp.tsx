@@ -9,12 +9,12 @@ interface EventoInstalar extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-const CHAVE = "pienel-instalar-dispensado";
+const CHAVE = "kout-instalar-dispensado";
 
 type Modo = "escondido" | "botao" | "iphone";
 
 /**
- * Convite para instalar o Pienel na tela de início (etapa 4). Aparece uma vez por
+ * Convite para instalar o Kout na tela de início (etapa 4). Aparece uma vez por
  * aparelho, some quando o app já está instalado ou quando a pessoa dispensa.
  * Android/Chrome: botão que abre a instalação. iPhone: passo a passo (a Apple não
  * deixa botão de instalar).
@@ -67,11 +67,11 @@ export function InstalarApp() {
   if (modo === "escondido") return null;
 
   return (
-    <section className="flex items-start gap-3 rounded-[20px] border border-brand bg-brand-soft p-4" aria-label="Instalar o Pienel">
+    <section className="flex items-start gap-3 rounded-[20px] border border-brand bg-brand-soft p-4" aria-label="Instalar o Kout">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/icones/icone-192.png" alt="" className="size-11 shrink-0 rounded-[12px]" />
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-[15px] font-bold text-brand">Instale o Pienel no seu celular</p>
+        <p className="text-[15px] font-bold text-brand">Instale o Kout no seu celular</p>
         {modo === "botao" ? (
           <p className="text-[14px] text-ink-2">Abre com um toque, em tela cheia, como um app.</p>
         ) : (
@@ -92,7 +92,7 @@ export function InstalarApp() {
               }}
               className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink"
             >
-              Instalar o Pienel
+              Instalar o Kout
             </button>
           )}
           <button type="button" onClick={dispensar} className="rounded-[11px] px-2 py-2 text-[14px] font-semibold text-ink-3">

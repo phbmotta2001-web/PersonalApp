@@ -129,7 +129,7 @@ export function FormAlunoSemConta({
               onChange={(e) => mudar({ responsavelAutorizou: e.target.checked })}
               className="mt-0.5 size-5 shrink-0 accent-brand"
             />
-            <span>O responsável autorizou o cadastro dos dados deste aluno no Pienel.</span>
+            <span>O responsável autorizou o cadastro dos dados deste aluno no Kout.</span>
           </label>
         </fieldset>
       )}

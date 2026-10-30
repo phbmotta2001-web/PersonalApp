@@ -118,7 +118,7 @@ async function Conteudo() {
       {personal.situacao === "suspenso" && (
         <section className="rounded-[20px] bg-gold-soft p-4 text-[14.5px] text-gold">
           <p className="font-bold">Conta suspensa</p>
-          <p className="mt-1">Fale com a equipe do Pienel.</p>
+          <p className="mt-1">Fale com a equipe do Kout.</p>
         </section>
       )}
 
