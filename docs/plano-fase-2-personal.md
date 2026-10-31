@@ -71,7 +71,7 @@ recusada · proposta expirada.
    O personal marca e desmarca horários livres; não consegue desmarcar os reservados
    nem os ocupados.
 5. **Busca e perfil do personal passam a ler do banco**. Os 5 de exemplo vão para o
-   banco com selo "Exemplo". Personal novo mostra **"Novo no Kout"** no lugar de
+   banco com selo "Exemplo". Personal novo mostra **"Novo no P-Bell"** no lugar de
    nota, avaliações, nível e "% renovam". A distância sai; fica o bairro.
 6. **Entrar** reconhece o tipo da conta e leva o personal para a área dele.
 
@@ -96,7 +96,7 @@ recusada · proposta expirada.
 
 ## Parte 2D: avisos por e-mail
 
-- Personal: "Você recebeu um novo pedido, abra o Kout."
+- Personal: "Você recebeu um novo pedido, abra o P-Bell."
 - Aluno: "Sua proposta chegou" / "Seu pedido foi recusado ou expirou".
 - Nenhum dado de saúde. Exige contratar um serviço de envio de e-mail.
 

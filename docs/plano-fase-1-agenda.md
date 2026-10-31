@@ -1,6 +1,6 @@
 # Plano: Fase 1, agenda e cobrança do personal
 
-**Pivot decidido em 15/10/2026.** Antes, o Kout era um marketplace para alunos
+**Pivot decidido em 15/10/2026.** Antes, o P-Bell era um marketplace para alunos
 encontrarem personais. Agora a **Fase 1** é a ferramenta de agenda e cobrança do
 personal; o marketplace vira **Fase 2**, depois de uma base grande de personais ativos.
 O plano anterior do marketplace continua em `docs/plano-fase-2-personal.md` (guardado).
@@ -63,7 +63,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 30 | Aniversários (17/10) | A agenda mostra os **aniversários dos alunos do mês** (e o do dia escolhido). O personal passa a ver o dia e o mês do aniversário, além da idade; o aluno é avisado no convite e no perfil. |
 | 31 | Aprovação dos pedidos (18/10) | **Substitui a 28:** reposição e remarcação pedidas pelo aluno ficam **pendentes** (horário reservado) até o personal **aceitar, recusar (com motivo) ou sugerir outro horário**; na remarcação a aula original vale até o aceite. Sem resposta, o pedido **expira 2 h antes** e a reposição volta. Sem opção de aceitar automaticamente. |
 | 32 | Calendário (18/10) | **Calendário do mês** na agenda (mês inteiro, filtro por aluno). Dias passados com as aulas em cores; dias futuros com as aulas marcadas (bolinha vazada); tocar no dia mostra a lista. Cores: verde = dada, azul = reposição, cinza = cancelada com antecedência, vermelho = perdida (falta ou em cima da hora). |
-| 33 | Cobranças (18/10) | 1ª mensalidade **proporcional**, calculada pelo Kout; mensalidade aparece **uma semana antes** do vencimento (com aviso); atrasada fica em vermelho para os dois e o nome do aluno fica vermelho na lista; ~~sem bloqueio por enquanto~~ (trocado pela decisão 38); "Cobrar no WhatsApp" com um toque. Baixa automática só com o Asaas (etapa 10). |
+| 33 | Cobranças (18/10) | 1ª mensalidade **proporcional**, calculada pelo P-Bell; mensalidade aparece **uma semana antes** do vencimento (com aviso); atrasada fica em vermelho para os dois e o nome do aluno fica vermelho na lista; ~~sem bloqueio por enquanto~~ (trocado pela decisão 38); "Cobrar no WhatsApp" com um toque. Baixa automática só com o Asaas (etapa 10). |
 | 34 | Alunos online e híbridos (20/10) | Tipo de acompanhamento na matrícula: **presencial, online ou híbrido**. Online não ocupa a agenda; híbrido tem aulas presenciais de rotina (ex.: **a cada 15 dias**) na agenda e aparece na lista de alunos online com a etiqueta "Híbrido". Cartão **Alunos online** na agenda. |
 | 35 | Planos online (20/10) | Tabela própria: **mensal, trimestral, semestral, anual**, valor total do período, cobrado uma vez por período (1ª cobrança proporcional). |
 | 36 | Questionários (20/10) | Questionário básico pronto e personalizável (frequência de treino, adesão e satisfação com o protocolo, sono, progressão de carga, aeróbico, alimentação); programável; envio pelo WhatsApp com um toque até a etapa 9. **Sem fotos** por enquanto. |
@@ -74,7 +74,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 41 | Abas do personal (21/10) | A área do personal fica em **quatro abas**, com barra fixa embaixo (como no Instagram): **Início** (pedidos, próximas aulas, recebido no mês, a receber, vencimentos dos próximos 7 dias, aniversários), **Alunos** (lista + alunos online), **Agenda** (semana, "Expandir" para o mês, horários e bloqueios) e **Minha conta** (dados, valores, chave Pix, regras, sair, excluir). |
 | 42 | Aluno sem app (21/10) | Vale para **qualquer aluno que não queira usar o app**. O personal cadastra nome, nascimento, WhatsApp (opcional) e observações. **Menor de 18:** nome e WhatsApp do responsável e a confirmação de que ele autorizou (LGPD, art. 14); cobranças e avisos pelo WhatsApp vão para o **responsável**. Matrícula, aulas, cobranças, calendário e aniversário funcionam igual; questionários não (precisa de conta). **"Convidar para ter conta"**: ao aceitar, matrícula, aulas, cobranças e histórico passam para a conta do aluno, e os dados do responsável são apagados. |
 | 43 | Pausa da matrícula (21/10) | **Só o personal registra** (na ficha do aluno): datas, com ou sem desconto e motivo. As aulas fixas do período ficam **em pausa**: o horário fica **livre** para reposição ou aula avulsa de outros alunos, mas aparece na agenda do personal em azul tracejado ("Ana · em pausa"). **Com desconto:** valor do mês ÷ 30 × dias, até um **limite de dias por aluno por ano** (Regras, padrão 14); passou do limite, os dias a mais ficam sem desconto. O desconto entra na próxima mensalidade em aberto (ou na próxima gerada) e aparece na cobrança. Cancelar a pausa devolve as aulas (as não ocupadas) e o desconto (se ainda não pago). |
-| 44 | Ajustes de 21/10 | **Término da matrícula:** "Sem data para acabar" (padrão) ou "Termina numa data" (sugere 3 meses; no iPhone, tocar num campo de data vazio preenchia hoje e a matrícula acabava no mesmo dia). Término tem que ser depois do início; nascimento com menos de 2 anos é barrado. **Vencimento:** na matrícula, o campo de data virou **"Dia do vencimento"** (o banco só guarda o dia), com a explicação das datas ("1ª mensalidade vence no início, proporcional até X; depois, todo dia N a partir de Y"). **Pausa na agenda:** o dia com pausa aparece em azul na faixa da semana ("pausa"), e o horário livre de quem pausou vem em azul tracejado com "*: só reposição ou aula avulsa". **Desconto da pausa personalizável:** o Kout mostra a sugestão e explica a conta (valor do mês ÷ 30 × dias, limite do ano); o personal pode trocar o valor. |
+| 44 | Ajustes de 21/10 | **Término da matrícula:** "Sem data para acabar" (padrão) ou "Termina numa data" (sugere 3 meses; no iPhone, tocar num campo de data vazio preenchia hoje e a matrícula acabava no mesmo dia). Término tem que ser depois do início; nascimento com menos de 2 anos é barrado. **Vencimento:** na matrícula, o campo de data virou **"Dia do vencimento"** (o banco só guarda o dia), com a explicação das datas ("1ª mensalidade vence no início, proporcional até X; depois, todo dia N a partir de Y"). **Pausa na agenda:** o dia com pausa aparece em azul na faixa da semana ("pausa"), e o horário livre de quem pausou vem em azul tracejado com "*: só reposição ou aula avulsa". **Desconto da pausa personalizável:** o P-Bell mostra a sugestão e explica a conta (valor do mês ÷ 30 × dias, limite do ano); o personal pode trocar o valor. |
 | 45 | Visual "Macio" (22/10) | Botões com leve relevo que afundam ao tocar, cartões e chips com sombra suave, ícone da aba atual pula com efeito de mola, sino balança quando há avisos, caixas de marcar estalam. **Confete** quando o personal confirma o recebimento de uma mensalidade (comemora o pagamento). Quem pede "reduzir movimento" no celular vê tudo parado. |
 | 46 | Redesign "Foco no hoje" (22/10) | **Personal com 5 abas:** Início (próxima aula em destaque, resto do dia, "Precisa de você", dinheiro do mês, aniversários) · Agenda (semana/mês + o dia como linha do tempo com aulas, pausas e horários livres; botão "+ Aula") · Alunos (busca, filtros: atrasados, online, sem app, em pausa, sem matrícula; etiqueta de situação; botão "Novo aluno") · **Financeiro** (recebido, a receber, atrasado; "avisou que pagou" com confirmação e confete; atrasadas, vencendo; **gráfico dos últimos 6 meses**; valores e Pix) · Conta (dados, horários, bloqueios, regras, questionários). **Aluno com 4 abas:** Início (próxima aula, matrícula a vencer, questionários, personal) · Aulas · Pagamentos · Perfil. |
 | 47 | Versão para computador (22/10) | **Opção C, "mesa de trabalho":** no computador, trilho de ícones à esquerda (com a aba **Online**), lista + detalhe em Alunos e Online, Início e Financeiro em duas colunas, semana em grade na Agenda. Página inicial escura com login no canto superior, que leva cada um para a sua área. No celular nada muda. |
@@ -82,6 +82,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 49 | Feriados (28/10) | Nacionais + Carnaval (seg e ter) e Corpus Christi aparecem na agenda. Regra do personal: **"Trabalho em feriados"** (padrão de quem já usava) ou **"Não trabalho"**, com exceções por feriado. Sem trabalho: o dia fica bloqueado e as aulas fixas dele são **canceladas com reposição** (sem notificação de cancelamento). Feriados da cidade: em Bloqueios. |
 | 50 | Primeiro acesso (28/10) | Logo depois do cadastro, um passo a passo: horários → feriados → regras → valores → consultoria online (sim/não e planos) → chave Pix. **Só online e Pix podem ficar para depois.** Tudo continua mudável em Conta. Quem já tinha horários configurados não passa por ele. |
 | 51 | Nome (30/10) | **Kout** (sem exclamação), no lugar do nome provisório "Pienel": já existe uma empresa com esse nome, ativa, com app de finanças na App Store e dona do domínio .com.br. Domínio previsto: `koutapp.com.br` (`kout.com.br` é de uma marca de streetwear). |
+| 52 | Nome (31/10) | **P-Bell** substitui a 51: o P de personal e de Pedro, e "bell" de kettlebell e de sino (lembretes). Kout saiu porque o Urkout tem registro em vigor na classe 42, no mesmo ramo, e a escrita e a pronúncia confundiam. Sem "P-Bell" no INPI, mas há muitos "Bell" nas classes 9, 41 e 42: **falta o parecer de um especialista em marcas**. Domínio previsto: `pbell.com.br`. |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do
@@ -115,18 +116,18 @@ volume cobrado pelo app, para levar números a um investidor.
 
 ## Pagamentos (como integrar e custos)
 - **Forma recomendada:** cada personal ganha uma **subconta Asaas** criada pelo
-  Kout (modelo BaaS / white label). O aluno paga dentro do Kout e o dinheiro cai
-  **direto na subconta do personal**; o Kout nunca guarda dinheiro. O Asaas avisa o
-  Kout quando a cobrança é paga (webhook) e o app dá baixa sozinho.
+  P-Bell (modelo BaaS / white label). O aluno paga dentro do P-Bell e o dinheiro cai
+  **direto na subconta do personal**; o P-Bell nunca guarda dinheiro. O Asaas avisa o
+  P-Bell quando a cobrança é paga (webhook) e o app dá baixa sozinho.
 - **Mensalidade:** padrão **Pix Automático** (o aluno autoriza uma vez); alternativas
   cartão recorrente e boleto/Pix avulso.
-- **Mensalidade do personal ao Kout:** cobrada pela conta própria do Kout no Asaas.
+- **Mensalidade do personal ao P-Bell:** cobrada pela conta própria do P-Bell no Asaas.
 - **Antes de integrar:** alinhar o BaaS com o gerente de contas do Asaas (as chaves das
   subcontas só funcionam além do período de avaliação dentro do BaaS), confirmar
   tarifas e o custo das subcontas por escrito.
 - **Custos de referência** (outubro/2026, conferir na tabela oficial): Pix R$ 1,99
   por cobrança recebida; boleto entre R$ 1,99 e R$ 3,49; cartão 2,99% + R$ 0,49.
-  Descontados da subconta do personal; o Kout não cobra percentual.
+  Descontados da subconta do personal; o P-Bell não cobra percentual.
 - **WhatsApp automático:** mensagem de utilidade a ~R$ 0,035 cada (Meta, desde
   01/10/2026), mais mensalidade do provedor, se houver. Exemplo: ~15 mensagens por
   aluno por mês ≈ R$ 0,53 por aluno.
@@ -152,7 +153,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 12 | Painel do beta (métricas para o investidor) | — |
 
 ## CREF (decisão de 15/10/2026)
-Na Fase 1 **não há conferência do CREF**: o Kout é a agenda do personal com os
+Na Fase 1 **não há conferência do CREF**: o P-Bell é a agenda do personal com os
 próprios alunos, sem captação. Toda conta de personal nasce liberada ("aprovado").
 O CREF continua sendo pedido no cadastro. A conferência (e uma tela de administração
 para isso) volta na **Fase 2**, junto com o marketplace.
@@ -176,6 +177,6 @@ com elas chega na etapa 5).
 2. Conta Asaas da plataforma e conversa sobre BaaS/subcontas com o gerente de contas.
 3. **Região definitiva do Supabase antes do primeiro personal real** (o beta terá
    dados reais).
-4. LGPD: o personal é o **controlador** dos dados dos alunos dele e o Kout o
+4. LGPD: o personal é o **controlador** dos dados dos alunos dele e o P-Bell o
    **operador**; Termos, Política e contrato de tratamento de dados mudam.
-5. CNPJ do Kout, se ainda não existir.
+5. CNPJ do P-Bell, se ainda não existir.

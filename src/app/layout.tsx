@@ -15,14 +15,14 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Kout", template: "%s · Kout" },
+  title: { default: "P-Bell", template: "%s · P-Bell" },
   description: "Agenda, alunos e cobranças do personal trainer num só lugar.",
-  applicationName: "Kout",
+  applicationName: "P-Bell",
   // iPhone: abre em tela cheia quando adicionado à tela de início.
   // startupImage: o iPhone mostra esta tela (a cor da abertura) em vez de preto até o app abrir.
   appleWebApp: {
     capable: true,
-    title: "Kout",
+    title: "P-Bell",
     statusBarStyle: "default",
     startupImage: [
       { url: "/icones/abertura/1320x2868.png", media: "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" },

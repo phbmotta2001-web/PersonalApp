@@ -278,7 +278,7 @@ export async function pixDaCobranca(
   cobranca: Pick<Cobranca, "id" | "valorCentavos">,
 ): Promise<{ codigo: string; qrSvg: string } | null> {
   if (!pix) return null;
-  const codigo = pixCopiaECola(pix, cobranca.valorCentavos, `KOUT${cobranca.id.replace(/-/g, "").slice(0, 19)}`);
+  const codigo = pixCopiaECola(pix, cobranca.valorCentavos, `PBELL${cobranca.id.replace(/-/g, "").slice(0, 19)}`);
   const qrSvg = await QRCode.toString(codigo, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
   return { codigo, qrSvg };
 }

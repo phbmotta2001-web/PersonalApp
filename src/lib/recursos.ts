@@ -1,4 +1,4 @@
-// Chaves liga/desliga de partes do Kout (ver docs/plano-fase-1-agenda.md).
+// Chaves liga/desliga de partes do P-Bell (ver docs/plano-fase-1-agenda.md).
 //
 // MARKETPLACE_ATIVO: busca de personais, perfil público do personal, "Tenho interesse"
 // e pedidos. É a base da Fase 2 e fica DESLIGADA na Fase 1 (agenda e cobrança do

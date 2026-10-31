@@ -61,7 +61,7 @@ export function ConvidarParaConta({
         }
         className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[14px]"}
       >
-        {ocupado ? "Criando…" : "Convidar para ter conta no Kout"}
+        {ocupado ? "Criando…" : "Convidar para ter conta no P-Bell"}
       </button>
       <Aviso>{erro}</Aviso>
     </div>

@@ -60,7 +60,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/boa
       <header className="flex flex-col gap-3 px-[18px] pt-6 pb-2">
         {n === 1 && (
           <div className="flex flex-col gap-1 rounded-[20px] bg-deep p-4 text-on-deep">
-            <p className="font-display text-[22px] font-extrabold">Bem-vindo ao Kout, {primeiroNome}!</p>
+            <p className="font-display text-[22px] font-extrabold">Bem-vindo ao P-Bell, {primeiroNome}!</p>
             <p className="text-[14.5px] text-on-deep-2">
               Vamos deixar tudo pronto de uma vez: leva uns 3 minutos. Tudo pode ser mudado depois, em Conta.
             </p>

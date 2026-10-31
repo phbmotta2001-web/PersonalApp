@@ -5,7 +5,7 @@ import { Icone, type NomeIcone } from "@/components/Icone";
 import { sair, tipoDaConta } from "@/data/conta";
 import { MARKETPLACE_ATIVO } from "@/lib/recursos";
 
-// Página inicial (decisão de 22/10/2026, opção C): apresenta o Kout ao personal, com o
+// Página inicial (decisão de 22/10/2026, opção C): apresenta o P-Bell ao personal, com o
 // login no canto superior. Fundo verde-escuro com o verde-limão em destaque.
 const FUNCIONALIDADES: { icone: NomeIcone; titulo: string; texto: string }[] = [
   {
@@ -48,7 +48,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col bg-deep text-on-deep">
       <header className="mx-auto flex w-full max-w-[1200px] items-center gap-4 px-5 py-4 lg:px-10 lg:py-5">
         <span className="font-display text-[26px] font-extrabold tracking-tight">
-          <span className="text-lime">K</span>out
+          P-<span className="text-lime">Bell</span>
         </span>
         <div className="ml-auto">
           {/* Depende de quem está logado: aparece logo depois do resto da página. */}
@@ -70,7 +70,7 @@ export default function Home() {
               <span className="text-lime">Acompanhe de perto.</span>
             </h1>
             <p className="max-w-[46ch] text-[18px] leading-relaxed text-on-deep-2">
-              O Kout junta a agenda, as mensalidades e o acompanhamento dos seus alunos, presenciais e online, num só
+              O P-Bell junta a agenda, as mensalidades e o acompanhamento dos seus alunos, presenciais e online, num só
               lugar. Você usa no celular ou no computador; seus alunos, pelo celular.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -166,7 +166,7 @@ export default function Home() {
 
       <footer className="border-t border-white/10">
         <p className="mx-auto w-full max-w-[1200px] px-5 py-6 text-[14px] text-on-deep-2 lg:px-10">
-          Kout · agenda, alunos e mensalidades do personal trainer. Aluno: sua conta é criada pelo link de convite do seu
+          P-Bell · agenda, alunos e mensalidades do personal trainer. Aluno: sua conta é criada pelo link de convite do seu
           personal.
         </p>
       </footer>

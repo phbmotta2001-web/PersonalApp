@@ -104,7 +104,7 @@ export function FormCadastroPersonal() {
         />
       </Campo>
 
-      <Campo id="pf-whatsapp" rotulo="WhatsApp" ajuda="Com DDD. Usado para os avisos do Kout.">
+      <Campo id="pf-whatsapp" rotulo="WhatsApp" ajuda="Com DDD. Usado para os avisos do P-Bell.">
         <input
           id="pf-whatsapp"
           type="tel"

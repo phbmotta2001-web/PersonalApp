@@ -148,7 +148,7 @@ export function PausasDoAluno({
                 />
               </div>
               <p className="text-[13px] text-ink-3">
-                <strong>Sugestão do Kout: {centavosParaReais(estimativa)}</strong>. É proporcional aos dias parados:{" "}
+                <strong>Sugestão do P-Bell: {centavosParaReais(estimativa)}</strong>. É proporcional aos dias parados:{" "}
                 {centavosParaReais(valorMensalCentavos)} por mês ÷ 30 × {diasDesconto} dia{diasDesconto === 1 ? "" : "s"}.
                 {diasDesconto < dias &&
                   (diasDesconto === 0

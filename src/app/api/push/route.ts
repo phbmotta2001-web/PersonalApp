@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const publica = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
   const privada = process.env.VAPID_PRIVATE_KEY?.trim();
   if (!segredo || !publica || !privada) return new Response("Notificações não configuradas.", { status: 503 });
-  if (!mesmaSenha((request.headers.get("x-kout-segredo") ?? "").trim(), segredo))
+  if (!mesmaSenha((request.headers.get("x-pbell-segredo") ?? "").trim(), segredo))
     // Só o tamanho da senha configurada (nunca o valor), para conferir a configuração.
     return new Response(`Acesso negado. (senha configurada com ${segredo.length} caracteres)`, { status: 401 });
 

@@ -1,4 +1,4 @@
-// Feriados que o Kout mostra (decisão de 28/10/2026): os nacionais + Carnaval (segunda e
+// Feriados que o P-Bell mostra (decisão de 28/10/2026): os nacionais + Carnaval (segunda e
 // terça) e Corpus Christi. A mesma lista existe no banco (public.feriados_do_ano): mudou
 // aqui, muda lá. Feriados da cidade o personal marca em Bloqueios.
 

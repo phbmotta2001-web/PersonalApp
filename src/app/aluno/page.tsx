@@ -120,7 +120,7 @@ async function Conteudo() {
           <span className="grid size-11 place-items-center rounded-full bg-brand-soft text-brand">
             <Icone nome="calendario" />
           </span>
-          <p className="font-bold">Você ainda não treina com nenhum personal pelo Kout</p>
+          <p className="font-bold">Você ainda não treina com nenhum personal pelo P-Bell</p>
           <p className="text-[14px] text-ink-3">Peça o link de convite ao seu personal.</p>
         </section>
       ) : (

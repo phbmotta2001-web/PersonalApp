@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "kout-teste",
+      "name": "pbell-teste",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",
@@ -14,7 +14,7 @@
       "port": 3123
     },
     {
-      "name": "kout-site",
+      "name": "pbell-site",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "run",

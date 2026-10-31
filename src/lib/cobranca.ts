@@ -116,7 +116,7 @@ export function mensagemDeCobranca(
         : "Se não for paga até o vencimento, a matrícula fica suspensa até o pagamento.",
     );
   if (pixCopiaECola) linhas.push("", "Pix copia e cola:", pixCopiaECola);
-  linhas.push("", "Depois de pagar, toque em \"Já paguei\" no Kout. Obrigado!");
+  linhas.push("", "Depois de pagar, toque em \"Já paguei\" no P-Bell. Obrigado!");
   return linhas.join("\n");
 }
 

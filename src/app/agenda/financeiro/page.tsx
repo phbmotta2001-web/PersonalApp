@@ -116,7 +116,7 @@ async function Conteudo() {
           titulo="Valores das aulas"
           texto={menorValor != null ? `Aulas a partir de ${centavosParaReais(menorValor)}` : "Cadastre seus valores"}
         />
-        <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo Kout"} />
+        <Linha href="/agenda/pix" icone="cadeado" titulo="Chave Pix" texto={pix ? "Cadastrada" : "Cadastre para receber pelo P-Bell"} />
       </nav>
       </div>
 

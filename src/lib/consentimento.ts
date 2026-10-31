@@ -6,7 +6,7 @@
 // versão cada pessoa aceitou (tabela "consentimentos").
 //
 // Desde 14/10/2026 as restrições são OBRIGATÓRIAS para enviar pedidos (segurança
-// do aluno e respaldo do Kout). Ver docs/plano-perfil-e-privacidade.md.
+// do aluno e respaldo do P-Bell). Ver docs/plano-perfil-e-privacidade.md.
 
 export const VERSAO_CONSENTIMENTO_SAUDE = "saude-v1-rascunho";
 
@@ -31,14 +31,14 @@ export const TEXTO_TERMO_CONFIDENCIALIDADE =
   "Declaro que meu registro no CREF está ativo.";
 
 export const TEXTO_CONSENTIMENTO_SAUDE =
-  "Autorizo o Kout a guardar meus dados de saúde (restrições, limitações, peso, altura, " +
+  "Autorizo o P-Bell a guardar meus dados de saúde (restrições, limitações, peso, altura, " +
   "medidas e, no futuro, exames) para que personais avaliem meus pedidos e montem treinos " +
   "seguros para mim. Posso retirar esta autorização quando quiser, no meu perfil.";
 
 // Fase 1: a autorização é necessária para o vínculo com o personal ficar ativo
 // (perfil completo). O nome da constante vem do marketplace (Fase 2).
 export const AVISO_CONSENTIMENTO_OBRIGATORIO_PEDIDO =
-  "Necessária para treinar com um personal pelo Kout: ele precisa conhecer suas restrições " +
+  "Necessária para treinar com um personal pelo P-Bell: ele precisa conhecer suas restrições " +
   "para treinar você com segurança.";
 
 export const TEXTO_CONFIRMACAO_RESTRICOES = "Confirmo que minhas restrições e limitações estão atualizadas";
@@ -53,6 +53,6 @@ export const AVISO_APAGAR_30_DIAS =
   "enviadas nele são apagadas em até 30 dias. Seu perfil não muda.";
 
 export const AVISO_RETIRAR_CONSENTIMENTO =
-  "Ao retirar a autorização, suas restrições, peso, altura e medidas são apagados do Kout, " +
+  "Ao retirar a autorização, suas restrições, peso, altura e medidas são apagados do P-Bell, " +
   "as restrições de pedidos ainda sem resposta deixam de ser mostradas ao personal, e você " +
   "não poderá enviar novos pedidos até autorizar de novo.";

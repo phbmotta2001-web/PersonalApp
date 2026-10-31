@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 
-// O que o celular usa para instalar o Kout como app (etapa 4).
+// O que o celular usa para instalar o P-Bell como app (etapa 4).
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Kout",
-    short_name: "Kout",
+    name: "P-Bell",
+    short_name: "P-Bell",
     description: "Agenda, alunos e cobranças do personal trainer num só lugar.",
     lang: "pt-BR",
     // Abre direto na área de quem está logado (agenda do personal ou área do aluno).

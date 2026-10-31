@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Cores do Kout (mesmas do protótipo). Modo claro aqui, modo escuro logo abaixo. */
+/* Cores do P-Bell (mesmas do protótipo). Modo claro aqui, modo escuro logo abaixo. */
 :root {
   --app: #f3f6f4;
   --surface: #ffffff;
@@ -184,7 +184,7 @@ h3 {
 
 /* Barra de abas: o ícone da aba atual pula ao chegar; qualquer ícone afunda ao tocar. */
 .aba-macia[aria-current="page"] svg {
-  animation: kout-pula 0.5s var(--mola);
+  animation: pbell-pula 0.5s var(--mola);
 }
 .aba-macia:active svg {
   transform: scale(0.88);
@@ -195,44 +195,44 @@ h3 {
 
 /* Sino com avisos novos: balança uma vez ao abrir a tela. */
 .sino-tocando svg {
-  animation: kout-balanca 0.7s ease 0.4s;
+  animation: pbell-balanca 0.7s ease 0.4s;
   transform-origin: 50% 10%;
 }
 
 /* Caixas de marcar: estalam ao marcar. */
 input[type="checkbox"]:checked {
-  animation: kout-estala 0.3s var(--mola);
+  animation: pbell-estala 0.3s var(--mola);
 }
 
-@keyframes kout-pula {
+@keyframes pbell-pula {
   0% { transform: translateY(0); }
   40% { transform: translateY(-7px) scale(1.1); }
   100% { transform: none; }
 }
-@keyframes kout-balanca {
+@keyframes pbell-balanca {
   0%, 100% { transform: rotate(0); }
   20% { transform: rotate(16deg); }
   40% { transform: rotate(-12deg); }
   60% { transform: rotate(8deg); }
   80% { transform: rotate(-4deg); }
 }
-@keyframes kout-estala {
+@keyframes pbell-estala {
   0% { transform: scale(0.8); }
   60% { transform: scale(1.15); }
   100% { transform: none; }
 }
 
 /* Confete de comemoração (pagamento recebido). */
-.kout-confete {
+.pbell-confete {
   position: fixed;
   width: 8px;
   height: 8px;
   border-radius: 2px;
   pointer-events: none;
   z-index: 60;
-  animation: kout-confete 0.9s ease-out forwards;
+  animation: pbell-confete 0.9s ease-out forwards;
 }
-@keyframes kout-confete {
+@keyframes pbell-confete {
   to { transform: translate(var(--dx), var(--dy)) rotate(var(--giro)); opacity: 0; }
 }
 
@@ -244,7 +244,7 @@ input[type="checkbox"]:checked {
 }
 
 /* Raio do "buraco" que abre no centro da abertura, revelando o app. */
-@property --kout-raio {
+@property --pbell-raio {
   syntax: "<percentage>";
   inherits: false;
   initial-value: 0%;
@@ -267,10 +267,10 @@ input[type="checkbox"]:checked {
   color: var(--on-deep);
   pointer-events: none;
   /* Um círculo transparente que cresce do centro (o app aparece por ele). */
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--kout-raio), #000 calc(var(--kout-raio) + 0.5%));
-  mask-image: radial-gradient(circle at 50% 50%, transparent var(--kout-raio), #000 calc(var(--kout-raio) + 0.5%));
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--pbell-raio), #000 calc(var(--pbell-raio) + 0.5%));
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--pbell-raio), #000 calc(var(--pbell-raio) + 0.5%));
   /* Segurança: se a animação não começar, some sozinha. */
-  animation: kout-abertura-some 0.4s ease 7s forwards;
+  animation: pbell-abertura-some 0.4s ease 7s forwards;
 }
 .abertura-traco {
   fill: none;
@@ -280,6 +280,11 @@ input[type="checkbox"]:checked {
   stroke-linejoin: round;
   stroke-dasharray: 260;
   stroke-dashoffset: 260;
+}
+.abertura-sino {
+  fill: var(--lime);
+  opacity: 0;
+  transform-origin: 72px 60px;
 }
 .abertura-nome {
   display: flex;
@@ -299,7 +304,7 @@ input[type="checkbox"]:checked {
   opacity: 0;
 }
 .abertura-toca .abertura {
-  animation: kout-abertura-revela 1.3s cubic-bezier(0.45, 0, 0.2, 1) 3s forwards;
+  animation: pbell-abertura-revela 1.3s cubic-bezier(0.45, 0, 0.2, 1) 3s forwards;
 }
 /* Enquanto o círculo abre, o símbolo, o nome e a frase crescem um pouco e somem. */
 .abertura-marca {
@@ -309,33 +314,44 @@ input[type="checkbox"]:checked {
   gap: 14px;
 }
 .abertura-toca .abertura-marca {
-  animation: kout-abertura-cresce 1.1s cubic-bezier(0.45, 0, 0.2, 1) 2.95s forwards;
+  animation: pbell-abertura-cresce 1.1s cubic-bezier(0.45, 0, 0.2, 1) 2.95s forwards;
 }
 .abertura-toca .abertura-traco {
-  animation: kout-abertura-desenha 1.6s cubic-bezier(0.45, 0, 0.2, 1) 0.25s forwards;
+  animation: pbell-abertura-desenha 1.6s cubic-bezier(0.45, 0, 0.2, 1) 0.25s forwards;
+}
+.abertura-toca .abertura-sino {
+  animation:
+    pbell-abertura-aparece 0.4s ease-out 1.5s forwards,
+    pbell-abertura-badala 1.1s ease-in-out 1.7s;
 }
 .abertura-toca .abertura-nome span {
-  animation: kout-abertura-sobe 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pbell-abertura-sobe 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .abertura-toca .abertura-frase {
-  animation: kout-abertura-aparece 0.8s ease-out 2.3s forwards;
+  animation: pbell-abertura-aparece 0.8s ease-out 2.3s forwards;
 }
-@keyframes kout-abertura-desenha {
+@keyframes pbell-abertura-desenha {
   to { stroke-dashoffset: 0; }
 }
-@keyframes kout-abertura-aparece {
+@keyframes pbell-abertura-aparece {
   to { opacity: 1; }
 }
-@keyframes kout-abertura-sobe {
+@keyframes pbell-abertura-badala {
+  20% { transform: rotate(18deg); }
+  40% { transform: rotate(-14deg); }
+  60% { transform: rotate(9deg); }
+  80% { transform: rotate(-5deg); }
+}
+@keyframes pbell-abertura-sobe {
   to { opacity: 1; transform: none; }
 }
-@keyframes kout-abertura-revela {
-  to { --kout-raio: 101%; visibility: hidden; }
+@keyframes pbell-abertura-revela {
+  to { --pbell-raio: 101%; visibility: hidden; }
 }
-@keyframes kout-abertura-cresce {
+@keyframes pbell-abertura-cresce {
   to { transform: scale(1.25); opacity: 0; }
 }
-@keyframes kout-abertura-some {
+@keyframes pbell-abertura-some {
   to { opacity: 0; visibility: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
