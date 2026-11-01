@@ -76,7 +76,10 @@ export function LoginDoTopo() {
         </button>
         {erro && (
           <p role="alert" className="absolute top-full right-0 mt-2 max-w-[400px] rounded-[12px] bg-bad px-3.5 py-2 text-[14px] font-semibold text-white">
-            {erro}
+            {erro}{" "}
+            <Link href="/esqueci-senha" className="underline">
+              Esqueci minha senha
+            </Link>
           </p>
         )}
       </form>

@@ -125,6 +125,33 @@ export async function sair(): Promise<void> {
   redirect("/");
 }
 
+/**
+ * Esqueci minha senha: envia o link para criar uma nova. Por segurança, a resposta é a mesma
+ * com ou sem conta nesse e-mail. O modelo do e-mail no Supabase usa token_hash, para o link
+ * abrir em qualquer navegador (no iPhone, o app instalado e o Safari não dividem a sessão).
+ */
+export async function pedirNovaSenha(email: string): Promise<Resposta> {
+  const endereco = typeof email === "string" ? email.trim() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(endereco)) return { ok: false, erro: "Informe um e-mail válido." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.auth.resetPasswordForEmail(endereco, {
+    redirectTo: `${await origemDoSite()}/auth/confirmar?voltar=/nova-senha`,
+  });
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
+/** Grava a senha nova de quem abriu o link do e-mail. */
+export async function definirNovaSenha(senha: string): Promise<Resposta> {
+  if (typeof senha !== "string" || senha.length < 8) return { ok: false, erro: "Use pelo menos 8 caracteres." };
+  if (senha.length > 72) return { ok: false, erro: "Use uma senha com até 72 caracteres." };
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { ok: false, erro: "Este link venceu. Peça outro em Esqueci minha senha." };
+  const { error } = await supabase.auth.updateUser({ password: senha });
+  if (error?.message.toLowerCase().includes("different"))
+    return { ok: false, erro: "A senha nova precisa ser diferente da anterior." };
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+}
+
 /** Troca de e-mail: só vale depois de confirmar pelo link enviado ("Secure email change"). */
 export async function trocarEmail(novoEmail: string): Promise<Resposta> {
   const { supabase, id, email } = await usuarioAtual();

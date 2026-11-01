@@ -72,6 +72,10 @@ export function FormEntrar() {
         />
       </Campo>
 
+      <Link href="/esqueci-senha" className="-mt-2 self-start text-[14px] font-semibold text-brand">
+        Esqueci minha senha
+      </Link>
+
       <Aviso>{erro}</Aviso>
 
       <button type="submit" disabled={entrando || !email || !senha} className={ESTILO_BOTAO_PRINCIPAL}>
