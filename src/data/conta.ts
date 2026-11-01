@@ -83,8 +83,9 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
         tipo_conta: "personal",
         nome_completo: dados.nomeCompleto.trim(),
         whatsapp: soDigitos(dados.whatsapp),
-        cref: dados.cref.trim().toUpperCase(),
-        cref_uf: dados.crefUf.trim().toUpperCase(),
+        // Sem CREF, as duas informações ficam fora (o banco guarda vazio).
+        cref: dados.cref.trim().toUpperCase() || undefined,
+        cref_uf: dados.crefUf.trim().toUpperCase() || undefined,
         termo_confidencialidade: VERSAO_TERMO_CONFIDENCIALIDADE,
       },
     },

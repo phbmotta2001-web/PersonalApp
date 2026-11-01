@@ -90,7 +90,8 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           <div className="min-w-0 flex-1">
             <p className="text-[17px] font-extrabold">{p.nome}</p>
             <p className="text-[14px] text-on-deep-2">
-              Seu personal desde {new Date(p.aceitoEm).toLocaleDateString("pt-BR")} · CREF {p.cref}
+              Seu personal desde {new Date(p.aceitoEm).toLocaleDateString("pt-BR")}
+              {p.cref && ` · CREF ${p.cref}`}
             </p>
           </div>
         </div>

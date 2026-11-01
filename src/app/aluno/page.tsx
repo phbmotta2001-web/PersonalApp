@@ -236,7 +236,7 @@ async function Conteudo() {
                 <Avatar nome={p.nome} cor={corPorId(p.vinculoId)} tamanho="pequeno" />
                 <Link href={`/aluno/personal/${p.vinculoId}`} className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-bold">{p.nome}</span>
-                  <span className="block text-[13px] text-ink-3">CREF {p.cref} · ver detalhes ›</span>
+                  <span className="block text-[13px] text-ink-3">{p.cref && `CREF ${p.cref} · `}ver detalhes ›</span>
                 </Link>
                 <a
                   href={linkWhatsapp(p.whatsapp, `Oi, ${p.nome.split(" ")[0]}!`)}

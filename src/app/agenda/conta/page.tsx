@@ -48,7 +48,8 @@ async function Conteudo() {
           <p className="truncate text-[17px] font-bold text-ink">{personal.nomeCompleto}</p>
           <p className="truncate">{personal.email}</p>
           <p>
-            WhatsApp {formatarWhatsapp(personal.whatsapp)} · CREF {personal.cref}/{personal.crefUf}
+            WhatsApp {formatarWhatsapp(personal.whatsapp)}
+            {personal.cref && ` · CREF ${personal.cref}/${personal.crefUf}`}
           </p>
         </div>
       </section>

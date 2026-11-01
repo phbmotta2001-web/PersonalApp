@@ -62,7 +62,7 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
         <h1 className="text-[24px] leading-tight font-extrabold">
           {convite.personalNome} convidou você para treinar pelo P-Bell
         </h1>
-        <p className="text-[14px] text-ink-3">CREF {convite.personalCref}</p>
+        {convite.personalCref && <p className="text-[14px] text-ink-3">CREF {convite.personalCref}</p>}
       </header>
       <p className="text-ink-2">
         Olá, {convite.nomeConvite.split(" ")[0]}! No P-Bell você vê seus horários de treino, remarca aulas e recebe

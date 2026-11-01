@@ -83,6 +83,7 @@ volume cobrado pelo app, para levar números a um investidor.
 | 50 | Primeiro acesso (28/10) | Logo depois do cadastro, um passo a passo: horários → feriados → regras → valores → consultoria online (sim/não e planos) → chave Pix. **Só online e Pix podem ficar para depois.** Tudo continua mudável em Conta. Quem já tinha horários configurados não passa por ele. |
 | 51 | Nome (30/10) | **Kout** (sem exclamação), no lugar do nome provisório "Pienel": já existe uma empresa com esse nome, ativa, com app de finanças na App Store e dona do domínio .com.br. Domínio previsto: `koutapp.com.br` (`kout.com.br` é de uma marca de streetwear). |
 | 52 | Nome (31/10) | **P-Bell** substitui a 51: o P de personal e de Pedro, e "bell" de kettlebell e de sino (lembretes). Kout saiu porque o Urkout tem registro em vigor na classe 42, no mesmo ramo, e a escrita e a pronúncia confundiam. Sem "P-Bell" no INPI, mas há muitos "Bell" nas classes 9, 41 e 42: **falta o parecer de um especialista em marcas**. Domínio previsto: `pbell.com.br`. |
+| 53 | CREF opcional (01/11) | Na beta, o CREF **não é obrigatório** no cadastro: alguns personais que vão testar ainda não são formados. Quem informa dá número e estado; sem CREF, o app não mostra nada. Depois do cadastro, só a equipe altera o CREF (como antes). |
 
 ### O que reaproveita, o que muda, o que fica escondido
 - **Reaproveita:** base do app e visual; Supabase, login e regras de segurança do

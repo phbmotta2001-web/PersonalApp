@@ -24,7 +24,7 @@ export interface DadosCadastroPersonal {
   nomeCompleto: string;
   /** Com DDD, só números ou com máscara: "(21) 99999-0000". */
   whatsapp: string;
-  /** Número do CREF, ex.: "012345-G". */
+  /** Número do CREF, ex.: "012345-G". Opcional: fica em branco para quem ainda não é formado. */
   cref: string;
   crefUf: string;
   aceitouTermo: boolean;
@@ -34,8 +34,9 @@ export interface Personal {
   email: string;
   nomeCompleto: string;
   whatsapp: string;
-  cref: string;
-  crefUf: string;
+  /** Sem CREF (ainda não formado): os dois ficam vazios. */
+  cref: string | null;
+  crefUf: string | null;
   situacao: Situacao;
   /** Já passou pelo primeiro acesso (horários, feriados, regras e valores). */
   configurado: boolean;
@@ -63,8 +64,12 @@ export function problemasDoCadastroPersonal(d: Partial<DadosCadastroPersonal> | 
   else if (d.senha.length > 72) problemas.push("use uma senha com até 72 caracteres");
   if (nome.length < 2 || nome.length > 120 || !nome.includes(" ")) problemas.push("escreva seu nome completo");
   if (whatsapp.length < 10 || whatsapp.length > 11) problemas.push("informe o WhatsApp com DDD");
-  if (!/^[0-9]{3,6}-?[A-Z]?$/.test(cref)) problemas.push("confira o número do CREF (ex.: 012345-G)");
-  if (!UFS.includes(texto(d?.crefUf).toUpperCase() as (typeof UFS)[number])) problemas.push("escolha o estado do CREF");
+  // O CREF é opcional; quem informa precisa dar o número e o estado.
+  const crefUf = texto(d?.crefUf).toUpperCase();
+  if (cref || crefUf) {
+    if (!/^[0-9]{3,6}-?[A-Z]?$/.test(cref)) problemas.push("confira o número do CREF (ex.: 012345-G)");
+    if (!UFS.includes(crefUf as (typeof UFS)[number])) problemas.push("escolha o estado do CREF");
+  }
   if (d?.aceitouTermo !== true) problemas.push("aceite o termo de confidencialidade");
   return problemas;
 }

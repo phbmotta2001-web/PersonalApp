@@ -97,7 +97,7 @@ export function FormCadastroPersonal() {
         />
       </Campo>
 
-      <Campo id="pf-nome" rotulo="Nome completo" ajuda="Como no seu registro do CREF.">
+      <Campo id="pf-nome" rotulo="Nome completo">
         <input
           id="pf-nome"
           autoComplete="name"
@@ -122,7 +122,7 @@ export function FormCadastroPersonal() {
       </Campo>
 
       <div className="grid grid-cols-[2fr_1fr] gap-3">
-        <Campo id="pf-cref" rotulo="CREF">
+        <Campo id="pf-cref" rotulo="CREF" opcional>
           <input
             id="pf-cref"
             placeholder="012345-G"
@@ -147,6 +147,7 @@ export function FormCadastroPersonal() {
             ))}
           </select>
         </Campo>
+        <p className="col-span-2 -mt-1 text-[13px] text-ink-3">Ainda não tem? Pode deixar em branco.</p>
       </div>
 
       <label className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3.5">

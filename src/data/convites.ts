@@ -203,7 +203,7 @@ export async function listarMeusPersonais(): Promise<MeuPersonal[]> {
   return ((data ?? []) as Record<string, string>[]).map((p) => ({
     vinculoId: p.vinculo_id,
     nome: p.personal_nome,
-    cref: p.personal_cref,
+    cref: p.personal_cref ?? "",
     whatsapp: p.personal_whatsapp,
     aceitoEm: p.aceito_em,
   }));

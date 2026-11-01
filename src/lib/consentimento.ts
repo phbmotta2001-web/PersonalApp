@@ -22,13 +22,13 @@ export const AJUDA_CONSENTIMENTO_WHATSAPP =
 
 // ─── Personal ─────────────────────────────────────────────────────────────
 // Aceito no cadastro do personal; a versão fica guardada na tabela "personais".
-export const VERSAO_TERMO_CONFIDENCIALIDADE = "confidencialidade-v1-rascunho";
+export const VERSAO_TERMO_CONFIDENCIALIDADE = "confidencialidade-v2-rascunho";
 
 export const TEXTO_TERMO_CONFIDENCIALIDADE =
   "Comprometo-me a usar os dados dos meus alunos, inclusive os de saúde (restrições, " +
   "limitações, medidas), apenas para planejar e acompanhar os treinos deles, a não " +
   "compartilhá-los com terceiros e a mantê-los em sigilo, também depois do fim do vínculo. " +
-  "Declaro que meu registro no CREF está ativo.";
+  "Se informei um CREF, declaro que o registro está ativo.";
 
 export const TEXTO_CONSENTIMENTO_SAUDE =
   "Autorizo o P-Bell a guardar meus dados de saúde (restrições, limitações, peso, altura, " +
