@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrarPersonal } from "@/data/conta";
 import { TEXTO_TERMO_CONFIDENCIALIDADE } from "@/lib/consentimento";
@@ -20,6 +21,7 @@ const VAZIO: DadosCadastroPersonal = {
 
 /** Cadastro do personal (Fase 1). Alunos não se cadastram aqui: entram pelo convite do personal. */
 export function FormCadastroPersonal() {
+  const router = useRouter();
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -39,8 +41,10 @@ export function FormCadastroPersonal() {
     iniciarEnvio(async () => {
       try {
         const r = await cadastrarPersonal(dados);
-        if (r.ok) setEnviadoPara(dados.email.trim());
-        else setErro(r.erro);
+        if (!r.ok) return setErro(r.erro);
+        if (!r.logado) return setEnviadoPara(dados.email.trim());
+        router.replace("/agenda");
+        router.refresh();
       } catch {
         setErro("Não foi possível criar a conta agora. Confira sua internet e tente de novo.");
       }

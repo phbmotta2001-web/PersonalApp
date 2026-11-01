@@ -17,6 +17,8 @@ import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } fr
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
 
 export type Resposta = { ok: true } | { ok: false; erro: string };
+/** logado: a conta já entrou (sem confirmação de e-mail); se não, o link foi enviado por e-mail. */
+export type RespostaCadastro = { ok: true; logado: boolean } | { ok: false; erro: string };
 
 /** Mensagens do Supabase (em inglês) → português simples. */
 function traduzirErro(mensagem: string | undefined): string {
@@ -37,13 +39,13 @@ function traduzirErro(mensagem: string | undefined): string {
   return "Algo deu errado. Tente de novo em instantes.";
 }
 
-export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<Resposta> {
+export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<RespostaCadastro> {
   const problemas = problemasDoCadastro(dados);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
   const supabase = await criarClienteSupabase();
   const destino = destinoSeguro(voltar);
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: dados.email.trim(),
     password: dados.senha,
     options: {
@@ -62,16 +64,17 @@ export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<
   });
 
   // Por segurança, o Supabase não conta se o e-mail já tinha conta: a resposta é a mesma.
-  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+  // Sem confirmação de e-mail ligada, a sessão já vem pronta: a conta entra direto.
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true, logado: data.session != null };
 }
 
 /** Cadastro de PERSONAL (Fase 1). O banco cria a linha em "personais" (situação: em análise). */
-export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<Resposta> {
+export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<RespostaCadastro> {
   const problemas = problemasDoCadastroPersonal(dados);
   if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
 
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: dados.email.trim(),
     password: dados.senha,
     options: {
@@ -88,7 +91,8 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
   });
 
   // Por segurança, o Supabase não conta se o e-mail já tinha conta: a resposta é a mesma.
-  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
+  // Sem confirmação de e-mail ligada, a sessão já vem pronta: a conta entra direto.
+  return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true, logado: data.session != null };
 }
 
 export type TipoConta = "personal" | "aluno";

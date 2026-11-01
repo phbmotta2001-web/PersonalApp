@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrar } from "@/data/conta";
 import { GENEROS, LIMITES, problemasDoCadastro, type DadosCadastro } from "@/lib/aluno";
@@ -39,6 +39,7 @@ function dataMaxima(): string {
  * convite), para o aluno voltar a ele depois de confirmar o e-mail.
  */
 export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {}) {
+  const router = useRouter();
   const voltar = destinoSeguro(useSearchParams().get("voltar") ?? voltarPadrao);
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
@@ -59,8 +60,13 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
     iniciarEnvio(async () => {
       try {
         const r = await cadastrar(dados, voltar);
-        if (r.ok) setEnviadoPara(dados.email.trim());
-        else setErro(r.erro);
+        if (!r.ok) {
+          setErro(r.erro);
+          return;
+        }
+        if (!r.logado) return setEnviadoPara(dados.email.trim());
+        router.replace(voltar);
+        router.refresh();
       } catch {
         setErro("Não foi possível criar a conta agora. Confira sua internet e tente de novo.");
       }
