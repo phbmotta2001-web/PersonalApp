@@ -4,6 +4,8 @@
 // O banco só deixa cada personal ler e mudar os próprios dados (regras de segurança
 // por linha em supabase/migrations).
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { Personal, Situacao } from "@/lib/personal";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 
@@ -30,14 +32,20 @@ export async function lerPersonalAtual(): Promise<Personal | null> {
   };
 }
 
-/** Fim do primeiro acesso: o banco confere se os horários de trabalho já estão salvos. */
-export async function concluirConfiguracao(): Promise<{ ok: true } | { ok: false; erro: string }> {
+/**
+ * Fim do primeiro acesso: o banco confere se os horários de trabalho já estão salvos. Daí
+ * limpa a memória de navegação do aparelho (ela ainda levaria de volta ao passo a passo) e
+ * abre a agenda.
+ */
+export async function concluirConfiguracao(): Promise<{ ok: false; erro: string }> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return { ok: false, erro: "Entre na sua conta de novo." };
   const { error } = await supabase.rpc("concluir_configuracao");
-  if (!error) return { ok: true };
-  return {
-    ok: false,
-    erro: error.message.includes("horários") ? "Configure seus horários de trabalho antes de continuar." : "Não foi possível salvar. Tente de novo.",
-  };
+  if (error)
+    return {
+      ok: false,
+      erro: error.message.includes("horários") ? "Configure seus horários de trabalho antes de continuar." : "Não foi possível salvar. Tente de novo.",
+    };
+  revalidatePath("/agenda", "layout");
+  redirect("/agenda");
 }

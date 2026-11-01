@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { concluirConfiguracao } from "@/data/profissional";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
@@ -8,7 +7,6 @@ import { soltarConfete } from "@/lib/confete";
 
 /** Último passo do primeiro acesso: marca a conta como configurada e abre a agenda. */
 export function ConcluirPrimeiroAcesso() {
-  const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
@@ -18,14 +16,12 @@ export function ConcluirPrimeiroAcesso() {
         type="button"
         disabled={ocupado}
         onClick={(e) => {
-          const origem = e.currentTarget;
+          soltarConfete(e.currentTarget);
           iniciar(async () => {
             try {
+              // Dando certo, o servidor já abre a agenda; só volta aqui com um erro.
               const r = await concluirConfiguracao();
-              if (!r.ok) return setErro(r.erro);
-              soltarConfete(origem);
-              router.replace("/agenda");
-              router.refresh();
+              setErro(r.erro);
             } catch {
               setErro("Não foi possível salvar agora. Confira sua internet.");
             }

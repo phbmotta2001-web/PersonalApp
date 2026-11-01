@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ConcluirPrimeiroAcesso } from "@/components/agenda/ConcluirPrimeiroAcesso";
 import { FormFeriados } from "@/components/agenda/FormFeriados";
@@ -48,6 +49,8 @@ export default function PaginaPrimeiroAcesso({ searchParams }: PageProps<"/agend
 
 async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/boas-vindas">["searchParams"] }) {
   const personal = await exigirPersonal(PRIMEIRO_ACESSO);
+  // Já terminou: nunca repete o passo a passo.
+  if (personal.configurado) redirect("/agenda");
   const { passo: pedido, online } = await searchParams;
   const fim = pedido === "fim";
   const n = fim ? ETAPAS.length + 1 : Math.min(ETAPAS.length, Math.max(1, Number(pedido) || 1));
