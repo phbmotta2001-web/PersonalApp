@@ -151,6 +151,10 @@ export function Alunos({
           <button type="submit" disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
             {ocupado ? "Criando…" : "Criar link de convite"}
           </button>
+          <Link href="/agenda/alunos/novo" className={ESTILO_BOTAO_SECUNDARIO + " text-[15px]"}>
+            Cadastrar quem não usa o app
+          </Link>
+          <p className="-mt-2 text-[13px] text-ink-3">Para quem não vai usar o app (ex.: aluno menor de idade): você cuida da agenda e das cobranças.</p>
           {alunos.length > 0 && (
             <button type="button" onClick={() => setAbrindo(false)} className="text-[14px] font-semibold text-ink-3">
               Cancelar

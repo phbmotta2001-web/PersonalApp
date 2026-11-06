@@ -284,7 +284,9 @@ input[type="checkbox"]:checked {
 .abertura-sino {
   fill: var(--lime);
   opacity: 0;
-  transform-origin: 72px 60px;
+  /* Balança preso pelo topo. */
+  transform-box: fill-box;
+  transform-origin: 50% 0;
 }
 .abertura-nome {
   display: flex;
@@ -321,8 +323,22 @@ input[type="checkbox"]:checked {
 }
 .abertura-toca .abertura-sino {
   animation:
-    pbell-abertura-aparece 0.4s ease-out 1.5s forwards,
-    pbell-abertura-badala 1.1s ease-in-out 1.7s;
+    pbell-abertura-aparece 0.4s ease-out 1.15s forwards,
+    pbell-abertura-badala 1.1s ease-in-out 2s;
+}
+/* O halter cai do alto (aceleração da queda), bate no sino às 2 s, quica e some. */
+.abertura-simbolo {
+  overflow: visible;
+}
+.abertura-halter {
+  fill: var(--on-deep);
+  opacity: 0;
+}
+.abertura-toca .abertura-halter {
+  animation:
+    pbell-abertura-cai 0.55s cubic-bezier(0.55, 0, 1, 0.45) 1.45s forwards,
+    pbell-abertura-quica 0.4s ease-out 2s,
+    pbell-abertura-sai 0.35s ease-in 2.45s forwards;
 }
 .abertura-toca .abertura-nome span {
   animation: pbell-abertura-sobe 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -335,6 +351,16 @@ input[type="checkbox"]:checked {
 }
 @keyframes pbell-abertura-aparece {
   to { opacity: 1; }
+}
+@keyframes pbell-abertura-cai {
+  from { opacity: 1; transform: translateY(-80px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pbell-abertura-quica {
+  40% { transform: translateY(-7px); }
+}
+@keyframes pbell-abertura-sai {
+  to { opacity: 0; transform: translateY(-4px); }
 }
 @keyframes pbell-abertura-badala {
   20% { transform: rotate(18deg); }

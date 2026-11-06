@@ -1,5 +1,5 @@
 // Animação de abertura (decisão de 22/10/2026, opção "Traço"): uma linha verde-limão
-// desenha o P, um sino aparece e balança, as letras de "P-Bell" sobem uma a uma, aparece "Sua agenda em dia"
+// desenha o P, um sino aparece, um halter cai nele e o faz tocar, as letras de "P-Bell" sobem uma a uma, aparece "Sua agenda em dia"
 // e um círculo se abre do centro revelando o app (o símbolo cresce e some). Uns 4 segundos, movimentos suaves.
 //
 // Vem pronta do servidor (sem esperar o JavaScript), cobrindo a tela enquanto o app
@@ -26,13 +26,23 @@ export function Abertura() {
             viewBox="0 0 100 100"
             className="abertura-simbolo"
           >
-            <path
-              className="abertura-traco"
-              d="M30 85V18h26a20 20 0 0 1 0 40H30"
-            />
-            <g className="abertura-sino">
-              <path d="M72 60a3 3 0 0 1 3 3c6 1.5 8 6 8 11v6l4 4H57l4-4v-6c0-5 2-9.5 8-11a3 3 0 0 1 3-3z" />
-              <circle cx="72" cy="90" r="3.5" />
+            <g transform="translate(-19 0)">
+              <path
+                className="abertura-traco"
+                d="M30 85V18h26a20 20 0 0 1 0 40H30"
+              />
+              {/* O halter cai em cima do sino e o faz tocar (fora da barriga do P; o grupo de fora recentraliza o símbolo). */}
+              <g transform="translate(22 8)">
+                <g className="abertura-halter">
+                  <rect x="61" y="49" width="22" height="3.5" rx="1.75" />
+                  <rect x="58" y="44" width="5" height="13" rx="2" />
+                  <rect x="81" y="44" width="5" height="13" rx="2" />
+                </g>
+                <g className="abertura-sino">
+                  <path d="M72 60a3 3 0 0 1 3 3c6 1.5 8 6 8 11v6l4 4H57l4-4v-6c0-5 2-9.5 8-11a3 3 0 0 1 3-3z" />
+                  <circle cx="72" cy="90" r="3.5" />
+                </g>
+              </g>
             </g>
           </svg>
           <span className="abertura-nome">

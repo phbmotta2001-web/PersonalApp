@@ -59,7 +59,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const hoje = agoraEmBrasilia().data;
 
   // Recolhida: os 7 dias a partir de hoje. Expandida (?ver=mes): o mês inteiro, com setas.
-  const expandida = ver === "mes";
+  // Decisão de 06/11/2026: o mês inteiro é o padrão; "Recolher" mostra só a semana.
+  const expandida = ver !== "semana";
   const ultimoMes = somarMes(hoje.slice(0, 7), MESES_A_FRENTE);
   const mes = mesValido(mesPedido)
     ? mesPedido > ultimoMes ? ultimoMes : mesPedido
@@ -164,7 +165,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
           {!expandida && (
             <span className="hidden gap-1 lg:flex">
               <Link
-                href={`/agenda/calendario?dia=${somarDias(inicioSemana, -7)}`}
+                href={`/agenda/calendario?ver=semana&dia=${somarDias(inicioSemana, -7)}`}
                 scroll={false}
                 aria-label="Semana anterior"
                 className="grid size-9 place-items-center rounded-full border border-line bg-surface"
@@ -172,13 +173,13 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 ‹
               </Link>
               {semanaN !== 0 && (
-                <Link href="/agenda/calendario" scroll={false} className="rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-semibold">
+                <Link href="/agenda/calendario?ver=semana" scroll={false} className="rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-semibold">
                   Hoje
                 </Link>
               )}
               {somarDias(inicioSemana, 7).slice(0, 7) <= ultimoMes && (
                 <Link
-                  href={`/agenda/calendario?dia=${somarDias(inicioSemana, 7)}`}
+                  href={`/agenda/calendario?ver=semana&dia=${somarDias(inicioSemana, 7)}`}
                   scroll={false}
                   aria-label="Próxima semana"
                   className="grid size-9 place-items-center rounded-full border border-line bg-surface"
@@ -189,7 +190,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             </span>
           )}
           <Link
-            href={expandida ? `/agenda/calendario?dia=${dia}` : `/agenda/calendario?ver=mes&dia=${dia}`}
+            href={expandida ? `/agenda/calendario?ver=semana&dia=${dia}` : `/agenda/calendario?dia=${dia}`}
             scroll={false}
             className="rounded-full border border-line bg-surface px-3 py-1.5 text-[14px] font-semibold"
           >
@@ -237,7 +238,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             return (
               <Link
                 key={d.data}
-                href={`/agenda/calendario?dia=${d.data}`}
+                href={`/agenda/calendario?ver=semana&dia=${d.data}`}
                 scroll={false}
                 aria-current={ativo ? "date" : undefined}
                 className={`flex flex-col items-center gap-0.5 rounded-[14px] py-2 text-[13px] ${
@@ -438,7 +439,7 @@ function GradeDaSemana({
         {dias.map((d) => (
           <Link
             key={d.data}
-            href={`/agenda/calendario?dia=${d.data}`}
+            href={`/agenda/calendario?ver=semana&dia=${d.data}`}
             scroll={false}
             aria-current={d.data === dia ? "date" : undefined}
             className={`flex flex-col items-center py-2.5 text-[13px] font-semibold ${
