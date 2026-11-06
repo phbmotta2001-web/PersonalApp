@@ -5,7 +5,14 @@ import { configSupabase } from "@/lib/supabase/config";
 // Roda antes de cada página: renova o login do Supabase quando ele está perto de
 // vencer e grava o cookie novo. Não decide quem pode ver o quê — isso é feito nas
 // telas, nas ações do servidor e nas regras do próprio banco.
+// Endereço antigo do site (antes do domínio próprio): leva para o mesmo caminho no novo.
+const ENDERECO_ANTIGO = "personal-app-gray-chi.vercel.app";
+const ENDERECO_NOVO = "https://pbell.com.br";
+
 export async function proxy(request: NextRequest) {
+  if (request.headers.get("host") === ENDERECO_ANTIGO)
+    return NextResponse.redirect(new URL(request.nextUrl.pathname + request.nextUrl.search, ENDERECO_NOVO), 308);
+
   const { url, chave } = configSupabase();
   let resposta = NextResponse.next({ request });
 
