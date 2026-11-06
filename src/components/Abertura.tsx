@@ -34,9 +34,12 @@ export function Abertura() {
               {/* O halter cai em cima do sino e o faz tocar (fora da barriga do P; o grupo de fora recentraliza o símbolo). */}
               <g transform="translate(22 8)">
                 <g className="abertura-halter">
-                  <rect x="61" y="49" width="22" height="3.5" rx="1.75" />
-                  <rect x="58" y="44" width="5" height="13" rx="2" />
-                  <rect x="81" y="44" width="5" height="13" rx="2" />
+                  {/* Barra, e de cada lado uma anilha grande (dentro) e uma pequena (fora). */}
+                  <rect x="53.5" y="48.5" width="37" height="3" rx="1.5" />
+                  <rect x="60" y="43" width="4.5" height="14" rx="1.5" />
+                  <rect x="55.5" y="45.5" width="4" height="9" rx="1.5" />
+                  <rect x="79.5" y="43" width="4.5" height="14" rx="1.5" />
+                  <rect x="84.5" y="45.5" width="4" height="9" rx="1.5" />
                 </g>
                 <g className="abertura-sino">
                   <path d="M72 60a3 3 0 0 1 3 3c6 1.5 8 6 8 11v6l4 4H57l4-4v-6c0-5 2-9.5 8-11a3 3 0 0 1 3-3z" />
