@@ -15,6 +15,7 @@ import { destinoSeguro } from "@/lib/destino";
 import { frase } from "@/lib/formato";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
+import { AceiteDosTermos } from "./AceiteDosTermos";
 
 const VAZIO: DadosCadastro = {
   email: "",
@@ -38,7 +39,7 @@ function dataMaxima(): string {
  * Cadastro do ALUNO. Na Fase 1 aparece dentro da página do convite (`voltar` = o próprio
  * convite), para o aluno voltar a ele depois de confirmar o e-mail.
  */
-export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {}) {
+export function FormCadastro({ voltar: voltarPadrao, termos = false }: { voltar?: string; termos?: boolean } = {}) {
   const router = useRouter();
   const voltar = destinoSeguro(useSearchParams().get("voltar") ?? voltarPadrao);
   const [dados, setDados] = useState(VAZIO);
@@ -207,6 +208,7 @@ export function FormCadastro({ voltar: voltarPadrao }: { voltar?: string } = {})
 
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
 
+      {termos && <AceiteDosTermos />}
       <button type="submit" disabled={enviando} className={ESTILO_BOTAO_PRINCIPAL}>
         {enviando ? "Criando conta…" : "Criar conta"}
       </button>

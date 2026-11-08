@@ -7,3 +7,9 @@
 // e reinicie o npm run dev.
 
 export const MARKETPLACE_ATIVO = process.env.MARKETPLACE_ATIVO === "true";
+
+// TERMOS_PUBLICADOS: Política de Privacidade e Termos de Uso (src/lib/textos-legais.ts).
+// Ficam DESLIGADOS até a revisão jurídica. Desligados, as páginas /privacidade e /termos
+// só abrem com npm run dev (para conferir o texto) e o cadastro não mostra o aceite.
+// Para publicar: TERMOS_PUBLICADOS=true na Vercel (Production) e Redeploy.
+export const TERMOS_PUBLICADOS = process.env.TERMOS_PUBLICADOS === "true";

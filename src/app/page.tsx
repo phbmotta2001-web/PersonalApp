@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { LoginDoTopo } from "@/components/conta/LoginDoTopo";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { sair, tipoDaConta } from "@/data/conta";
-import { MARKETPLACE_ATIVO } from "@/lib/recursos";
+import { MARKETPLACE_ATIVO, TERMOS_PUBLICADOS } from "@/lib/recursos";
 
 // Página inicial (decisão de 22/10/2026, opção C): apresenta o P-Bell ao personal, com o
 // login no canto superior. Fundo verde-escuro com o verde-limão em destaque.
@@ -168,6 +168,16 @@ export default function Home() {
         <p className="mx-auto w-full max-w-[1200px] px-5 py-6 text-[14px] text-on-deep-2 lg:px-10">
           P-Bell · agenda, alunos e mensalidades do personal trainer. Aluno: sua conta é criada pelo link de convite do seu
           personal.
+          {TERMOS_PUBLICADOS && (
+            <span className="mt-2 flex gap-4">
+              <Link href="/termos" className="underline">
+                Termos de Uso
+              </Link>
+              <Link href="/privacidade" className="underline">
+                Política de Privacidade
+              </Link>
+            </span>
+          )}
         </p>
       </footer>
     </div>

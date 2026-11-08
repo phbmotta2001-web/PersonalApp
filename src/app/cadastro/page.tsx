@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { FormCadastroPersonal } from "@/components/conta/FormCadastroPersonal";
 import { Cabecalho } from "@/components/Formulario";
+import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 
 export const metadata: Metadata = {
   title: "Criar conta de personal",
@@ -15,7 +16,7 @@ export default function PaginaCadastro() {
       <Cabecalho titulo="Criar conta de personal">
         <BotaoVoltar reserva="/" className="hover:bg-surface-2" />
       </Cabecalho>
-      <FormCadastroPersonal />
+      <FormCadastroPersonal termos={TERMOS_PUBLICADOS} />
     </div>
   );
 }

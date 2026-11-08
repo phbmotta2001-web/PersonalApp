@@ -12,6 +12,8 @@ import {
   VERSAO_TERMO_CONFIDENCIALIDADE,
 } from "@/lib/consentimento";
 import { destinoSeguro } from "@/lib/destino";
+import { TERMOS_PUBLICADOS } from "@/lib/recursos";
+import { VERSAO_TERMOS } from "@/lib/textos-legais";
 import { frase } from "@/lib/formato";
 import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } from "@/lib/personal";
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
@@ -53,6 +55,8 @@ export async function cadastrar(dados: DadosCadastro, voltar?: string): Promise<
       // O banco cria o perfil do aluno com estes dados (função criar_aluno_no_cadastro).
       data: {
         tipo_conta: "aluno",
+        // Versão dos Termos e da Política aceita ao criar a conta (só depois de publicados).
+        termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
         nome_completo: dados.nomeCompleto.trim(),
         data_nascimento: dados.dataNascimento,
         genero: dados.genero ?? "",
@@ -81,6 +85,7 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
       emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=/agenda`,
       data: {
         tipo_conta: "personal",
+        termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
         nome_completo: dados.nomeCompleto.trim(),
         whatsapp: soDigitos(dados.whatsapp),
         // Sem CREF, as duas informações ficam fora (o banco guarda vazio).

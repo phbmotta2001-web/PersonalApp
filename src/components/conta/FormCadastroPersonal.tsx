@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrarPersonal } from "@/data/conta";
+import { AceiteDosTermos } from "./AceiteDosTermos";
 import { TEXTO_TERMO_CONFIDENCIALIDADE } from "@/lib/consentimento";
 import { frase } from "@/lib/formato";
 import { problemasDoCadastroPersonal, UFS, type DadosCadastroPersonal } from "@/lib/personal";
@@ -20,7 +21,7 @@ const VAZIO: DadosCadastroPersonal = {
 };
 
 /** Cadastro do personal (Fase 1). Alunos não se cadastram aqui: entram pelo convite do personal. */
-export function FormCadastroPersonal() {
+export function FormCadastroPersonal({ termos = false }: { termos?: boolean } = {}) {
   const router = useRouter();
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
@@ -165,6 +166,7 @@ export function FormCadastroPersonal() {
 
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
 
+      {termos && <AceiteDosTermos />}
       <button type="submit" disabled={enviando} className={ESTILO_BOTAO_PRINCIPAL}>
         {enviando ? "Criando conta…" : "Criar minha conta de personal"}
       </button>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AceitarConvite } from "@/components/conta/AceitarConvite";
 import { FormCadastro } from "@/components/conta/FormCadastro";
+import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 import { Carregando, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { lerContaAtual } from "@/data/alunos";
 import { sair, tipoDaConta } from "@/data/conta";
@@ -93,7 +94,7 @@ async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["pa
               Só maiores de 18 anos. Menor de idade? Avise {primeiro}: você pode ser colocado na agenda sem conta.
             </p>
             <div className="-mx-[18px]">
-              <FormCadastro voltar={aqui} />
+              <FormCadastro voltar={aqui} termos={TERMOS_PUBLICADOS} />
             </div>
           </section>
         </>
