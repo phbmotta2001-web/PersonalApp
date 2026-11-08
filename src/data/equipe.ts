@@ -35,6 +35,14 @@ export interface PainelBeta {
   personais: PersonalNoPainel[];
 }
 
+/** Quem está logado é da equipe do P-Bell (conta de administração)? */
+export async function souDaEquipe(): Promise<boolean> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return false;
+  const { data } = await supabase.rpc("sou_da_equipe");
+  return data === true;
+}
+
 /** null: ninguém logado ou quem está logado não é da equipe. */
 export async function lerPainelBeta(): Promise<PainelBeta | null> {
   const { supabase, id } = await usuarioAtual();
