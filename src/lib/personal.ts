@@ -64,9 +64,10 @@ export function problemasDoCadastroPersonal(d: Partial<DadosCadastroPersonal> | 
   else if (d.senha.length > 72) problemas.push("use uma senha com até 72 caracteres");
   if (nome.length < 2 || nome.length > 120 || !nome.includes(" ")) problemas.push("escreva seu nome completo");
   if (whatsapp.length < 10 || whatsapp.length > 11) problemas.push("informe o WhatsApp com DDD");
-  // O CREF é opcional; quem informa precisa dar o número e o estado.
+  // O CREF é opcional; quem informa o número precisa dar também o estado. Só o estado, sem
+  // número (às vezes o navegador preenche sozinho), é ignorado.
   const crefUf = texto(d?.crefUf).toUpperCase();
-  if (cref || crefUf) {
+  if (cref) {
     if (!/^[0-9]{3,6}-?[A-Z]?$/.test(cref)) problemas.push("confira o número do CREF (ex.: 012345-G)");
     if (!UFS.includes(crefUf as (typeof UFS)[number])) problemas.push("escolha o estado do CREF");
   }

@@ -137,6 +137,7 @@ export function FormCadastroPersonal({ termos = false }: { termos?: boolean } = 
           <select
             id="pf-uf"
             value={dados.crefUf}
+            autoComplete="off"
             onChange={(e) => mudar({ crefUf: e.target.value })}
             className={ESTILO_CAIXA}
           >

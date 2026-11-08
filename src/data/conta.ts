@@ -90,7 +90,7 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
         whatsapp: soDigitos(dados.whatsapp),
         // Sem CREF, as duas informações ficam fora (o banco guarda vazio).
         cref: dados.cref.trim().toUpperCase() || undefined,
-        cref_uf: dados.crefUf.trim().toUpperCase() || undefined,
+        cref_uf: (dados.cref.trim() && dados.crefUf.trim().toUpperCase()) || undefined,
         termo_confidencialidade: VERSAO_TERMO_CONFIDENCIALIDADE,
       },
     },
