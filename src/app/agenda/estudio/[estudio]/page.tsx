@@ -69,7 +69,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudi
                     <span className="block text-[13px] text-ink-3">{textoDaAula(a.inicio, null).split(" às ")[0]}</span>
                   </span>
                   <span className="rounded-full bg-estudio-soft px-2 py-0.5 text-[12.5px] font-bold text-estudio">
-                    {a.alunos}/{a.vagas}
+                    {a.turno ? "turno" : `${a.alunos}/${a.vagas}`}
                   </span>
                 </Link>
               </li>

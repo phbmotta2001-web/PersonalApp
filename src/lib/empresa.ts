@@ -2,6 +2,7 @@
 // particular de personal. No banco ela é um personal (a equipe do estúdio aponta para
 // personais) marcado com conta: "empresa" nos dados da conta.
 
+import { problemasDoFuncionamento, type Funcionamento } from "./funcionamento";
 import { soDigitos } from "./personal";
 
 export interface DadosCadastroEmpresa {
@@ -12,6 +13,8 @@ export interface DadosCadastroEmpresa {
   whatsapp: string;
   nomeEstudio: string;
   tipo: "estudio" | "academia";
+  /** Dias e horários de funcionamento. */
+  funcionamento: Funcionamento;
   aceitouTermo: boolean;
 }
 
@@ -23,6 +26,7 @@ export function problemasDoCadastroEmpresa(d: Partial<DadosCadastroEmpresa> | nu
   const whatsapp = soDigitos(texto(d?.whatsapp));
   if (estudio.length < 2 || estudio.length > 80) problemas.push("informe o nome do estúdio ou da academia");
   if (d?.tipo !== "estudio" && d?.tipo !== "academia") problemas.push("escolha estúdio ou academia");
+  problemas.push(...problemasDoFuncionamento(d?.funcionamento ?? {}));
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto(d?.email))) problemas.push("informe um e-mail válido");
   if (typeof d?.senha !== "string" || d.senha.length < 8) problemas.push("crie uma senha com pelo menos 8 caracteres");
   else if (d.senha.length > 72) problemas.push("use uma senha com até 72 caracteres");

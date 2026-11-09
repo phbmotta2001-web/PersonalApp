@@ -10,7 +10,7 @@ import { souContaEmpresa } from "@/data/conta";
 import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
 import { lerFinanceiroDoMes } from "@/data/estudio-financeiro";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
+import { emBrasilia, instante, somarDias } from "@/lib/expediente";
 
 const ABAS: Aba[] = ["agenda", "turmas", "equipe", "alunos", "financeiro", "ajustes"];
 
@@ -36,7 +36,7 @@ async function Conteudo({
   searchParams: PageProps<"/estudio/[estudio]">["searchParams"];
 }) {
   const { estudio: id } = await params;
-  const { aba, mes, semana } = await searchParams;
+  const { aba, mes, dia } = await searchParams;
   await exigirPersonal(`/estudio/${id}`);
   const [estudio, empresa] = await Promise.all([lerEstudio(id), souContaEmpresa()]);
   if (!estudio || estudio.papel !== "coordenacao") notFound();
@@ -55,15 +55,14 @@ async function Conteudo({
         </div>
         {empresa && <BotaoSair />}
       </header>
-      <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} agenda={qual === "agenda" ? await agendaDaSemana(estudio, hoje, semana) : undefined} />
+      <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined} />
     </div>
   );
 }
 
-/** A grade da semana (segunda a domingo); `semana` desloca a partir da semana de hoje. */
-async function agendaDaSemana(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, hoje: string, semana: string | string[] | undefined) {
-  const n = typeof semana === "string" && /^-?\d{1,3}$/.test(semana) ? Number(semana) : 0;
-  const segunda = somarDias(hoje, -((diaDaSemana(hoje) + 6) % 7) + n * 7);
-  const aulas = await aulasDoEstudio(estudio.id, instante(segunda, 0).toISOString(), instante(somarDias(segunda, 7), 0).toISOString());
-  return <AgendaDoEstudio estudio={estudio} aulas={aulas} inicioSemana={segunda} semana={n} hoje={hoje} />;
+/** A agenda de um dia (padrão: hoje), com uma coluna por profissional. */
+async function agendaDoDia(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, hoje: string, dia: string | string[] | undefined) {
+  const data = typeof dia === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dia) && !Number.isNaN(Date.parse(dia)) ? dia : hoje;
+  const aulas = await aulasDoEstudio(estudio.id, instante(data, 0).toISOString(), instante(somarDias(data, 1), 0).toISOString());
+  return <AgendaDoEstudio key={data} estudio={estudio} aulas={aulas} dia={data} hoje={hoje} />;
 }

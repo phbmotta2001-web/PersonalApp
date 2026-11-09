@@ -79,7 +79,11 @@ export function GestaoDoEstudio({
 
 // ─── Turmas ─────────────────────────────────────────────────────────────────
 
-const NOVA: Omit<DadosTurma, "vagas"> = { id: null, modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
+const NOVA: Omit<DadosTurma, "vagas"> = { id: null, tipo: "turma", modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
+/** Turma: 30 min a 2 h. Turno: até 12 h. */
+const DURACOES_TURMA = [30, 45, 50, 60, 75, 90, 120];
+const DURACOES_TURNO = [60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720];
+const textoDuracao = (m: number) => (m < 60 || m % 60 ? `${m} min` : `${m / 60} h`);
 
 function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
   const [editando, setEditando] = useState<DadosTurma | null>(null);
@@ -101,24 +105,43 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
   return (
     <section className="flex flex-col gap-3" aria-label="Turmas">
       <div className="flex items-center gap-2">
-        <h2 className="flex-1 text-[18px] font-bold">Turmas ({estudio.turmas.length})</h2>
+        <h2 className="flex-1 text-[18px] font-bold">Turmas e turnos ({estudio.turmas.length})</h2>
         {!editando && (
           <button type="button" onClick={() => setEditando({ ...NOVA, vagas: estudio.config.maxAlunosTurma, professorId: professores[0]?.personalId ?? null })} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
-            + Turma
+            + Turma ou turno
           </button>
         )}
       </div>
 
       {editando && (
         <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
-          <h3 className="font-bold">{editando.id ? "Alterar turma" : "Nova turma"}</h3>
+          <h3 className="font-bold">{editando.id ? (editando.tipo === "turno" ? "Alterar turno" : "Alterar turma") : "Novo horário"}</h3>
+          <div className="flex flex-wrap gap-2">
+            {(["turma", "turno"] as const).map((tp) => (
+              <button
+                key={tp}
+                type="button"
+                aria-pressed={editando.tipo === tp}
+                onClick={() =>
+                  setEditando({
+                    ...editando,
+                    tipo: tp,
+                    duracaoMin: tp === "turno" ? Math.max(editando.duracaoMin, 240) : Math.min(editando.duracaoMin, 60),
+                  })
+                }
+                className={`rounded-full border px-3.5 py-1.5 text-[14.5px] font-semibold ${editando.tipo === tp ? "border-ink bg-ink text-app" : "border-line bg-surface text-ink-2"}`}
+              >
+                {tp === "turma" ? "Turma (com alunos)" : "Turno de trabalho"}
+              </button>
+            ))}
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
-              Modalidade
+              {editando.tipo === "turno" ? "Função" : "Modalidade"}
               <input
                 value={editando.modalidade}
                 onChange={(e) => setEditando({ ...editando, modalidade: e.target.value })}
-                placeholder="Ex.: Funcional"
+                placeholder={editando.tipo === "turno" ? "Ex.: Musculação" : "Ex.: Funcional"}
                 maxLength={40}
                 className={ESTILO_CAIXA}
               />
@@ -161,13 +184,14 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               Duração
               <select value={editando.duracaoMin} onChange={(e) => setEditando({ ...editando, duracaoMin: Number(e.target.value) })} className={ESTILO_CAIXA}>
-                {[30, 45, 50, 60, 75, 90].map((m) => (
+                {(editando.tipo === "turno" ? DURACOES_TURNO : DURACOES_TURMA).map((m) => (
                   <option key={m} value={m}>
-                    {m} min
+                    {textoDuracao(m)}
                   </option>
                 ))}
               </select>
             </label>
+            {editando.tipo === "turma" && (
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               Vagas
               <input
@@ -179,11 +203,12 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 className={ESTILO_CAIXA}
               />
             </label>
+            )}
           </div>
           <Aviso>{erro}</Aviso>
           <div className="flex flex-wrap gap-2">
             <button type="button" disabled={ocupado} onClick={salvar} className={ESTILO_BOTAO_PRINCIPAL + " sm:w-auto"}>
-              {ocupado ? "Salvando…" : "Salvar turma"}
+              {ocupado ? "Salvando…" : "Salvar"}
             </button>
             <button type="button" onClick={() => setEditando(null)} className="px-3 font-semibold text-ink-3">
               Cancelar
@@ -203,16 +228,20 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 <span className="flex-1">
                   <span className="block font-bold">{t.modalidade}</span>
                   <span className="block text-[14px] text-ink-2">
-                    {nomeDoDia(t.diaSemana)}, {minParaHora(t.inicioMin)} · {t.duracaoMin} min
+                    {nomeDoDia(t.diaSemana)}, {minParaHora(t.inicioMin)} às {minParaHora(t.inicioMin + t.duracaoMin)}
                   </span>
                 </span>
-                <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-bold ${t.alunos.length >= t.vagas ? "bg-bad/10 text-bad" : "bg-estudio-soft text-estudio"}`}>
-                  {t.alunos.length}/{t.vagas}
-                </span>
+                {t.tipo === "turno" ? (
+                  <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[12.5px] font-bold text-brand">turno</span>
+                ) : (
+                  <span className={`rounded-full px-2 py-0.5 text-[12.5px] font-bold ${t.alunos.length >= t.vagas ? "bg-bad/10 text-bad" : "bg-estudio-soft text-estudio"}`}>
+                    {t.alunos.length}/{t.vagas}
+                  </span>
+                )}
               </div>
               <span className="text-[13.5px] text-ink-3">{nomeDe(t.professorId)}</span>
               <div className="flex gap-3 text-[14px] font-semibold">
-                <button type="button" onClick={() => setEditando({ ...t })} className="text-brand">
+                <button type="button" onClick={() => setEditando({ ...t, vagas: t.vagas || estudio.config.maxAlunosTurma })} className="text-brand">
                   Alterar
                 </button>
                 <EncerrarTurma turmaId={t.id} atualizar={atualizar} />
@@ -413,7 +442,7 @@ function Alunos({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
               </button>
               {aberto === a.id && (
                 <div className="flex flex-col gap-2.5 rounded-[14px] bg-surface-2 p-3">
-                  <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas} escolhidas={a.turmas} atualizar={atualizar} />
+                  <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={a.turmas} atualizar={atualizar} />
                   {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
                 </div>
               )}

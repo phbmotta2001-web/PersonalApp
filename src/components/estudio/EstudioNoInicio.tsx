@@ -30,7 +30,7 @@ export function EstudioNoInicio({ estudios, aulasHoje, agora }: { estudios: MeuE
             {emBrasilia(atual.inicio).hora} · {atual.modalidade}
           </p>
           <p className="text-[14px] opacity-85">
-            {atual.alunos} de {atual.vagas} vagas
+            {atual.turno ? `Turno até ${emBrasilia(atual.fim).hora}` : `${atual.alunos} de ${atual.vagas} vagas`}
             {seguintes.length > 0 && ` · depois: ${seguintes.map((a) => emBrasilia(a.inicio).hora).join(", ")}`}
           </p>
         </div>
@@ -39,7 +39,7 @@ export function EstudioNoInicio({ estudios, aulasHoje, agora }: { estudios: MeuE
             href={`/agenda/turma/${atual.id}`}
             className="flex min-h-12 items-center justify-center rounded-[14px] bg-white text-[14.5px] font-bold text-estudio"
           >
-            {atual.chamadaEm ? "Ver chamada" : "Fazer chamada"}
+            {atual.turno ? "Ver turno" : atual.chamadaEm ? "Ver chamada" : "Fazer chamada"}
           </Link>
           <Link
             href={`/agenda/estudio/${atual.estudioId}`}

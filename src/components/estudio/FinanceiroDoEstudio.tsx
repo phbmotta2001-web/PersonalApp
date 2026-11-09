@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import type { AlunoDoEstudio, EstudioCompleto, MembroDaEquipe, ModeloDePagamento, ValoresDePagamento } from "@/data/estudio";
+import { salvarFuncionamento, type AlunoDoEstudio, type EstudioCompleto, type MembroDaEquipe, type ModeloDePagamento, type ValoresDePagamento } from "@/data/estudio";
+import { FUNCIONAMENTO_PADRAO } from "@/lib/funcionamento";
+import { HorarioDeFuncionamento } from "./HorarioDeFuncionamento";
 import {
   gerarMensalidadesAgora,
   marcarMensalidade,
@@ -199,9 +201,44 @@ export function AjustesDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
         </button>
       </section>
 
+      <FuncionamentoDoEstudio estudio={estudio} />
       {c.tipo === "estudio" && <TabelaDeMensalidades estudio={estudio} />}
       {c.tipo === "estudio" && <PixDoEstudio estudio={estudio} />}
     </div>
+  );
+}
+
+function FuncionamentoDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
+  const router = useRouter();
+  const definido = Object.keys(estudio.config.funcionamento).length > 0;
+  const [valor, setValor] = useState(definido ? estudio.config.funcionamento : FUNCIONAMENTO_PADRAO);
+  const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Funcionamento">
+      <div>
+        <h2 className="font-bold">Dias e horários de funcionamento</h2>
+        <p className="text-[13px] text-ink-3">
+          {definido ? "Turmas e turnos ficam dentro deste horário." : "Ainda não definido: confira e salve para a agenda usar este horário."}
+        </p>
+      </div>
+      <HorarioDeFuncionamento valor={valor} mudar={setValor} />
+      <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
+      <button
+        type="button"
+        disabled={ocupado}
+        onClick={() =>
+          iniciar(async () => {
+            const r = await salvarFuncionamento(estudio.id, valor);
+            setAviso(r.ok ? { tipo: "ok", texto: "Horário salvo." } : { tipo: "erro", texto: r.erro });
+            if (r.ok) router.refresh();
+          })
+        }
+        className={ESTILO_BOTAO_PRINCIPAL + " sm:w-auto"}
+      >
+        {ocupado ? "Salvando…" : "Salvar horário"}
+      </button>
+    </section>
   );
 }
 

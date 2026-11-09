@@ -3,14 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { criarEstudio } from "@/data/estudio";
+import { FUNCIONAMENTO_PADRAO, problemasDoFuncionamento, type Funcionamento } from "@/lib/funcionamento";
 import { Chip } from "../Chip";
+import { HorarioDeFuncionamento } from "./HorarioDeFuncionamento";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 /** Cria o estúdio; quem cria fica na coordenação. */
-export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "estudio" | "academia" } | null }) {
+export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento } | null }) {
   const router = useRouter();
   const [nome, setNome] = useState(inicial?.nome ?? "");
   const [tipo, setTipo] = useState<"estudio" | "academia">(inicial?.tipo ?? "estudio");
+  const [funcionamento, setFuncionamento] = useState<Funcionamento>(inicial?.funcionamento ?? FUNCIONAMENTO_PADRAO);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
@@ -18,7 +21,9 @@ export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "est
       onSubmit={(e) => {
         e.preventDefault();
         iniciar(async () => {
-          const r = await criarEstudio(nome, tipo);
+          const problema = problemasDoFuncionamento(funcionamento)[0];
+          if (problema) return setErro(problema[0].toUpperCase() + problema.slice(1) + ".");
+          const r = await criarEstudio(nome, tipo, funcionamento);
           if (!r.ok) return setErro(r.erro);
           // Primeiro, como os professores recebem (e, no estúdio, as mensalidades).
           router.replace(`/estudio/${r.id}?aba=ajustes`);
@@ -53,6 +58,10 @@ export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "est
           className={ESTILO_CAIXA}
         />
       </Campo>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[14px] font-bold text-ink-2">Dias e horários de funcionamento</span>
+        <HorarioDeFuncionamento valor={funcionamento} mudar={setFuncionamento} />
+      </div>
       <Aviso>{erro}</Aviso>
       <button type="submit" disabled={ocupado || nome.trim().length < 2} className={ESTILO_BOTAO_PRINCIPAL}>
         {ocupado ? "Criando…" : "Criar estúdio"}

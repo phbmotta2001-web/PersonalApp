@@ -330,12 +330,15 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                         className="flex items-start gap-2 rounded-[12px] border-l-[3px] border-estudio bg-estudio-soft px-3 py-2 text-estudio"
                       >
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[15px] font-bold">Turma {l.turma.modalidade}</span>
+                          <span className="block truncate text-[15px] font-bold">
+                            {l.turma.turno ? "Turno" : "Turma"} {l.turma.modalidade}
+                          </span>
                           <span className="block truncate text-[13px]">
-                            {l.turma.estudioNome} · até {emBrasilia(l.turma.fim).hora} · {l.turma.alunos}/{l.turma.vagas}
+                            {l.turma.estudioNome} · até {emBrasilia(l.turma.fim).hora}
+                            {!l.turma.turno && ` · ${l.turma.alunos}/${l.turma.vagas}`}
                           </span>
                         </span>
-                        {!l.turma.chamadaEm && Date.parse(l.turma.inicio) - 30 * 60_000 <= agora.getTime() && (
+                        {!l.turma.turno && !l.turma.chamadaEm && Date.parse(l.turma.inicio) - 30 * 60_000 <= agora.getTime() && (
                           <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-[12.5px] font-bold text-gold">chamada</span>
                         )}
                       </Link>
@@ -560,13 +563,14 @@ function GradeDaSemana({
                   <Link
                     key={x.id}
                     href={`/agenda/turma/${x.id}`}
-                    title={`${emBrasilia(x.inicio).hora} · Turma ${x.modalidade} · ${x.estudioNome}`}
+                    title={`${emBrasilia(x.inicio).hora} · ${x.turno ? "Turno" : "Turma"} ${x.modalidade} · ${x.estudioNome}`}
                     className="absolute inset-x-1 overflow-hidden rounded-[8px] border-l-[3px] border-estudio bg-estudio-soft px-1.5 py-1 text-[12px] leading-tight font-bold text-estudio hover:brightness-95"
                     style={{ top: (ini - de) * PX_POR_MIN + 1, height: (fim - ini) * PX_POR_MIN - 2 }}
                   >
                     <span className="block truncate">{x.modalidade}</span>
                     <span className="block truncate text-[11px] font-semibold opacity-80">
-                      {x.estudioNome} · {x.alunos}/{x.vagas}
+                      {x.estudioNome}
+                      {!x.turno && ` · ${x.alunos}/${x.vagas}`}
                     </span>
                   </Link>
                 );

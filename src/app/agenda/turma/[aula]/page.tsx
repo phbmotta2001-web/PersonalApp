@@ -41,11 +41,15 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/turma/[aula]">[
           {emBrasilia(aula.inicio).hora} · {aula.modalidade}
         </span>
         <span className="text-[14px] opacity-85">
-          {textoDaAula(aula.inicio, null)} · {aula.alunos.length} de {aula.vagas} vagas
+          {aula.turno
+            ? `Turno de trabalho · ${textoDaAula(aula.inicio, null).split(" às ")[0]}, ${emBrasilia(aula.inicio).hora} às ${emBrasilia(aula.fim).hora}`
+            : `${textoDaAula(aula.inicio, null)} · ${aula.alunos.length} de ${aula.vagas} vagas`}
         </span>
-        {aula.chamadaEm && <span className="mt-1 text-[13px] font-bold">Chamada feita</span>}
+        {aula.chamadaEm && !aula.turno && <span className="mt-1 text-[13px] font-bold">Chamada feita</span>}
       </section>
-      {aula.cancelada ? (
+      {aula.turno ? (
+        <p className="text-ink-2">{aula.cancelada ? "Este turno foi cancelado." : "Turno sem lista de alunos nem chamada. Conta no pagamento pelas horas."}</p>
+      ) : aula.cancelada ? (
         <p className="text-ink-2">Esta aula foi cancelada.</p>
       ) : !aberta ? (
         <div className="flex flex-col gap-2">

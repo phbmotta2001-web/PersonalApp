@@ -5,6 +5,7 @@
 // está logado (coordenação ou professor). Nada aqui toca na agenda particular do personal.
 
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
+import { funcionamentoParaBanco, problemasDoFuncionamento, type Funcionamento } from "@/lib/funcionamento";
 import type { Resposta } from "./conta";
 
 export type PapelNoEstudio = "coordenacao" | "professor";
@@ -41,6 +42,8 @@ export interface AulaDeTurma {
   alunos: number;
   chamadaEm: string | null;
   cancelada: boolean;
+  /** Turno de trabalho (sem alunos nem chamada). */
+  turno: boolean;
 }
 
 /** Aulas de turma que o personal logado dá entre dois instantes (ISO). */
@@ -49,7 +52,7 @@ export async function aulasDeTurmaParaMim(de: string, ate: string): Promise<Aula
   if (!id) return [];
   const { data } = await supabase
     .from("aulas_turma")
-    .select("id, inicio, fim, estudio_id, turma_id, chamada_em, situacao, turmas(modalidade, vagas), estudios(nome)")
+    .select("id, inicio, fim, estudio_id, turma_id, chamada_em, situacao, turmas(modalidade, vagas, tipo), estudios(nome)")
     .eq("professor_id", id)
     .lt("inicio", ate)
     .gt("fim", de)
@@ -62,7 +65,7 @@ export async function aulasDeTurmaParaMim(de: string, ate: string): Promise<Aula
   const porTurma = new Map<string, number>();
   for (const m of matriculas ?? []) porTurma.set(m.turma_id, (porTurma.get(m.turma_id) ?? 0) + 1);
   return aulas.map((a) => {
-    const t = a.turmas as unknown as { modalidade: string; vagas: number };
+    const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string };
     const e = a.estudios as unknown as { nome: string };
     return {
       id: a.id,
@@ -76,6 +79,7 @@ export async function aulasDeTurmaParaMim(de: string, ate: string): Promise<Aula
       alunos: porTurma.get(a.turma_id) ?? 0,
       chamadaEm: a.chamada_em,
       cancelada: a.situacao === "cancelada",
+      turno: t?.tipo === "turno",
     };
   });
 }
@@ -106,10 +110,15 @@ export interface ConfigDoEstudio {
   pix: { tipo: string; chave: string; nome: string; cidade: string } | null;
   /** Mensalidade por vezes na semana (1 a 7), em centavos. */
   precos: Partial<Record<number, number>>;
+  /** Dias e horários de funcionamento (vazio: ainda não definido). */
+  funcionamento: Funcionamento;
 }
+
+export type TipoDeHorario = "turma" | "turno";
 
 export interface TurmaDoEstudio {
   id: string;
+  tipo: TipoDeHorario;
   modalidade: string;
   diaSemana: number;
   inicioMin: number;
@@ -146,7 +155,7 @@ export interface EstudioCompleto {
 export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | null> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return null;
-  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }] = await Promise.all([
+  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }] = await Promise.all([
     supabase
       .from("estudios")
       .select(
@@ -158,7 +167,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     supabase.rpc("equipe_do_estudio", { p_estudio: estudioId }),
     supabase
       .from("turmas")
-      .select("id, modalidade, dia_semana, inicio_min, duracao_min, vagas, professor_id")
+      .select("id, tipo, modalidade, dia_semana, inicio_min, duracao_min, vagas, professor_id")
       .eq("estudio_id", estudioId)
       .eq("ativa", true)
       .order("dia_semana")
@@ -175,6 +184,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .select("personal_id, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual")
       .eq("estudio_id", estudioId),
     supabase.from("estudio_precos").select("vezes, valor_centavos").eq("estudio_id", estudioId),
+    supabase.from("estudio_funcionamento").select("dia_semana, inicio_min, fim_min").eq("estudio_id", estudioId),
   ]);
   const valoresDe = (v: { valor_hora_centavos: number | null; valor_aula_centavos: number | null; valor_por_aluno_centavos: number | null; percentual: number | string | null } | undefined): ValoresDePagamento => ({
     valorHora: v?.valor_hora_centavos ?? null,
@@ -198,6 +208,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       maxAlunosTurma: e.max_alunos_turma,
       pix: e.pix_tipo && e.pix_chave ? { tipo: e.pix_tipo, chave: e.pix_chave, nome: e.pix_nome ?? "", cidade: e.pix_cidade ?? "" } : null,
       precos: Object.fromEntries((precos ?? []).map((p) => [p.vezes, p.valor_centavos])),
+      funcionamento: Object.fromEntries((funcionamento ?? []).map((f) => [f.dia_semana, { inicio: f.inicio_min, fim: f.fim_min }])),
     },
     equipe: ((equipe ?? []) as { personal_id: string; nome: string; papel: string }[]).map((m) => ({
       personalId: m.personal_id,
@@ -207,11 +218,12 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     })),
     turmas: (turmas ?? []).map((t) => ({
       id: t.id,
+      tipo: t.tipo as TipoDeHorario,
       modalidade: t.modalidade,
       diaSemana: t.dia_semana,
       inicioMin: t.inicio_min,
       duracaoMin: t.duracao_min,
-      vagas: t.vagas,
+      vagas: t.vagas ?? 0,
       professorId: t.professor_id,
       alunos: daTurma(t.id),
     })),
@@ -244,6 +256,7 @@ export interface AulaParaChamada {
   chamadaEm: string | null;
   cancelada: boolean;
   souProfessor: boolean;
+  turno: boolean;
   alunos: AlunoNaChamada[];
 }
 
@@ -253,7 +266,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   if (!id) return null;
   const { data: a } = await supabase
     .from("aulas_turma")
-    .select("id, inicio, fim, estudio_id, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas), estudios(nome)")
+    .select("id, inicio, fim, estudio_id, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo), estudios(nome)")
     .eq("id", aulaId)
     .maybeSingle();
   if (!a) return null;
@@ -272,9 +285,10 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     const x = p.estudio_alunos as unknown as { id: string; nome: string } | null;
     if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null });
   }
-  const t = a.turmas as unknown as { modalidade: string; vagas: number };
+  const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string };
   const e = a.estudios as unknown as { nome: string };
   return {
+    turno: t?.tipo === "turno",
     id: a.id,
     inicio: a.inicio,
     fim: a.fim,
@@ -336,12 +350,15 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
 const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value|uuid/i;
 const doBanco = (mensagem: string | undefined, padrao: string) => (mensagem && !TECNICO.test(mensagem) ? mensagem : padrao);
 
-export async function criarEstudio(nome: string, tipo: TipoDeEstudio = "estudio"): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
+export async function criarEstudio(nome: string, tipo: TipoDeEstudio = "estudio", funcionamento?: Funcionamento): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("criar_estudio", { p_nome: typeof nome === "string" ? nome : "" });
   if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível criar o estúdio.") };
   if (tipo === "academia") {
     await supabase.rpc("salvar_config_estudio", { p_estudio: data, p: { tipo: "academia", pagamento_modelo: "hora" } });
+  }
+  if (funcionamento && problemasDoFuncionamento(funcionamento).length === 0) {
+    await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: data, p: funcionamentoParaBanco(funcionamento) });
   }
   return { ok: true, id: data as string };
 }
@@ -375,6 +392,7 @@ export async function removerDaEquipe(estudioId: string, personalId: string): Pr
 
 export interface DadosTurma {
   id: string | null;
+  tipo: TipoDeHorario;
   modalidade: string;
   diaSemana: number;
   inicioMin: number;
@@ -384,19 +402,21 @@ export interface DadosTurma {
 }
 
 export async function salvarTurma(estudioId: string, t: DadosTurma): Promise<Resposta> {
-  if (!t.modalidade?.trim()) return { ok: false, erro: "Informe a modalidade (ex.: Funcional)." };
-  if (!Number.isInteger(t.vagas) || t.vagas < 1 || t.vagas > 100) return { ok: false, erro: "Vagas de 1 a 100." };
+  const turno = t.tipo === "turno";
+  if (!t.modalidade?.trim()) return { ok: false, erro: turno ? "Informe a função (ex.: Musculação)." : "Informe a modalidade (ex.: Funcional)." };
+  if (!turno && (!Number.isInteger(t.vagas) || t.vagas < 1 || t.vagas > 100)) return { ok: false, erro: "Vagas de 1 a 100." };
   const supabase = await criarClienteSupabase();
   const { data: est } = await supabase.from("estudios").select("max_alunos_turma").eq("id", estudioId).maybeSingle();
-  if (est && t.vagas > est.max_alunos_turma) return { ok: false, erro: `O máximo do estúdio é ${est.max_alunos_turma} alunos por turma.` };
-  const { error } = await supabase.rpc("salvar_turma", {
+  if (!turno && est && t.vagas > est.max_alunos_turma) return { ok: false, erro: `O máximo do estúdio é ${est.max_alunos_turma} alunos por turma.` };
+  const { error } = await supabase.rpc("salvar_horario", {
     p_estudio: estudioId,
     p_turma: t.id,
+    p_tipo: turno ? "turno" : "turma",
     p_modalidade: t.modalidade.trim(),
     p_dia: t.diaSemana,
     p_inicio_min: t.inicioMin,
     p_duracao: t.duracaoMin,
-    p_vagas: t.vagas,
+    p_vagas: turno ? null : t.vagas,
     p_professor: t.professorId,
   });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a turma.") } : { ok: true };
@@ -456,6 +476,7 @@ export interface AulaNaAgendaDoEstudio {
   professorId: string | null;
   chamadaEm: string | null;
   cancelada: boolean;
+  tipo: TipoDeHorario;
 }
 
 /** Aulas de todas as turmas do estúdio entre dois instantes (ISO), para a agenda da coordenação. */
@@ -465,7 +486,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
   const [{ data: aulas }, { data: matriculas }] = await Promise.all([
     supabase
       .from("aulas_turma")
-      .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas)")
+      .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo)")
       .eq("estudio_id", estudioId)
       .gte("inicio", de)
       .lt("inicio", ate)
@@ -475,8 +496,9 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
   const porTurma = new Map<string, number>();
   for (const m of matriculas ?? []) porTurma.set(m.turma_id, (porTurma.get(m.turma_id) ?? 0) + 1);
   return (aulas ?? []).map((a) => {
-    const t = a.turmas as unknown as { modalidade: string; vagas: number } | null;
+    const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string } | null;
     return {
+      tipo: (t?.tipo === "turno" ? "turno" : "turma") as TipoDeHorario,
       id: a.id,
       inicio: a.inicio,
       fim: a.fim,
@@ -489,4 +511,13 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
       cancelada: a.situacao === "cancelada",
     };
   });
+}
+
+/** Dias e horários de funcionamento do estúdio (só a coordenação). */
+export async function salvarFuncionamento(estudioId: string, f: Funcionamento): Promise<Resposta> {
+  const problemas = problemasDoFuncionamento(f);
+  if (problemas.length) return { ok: false, erro: problemas[0][0].toUpperCase() + problemas[0].slice(1) + "." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: estudioId, p: funcionamentoParaBanco(f) });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o horário.") } : { ok: true };
 }

@@ -16,6 +16,7 @@ import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 import { VERSAO_TERMOS } from "@/lib/textos-legais";
 import { frase } from "@/lib/formato";
 import { problemasDoCadastroEmpresa, type DadosCadastroEmpresa } from "@/lib/empresa";
+import { funcionamentoParaBanco, type Funcionamento } from "@/lib/funcionamento";
 import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } from "@/lib/personal";
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
 
@@ -123,6 +124,7 @@ export async function cadastrarEmpresa(dados: DadosCadastroEmpresa): Promise<Res
         // Se a conta precisar confirmar o e-mail, o estúdio é criado depois, com estes dados.
         estudio_nome: dados.nomeEstudio.trim(),
         estudio_tipo: dados.tipo,
+        estudio_funcionamento: dados.funcionamento,
         termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
         nome_completo: dados.nomeCompleto.trim(),
         whatsapp: soDigitos(dados.whatsapp),
@@ -138,6 +140,9 @@ export async function cadastrarEmpresa(dados: DadosCadastroEmpresa): Promise<Res
   if (estudio && dados.tipo === "academia") {
     await supabase.rpc("salvar_config_estudio", { p_estudio: estudio, p: { tipo: "academia", pagamento_modelo: "hora" } });
   }
+  if (estudio) {
+    await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: estudio, p: funcionamentoParaBanco(dados.funcionamento) });
+  }
   return { ok: true, logado: true, estudio: (estudio as string | null) ?? undefined };
 }
 
@@ -149,12 +154,16 @@ export async function souContaEmpresa(): Promise<boolean> {
 }
 
 /** Nome e tipo informados no cadastro empresarial (para criar o estúdio depois de confirmar o e-mail). */
-export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudio" | "academia" } | null> {
+export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento } | null> {
   const supabase = await criarClienteSupabase();
   const { data } = await supabase.auth.getClaims();
   const m = data?.claims?.user_metadata;
   if (m?.conta !== "empresa" || typeof m.estudio_nome !== "string") return null;
-  return { nome: m.estudio_nome, tipo: m.estudio_tipo === "academia" ? "academia" : "estudio" };
+  return {
+    nome: m.estudio_nome,
+    tipo: m.estudio_tipo === "academia" ? "academia" : "estudio",
+    funcionamento: typeof m.estudio_funcionamento === "object" && m.estudio_funcionamento ? (m.estudio_funcionamento as Funcionamento) : undefined,
+  };
 }
 
 export type TipoConta = "personal" | "aluno";
