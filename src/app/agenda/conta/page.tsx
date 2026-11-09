@@ -86,6 +86,7 @@ async function Conteudo() {
         </Grupo>
       )}
 
+      {estudios.length > 0 && (
       <Grupo titulo="Estúdio">
         {estudios.map((e) => (
           <Linha
@@ -96,10 +97,8 @@ async function Conteudo() {
             texto={e.papel === "coordenacao" ? "Você coordena: turmas, professores e alunos" : "Suas turmas e a equipe"}
           />
         ))}
-        {estudios.every((e) => e.papel !== "coordenacao") && (
-          <Linha href="/estudio" icone="mais" titulo="Cadastrar um estúdio" texto="Turmas, chamada e reposições de um estúdio ou academia" />
-        )}
       </Grupo>
+      )}
 
       <Grupo titulo="Alunos online">
         <Linha href="/agenda/online/questionarios" icone="conversa" titulo="Questionários" texto="Modelos de check-in e acompanhamento" />

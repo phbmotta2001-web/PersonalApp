@@ -7,6 +7,7 @@ import { CriarEstudio } from "@/components/estudio/CriarEstudio";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { BotaoSair } from "@/components/estudio/BotaoSair";
 import { estudioDoCadastro, souContaEmpresa } from "@/data/conta";
+import { souDaEquipe } from "@/data/equipe";
 import { meusEstudios } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 
@@ -43,7 +44,21 @@ async function Conteudo() {
   await exigirPersonal("/estudio");
   const coordeno = (await meusEstudios()).filter((e) => e.papel === "coordenacao");
   if (coordeno.length === 1) redirect(`/estudio/${coordeno[0].id}`);
-  if (coordeno.length === 0) return <CriarEstudio inicial={await estudioDoCadastro()} />;
+  if (coordeno.length === 0) {
+    const [empresa, equipe] = await Promise.all([souContaEmpresa(), souDaEquipe()]);
+    if (empresa || equipe) return <CriarEstudio inicial={await estudioDoCadastro()} />;
+    return (
+      <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-5 text-ink-2">
+        <p>
+          O estúdio é cadastrado pela coordenação, com a <b>conta empresarial</b>. Para dar aula num estúdio, peça à coordenação o
+          link de convite.
+        </p>
+        <Link href="/agenda" className="font-semibold text-brand">
+          Voltar para a agenda
+        </Link>
+      </div>
+    );
+  }
   return (
     <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
       {coordeno.map((e) => (
