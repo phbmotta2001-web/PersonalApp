@@ -5,81 +5,70 @@ import { useState, useTransition } from "react";
 import { fazerChamada, type AlunoNaChamada } from "@/data/estudio";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 
-type Marca = "presente" | "falta";
-
-/** Chamada da turma: presente (✓) ou falta (✕) para cada aluno. Falta avisada já vem marcada. */
+/**
+ * Chamada da turma: o professor só marca a falta (✕). Quem não for marcado recebe presença.
+ * Falta avisada pelo aluno já vem marcada.
+ */
 export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alunos: AlunoNaChamada[]; feita: boolean }) {
   const router = useRouter();
-  const [marcas, setMarcas] = useState<Record<string, Marca | undefined>>(() =>
-    Object.fromEntries(alunos.filter((a) => a.situacao === "presente" || a.situacao === "falta").map((a) => [a.id, a.situacao as Marca])),
-  );
+  const avisadas = new Set(alunos.filter((a) => a.situacao === "falta_avisada").map((a) => a.id));
+  const [faltas, setFaltas] = useState<Set<string>>(() => new Set(alunos.filter((a) => a.situacao === "falta").map((a) => a.id)));
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
   const [ocupado, iniciar] = useTransition();
-  const avisadas = new Set(alunos.filter((a) => a.situacao === "falta_avisada").map((a) => a.id));
-  const faltam = alunos.filter((a) => !avisadas.has(a.id) && !marcas[a.id]).length;
+  const marcaveis = alunos.filter((a) => !avisadas.has(a.id));
+  const presentes = marcaveis.filter((a) => !faltas.has(a.id)).length;
 
-  const marcar = (id: string, m: Marca) => {
+  const alternar = (id: string) => {
     setSalvo(false);
-    setMarcas((atual) => ({ ...atual, [id]: atual[id] === m ? undefined : m }));
+    setFaltas((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSalvo(false);
-            setMarcas(Object.fromEntries(alunos.filter((a) => !avisadas.has(a.id)).map((a) => [a.id, "presente" as Marca])));
-          }}
-          className="rounded-[12px] border border-line bg-surface px-3 py-2 text-[14px] font-bold"
-        >
-          Todos presentes
-        </button>
-      </div>
+      <p className="text-[14px] text-ink-3">Marque só quem faltou. Os outros ficam com presença.</p>
       <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
-        {alunos.map((a) => (
-          <li key={a.id} className="flex items-center gap-3 py-2.5">
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[16px] font-semibold">{a.nome}</span>
-              {avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
-            </span>
-            {!avisadas.has(a.id) && (
-              <span className="flex gap-1.5">
-                {(["presente", "falta"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    aria-pressed={marcas[a.id] === m}
-                    aria-label={`${a.nome}: ${m}`}
-                    onClick={() => marcar(a.id, m)}
-                    className={`grid size-11 place-items-center rounded-[12px] border text-[18px] font-extrabold ${
-                      marcas[a.id] === m
-                        ? m === "presente"
-                          ? "border-transparent bg-ok-soft text-ok"
-                          : "border-transparent bg-bad/10 text-bad"
-                        : "border-line text-ink-3"
-                    }`}
-                  >
-                    {m === "presente" ? "✓" : "✕"}
-                  </button>
-                ))}
+        {alunos.map((a) => {
+          const faltou = faltas.has(a.id);
+          return (
+            <li key={a.id} className="flex items-center gap-3 py-2.5">
+              <span className="min-w-0 flex-1">
+                <span className={`block truncate text-[16px] font-semibold ${faltou ? "text-ink-3 line-through" : ""}`}>{a.nome}</span>
+                {avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
               </span>
-            )}
-          </li>
-        ))}
+              {!avisadas.has(a.id) && (
+                <button
+                  type="button"
+                  aria-pressed={faltou}
+                  aria-label={`${a.nome}: falta`}
+                  onClick={() => alternar(a.id)}
+                  className={`flex h-11 items-center gap-1.5 rounded-[12px] border px-3 text-[15px] font-bold ${
+                    faltou ? "border-transparent bg-bad/10 text-bad" : "border-line text-ink-3"
+                  }`}
+                >
+                  <span className="text-[17px] font-extrabold" aria-hidden="true">
+                    ✕
+                  </span>
+                  Falta
+                </button>
+              )}
+            </li>
+          );
+        })}
       </ul>
       <Aviso tipo={salvo ? "ok" : "erro"}>{salvo ? "Chamada salva." : erro}</Aviso>
       <button
         type="button"
-        disabled={ocupado || alunos.length === 0}
+        disabled={ocupado || marcaveis.length === 0}
         onClick={() =>
           iniciar(async () => {
             setErro(null);
-            const lista = Object.entries(marcas)
-              .filter((par): par is [string, Marca] => par[1] !== undefined)
-              .map(([aluno, situacao]) => ({ aluno, situacao }));
+            const lista = marcaveis.map((a) => ({ aluno: a.id, situacao: faltas.has(a.id) ? ("falta" as const) : ("presente" as const) }));
             const r = await fazerChamada(aulaId, lista);
             if (!r.ok) return setErro(r.erro);
             setSalvo(true);
@@ -88,7 +77,7 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
         }
         className={ESTILO_BOTAO_PRINCIPAL}
       >
-        {ocupado ? "Salvando…" : feita ? "Salvar correção" : faltam > 0 ? `Concluir chamada (${faltam} sem marcar)` : "Concluir chamada"}
+        {ocupado ? "Salvando…" : feita ? "Salvar correção" : `Concluir chamada (${presentes} presente${presentes === 1 ? "" : "s"})`}
       </button>
     </div>
   );
