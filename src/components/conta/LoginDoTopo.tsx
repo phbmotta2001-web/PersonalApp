@@ -26,7 +26,7 @@ export function LoginDoTopo() {
       try {
         const r = await entrar(email, senha);
         if (!r.ok) return setErro(r.erro);
-        router.replace(r.tipo === "personal" ? "/agenda" : "/aluno");
+        router.replace(r.destino);
         router.refresh();
       } catch {
         setErro("Não foi possível entrar agora. Confira sua internet e tente de novo.");

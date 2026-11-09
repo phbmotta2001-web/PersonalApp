@@ -114,14 +114,17 @@ export async function tipoDaConta(): Promise<TipoConta | null> {
 export async function entrar(
   email: string,
   senha: string,
-): Promise<{ ok: true; tipo: TipoConta | null } | { ok: false; erro: string }> {
+): Promise<{ ok: true; tipo: TipoConta | null; destino: string } | { ok: false; erro: string }> {
   if (typeof email !== "string" || typeof senha !== "string" || !email.trim() || !senha)
     return { ok: false, erro: "Preencha e-mail e senha." };
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
   if (error) return { ok: false, erro: traduzirErro(error.message) };
-  const { data } = await supabase.rpc("tipo_da_conta");
-  return { ok: true, tipo: data === "personal" || data === "aluno" ? data : null };
+  const [{ data }, { data: equipe }] = await Promise.all([supabase.rpc("tipo_da_conta"), supabase.rpc("sou_da_equipe")]);
+  const tipo = data === "personal" || data === "aluno" ? data : null;
+  // Para onde cada conta vai depois de entrar: a da equipe abre no painel da beta.
+  const destino = equipe === true ? "/equipe" : tipo === "personal" ? "/agenda" : "/aluno";
+  return { ok: true, tipo, destino };
 }
 
 export async function sair(): Promise<void> {
