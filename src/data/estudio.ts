@@ -80,10 +80,32 @@ export async function aulasDeTurmaParaMim(de: string, ate: string): Promise<Aula
   });
 }
 
+export interface ValoresDePagamento {
+  valorHora: number | null;
+  valorAula: number | null;
+  valorPorAluno: number | null;
+  percentual: number | null;
+}
+
 export interface MembroDaEquipe {
   personalId: string;
   nome: string;
   papel: PapelNoEstudio;
+  /** Valor próprio do professor (vazio: usa o padrão do estúdio). */
+  valores: ValoresDePagamento;
+}
+
+export type TipoDeEstudio = "estudio" | "academia";
+export type ModeloDePagamento = "hora" | "aula_comissao" | "percentual";
+
+export interface ConfigDoEstudio {
+  tipo: TipoDeEstudio;
+  pagamentoModelo: ModeloDePagamento;
+  valores: ValoresDePagamento;
+  maxAlunosTurma: number;
+  pix: { tipo: string; chave: string; nome: string; cidade: string } | null;
+  /** Mensalidade por vezes na semana (1 a 7), em centavos. */
+  precos: Partial<Record<number, number>>;
 }
 
 export interface TurmaDoEstudio {
@@ -103,6 +125,9 @@ export interface AlunoDoEstudio {
   whatsapp: string | null;
   comApp: boolean;
   turmas: string[];
+  /** Exceção à tabela, em centavos. */
+  valorMensal: number | null;
+  diaVencimento: number | null;
 }
 
 export interface EstudioCompleto {
@@ -111,6 +136,7 @@ export interface EstudioCompleto {
   papel: PapelNoEstudio;
   antecedenciaFaltaH: number;
   validadeReposicaoDias: number;
+  config: ConfigDoEstudio;
   equipe: MembroDaEquipe[];
   turmas: TurmaDoEstudio[];
   alunos: AlunoDoEstudio[];
@@ -120,8 +146,14 @@ export interface EstudioCompleto {
 export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | null> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return null;
-  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }] = await Promise.all([
-    supabase.from("estudios").select("id, nome, antecedencia_falta_h, validade_reposicao_dias").eq("id", estudioId).maybeSingle(),
+  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }] = await Promise.all([
+    supabase
+      .from("estudios")
+      .select(
+        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade",
+      )
+      .eq("id", estudioId)
+      .maybeSingle(),
     supabase.rpc("papel_no_estudio", { p_estudio: estudioId }),
     supabase.rpc("equipe_do_estudio", { p_estudio: estudioId }),
     supabase
@@ -131,9 +163,25 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .eq("ativa", true)
       .order("dia_semana")
       .order("inicio_min"),
-    supabase.from("estudio_alunos").select("id, nome, whatsapp, aluno_id").eq("estudio_id", estudioId).eq("situacao", "ativo").order("nome"),
+    supabase
+      .from("estudio_alunos")
+      .select("id, nome, whatsapp, aluno_id, valor_mensal_centavos, dia_vencimento")
+      .eq("estudio_id", estudioId)
+      .eq("situacao", "ativo")
+      .order("nome"),
     supabase.from("turma_alunos").select("turma_id, estudio_aluno_id"),
+    supabase
+      .from("estudio_membros")
+      .select("personal_id, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual")
+      .eq("estudio_id", estudioId),
+    supabase.from("estudio_precos").select("vezes, valor_centavos").eq("estudio_id", estudioId),
   ]);
+  const valoresDe = (v: { valor_hora_centavos: number | null; valor_aula_centavos: number | null; valor_por_aluno_centavos: number | null; percentual: number | string | null } | undefined): ValoresDePagamento => ({
+    valorHora: v?.valor_hora_centavos ?? null,
+    valorAula: v?.valor_aula_centavos ?? null,
+    valorPorAluno: v?.valor_por_aluno_centavos ?? null,
+    percentual: v?.percentual == null ? null : Number(v.percentual),
+  });
   if (!e || !papel) return null;
   const doAluno = (alunoId: string) => (matriculas ?? []).filter((m) => m.estudio_aluno_id === alunoId).map((m) => m.turma_id);
   const daTurma = (turmaId: string) => (matriculas ?? []).filter((m) => m.turma_id === turmaId).map((m) => m.estudio_aluno_id);
@@ -143,10 +191,19 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     papel: papel as PapelNoEstudio,
     antecedenciaFaltaH: e.antecedencia_falta_h,
     validadeReposicaoDias: e.validade_reposicao_dias,
+    config: {
+      tipo: e.tipo as TipoDeEstudio,
+      pagamentoModelo: e.pagamento_modelo as ModeloDePagamento,
+      valores: valoresDe(e),
+      maxAlunosTurma: e.max_alunos_turma,
+      pix: e.pix_tipo && e.pix_chave ? { tipo: e.pix_tipo, chave: e.pix_chave, nome: e.pix_nome ?? "", cidade: e.pix_cidade ?? "" } : null,
+      precos: Object.fromEntries((precos ?? []).map((p) => [p.vezes, p.valor_centavos])),
+    },
     equipe: ((equipe ?? []) as { personal_id: string; nome: string; papel: string }[]).map((m) => ({
       personalId: m.personal_id,
       nome: m.nome,
       papel: m.papel as PapelNoEstudio,
+      valores: valoresDe((membros ?? []).find((x) => x.personal_id === m.personal_id)),
     })),
     turmas: (turmas ?? []).map((t) => ({
       id: t.id,
@@ -164,6 +221,8 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       whatsapp: a.whatsapp,
       comApp: a.aluno_id != null,
       turmas: doAluno(a.id),
+      valorMensal: a.valor_mensal_centavos,
+      diaVencimento: a.dia_vencimento,
     })),
   };
 }
@@ -277,10 +336,14 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
 const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value|uuid/i;
 const doBanco = (mensagem: string | undefined, padrao: string) => (mensagem && !TECNICO.test(mensagem) ? mensagem : padrao);
 
-export async function criarEstudio(nome: string): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
+export async function criarEstudio(nome: string, tipo: TipoDeEstudio = "estudio"): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("criar_estudio", { p_nome: typeof nome === "string" ? nome : "" });
-  return error || !data ? { ok: false, erro: doBanco(error?.message, "Não foi possível criar o estúdio.") } : { ok: true, id: data as string };
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível criar o estúdio.") };
+  if (tipo === "academia") {
+    await supabase.rpc("salvar_config_estudio", { p_estudio: data, p: { tipo: "academia", pagamento_modelo: "hora" } });
+  }
+  return { ok: true, id: data as string };
 }
 
 /** Link de convite para um professor entrar na equipe. */
@@ -324,6 +387,8 @@ export async function salvarTurma(estudioId: string, t: DadosTurma): Promise<Res
   if (!t.modalidade?.trim()) return { ok: false, erro: "Informe a modalidade (ex.: Funcional)." };
   if (!Number.isInteger(t.vagas) || t.vagas < 1 || t.vagas > 100) return { ok: false, erro: "Vagas de 1 a 100." };
   const supabase = await criarClienteSupabase();
+  const { data: est } = await supabase.from("estudios").select("max_alunos_turma").eq("id", estudioId).maybeSingle();
+  if (est && t.vagas > est.max_alunos_turma) return { ok: false, erro: `O máximo do estúdio é ${est.max_alunos_turma} alunos por turma.` };
   const { error } = await supabase.rpc("salvar_turma", {
     p_estudio: estudioId,
     p_turma: t.id,

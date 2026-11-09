@@ -15,15 +15,19 @@ import {
   type EstudioCompleto,
   type TurmaDoEstudio,
 } from "@/data/estudio";
+import type { FinanceiroDoMes } from "@/data/estudio-financeiro";
 import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
+import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
-type Aba = "turmas" | "equipe" | "alunos";
+export type Aba = "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
 const ABAS: { valor: Aba; rotulo: string }[] = [
   { valor: "turmas", rotulo: "Turmas" },
   { valor: "equipe", rotulo: "Professores" },
   { valor: "alunos", rotulo: "Alunos" },
+  { valor: "financeiro", rotulo: "Financeiro" },
+  { valor: "ajustes", rotulo: "Ajustes" },
 ];
 
 const nomeDoDia = (d: number) => DIAS.find((x) => x.valor === d)?.nome ?? "";
@@ -31,18 +35,27 @@ export const rotuloDaTurma = (t: Pick<TurmaDoEstudio, "modalidade" | "diaSemana"
   `${t.modalidade} · ${DIAS.find((x) => x.valor === t.diaSemana)?.curto ?? ""} ${minParaHora(t.inicioMin)}`;
 
 /** Coordenação do estúdio: turmas, professores e alunos (decisão 54, etapa 1). */
-export function GestaoDoEstudio({ estudio, aba }: { estudio: EstudioCompleto; aba: Aba }) {
+export function GestaoDoEstudio({
+  estudio,
+  aba,
+  financeiro,
+}: {
+  estudio: EstudioCompleto;
+  aba: Aba;
+  /** Só na aba Financeiro: o mês ("AAAA-MM"), hoje e os dados. */
+  financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes };
+}) {
   const router = useRouter();
   return (
     <div className="flex flex-col gap-5">
-      <nav className="flex gap-2" aria-label="Partes do estúdio">
+      <nav className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1" aria-label="Partes do estúdio">
         {ABAS.map((a) => (
           <Link
             key={a.valor}
             href={`/estudio/${estudio.id}?aba=${a.valor}`}
             scroll={false}
             aria-current={aba === a.valor ? "page" : undefined}
-            className={`rounded-full border px-4 py-2 text-[15px] font-bold ${
+            className={`shrink-0 rounded-full border px-4 py-2 text-[15px] font-bold ${
               aba === a.valor ? "border-ink bg-ink text-app" : "border-line bg-surface text-ink-2"
             }`}
           >
@@ -53,13 +66,15 @@ export function GestaoDoEstudio({ estudio, aba }: { estudio: EstudioCompleto; ab
       {aba === "turmas" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} atualizar={() => router.refresh()} />}
+      {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
+      {aba === "ajustes" && <AjustesDoEstudio estudio={estudio} />}
     </div>
   );
 }
 
 // ─── Turmas ─────────────────────────────────────────────────────────────────
 
-const NOVA: DadosTurma = { id: null, modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, vagas: 8, professorId: null };
+const NOVA: Omit<DadosTurma, "vagas"> = { id: null, modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
 
 function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
   const [editando, setEditando] = useState<DadosTurma | null>(null);
@@ -83,7 +98,7 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-[18px] font-bold">Turmas ({estudio.turmas.length})</h2>
         {!editando && (
-          <button type="button" onClick={() => setEditando({ ...NOVA, professorId: professores[0]?.personalId ?? null })} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
+          <button type="button" onClick={() => setEditando({ ...NOVA, vagas: estudio.config.maxAlunosTurma, professorId: professores[0]?.personalId ?? null })} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
             + Turma
           </button>
         )}
@@ -153,7 +168,7 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
               <input
                 type="number"
                 min={1}
-                max={100}
+                max={estudio.config.maxAlunosTurma}
                 value={editando.vagas}
                 onChange={(e) => setEditando({ ...editando, vagas: Number(e.target.value) })}
                 className={ESTILO_CAIXA}
@@ -250,8 +265,11 @@ function Equipe({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
       <h2 className="text-[18px] font-bold">Professores ({estudio.equipe.length})</h2>
       <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
         {estudio.equipe.map((m) => (
-          <li key={m.personalId} className="flex items-center gap-3 py-3">
-            <span className="flex-1 font-semibold">{m.nome}</span>
+          <li key={m.personalId} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-3">
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="font-semibold">{m.nome}</span>
+              <ValorDoProfessor estudio={estudio} membro={m} />
+            </span>
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12.5px] font-bold text-ink-2">
               {m.papel === "coordenacao" ? "coordenação" : "professor"}
             </span>
@@ -388,7 +406,12 @@ function Alunos({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                   {aberto === a.id ? "▴" : "▾"}
                 </span>
               </button>
-              {aberto === a.id && <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas} escolhidas={a.turmas} atualizar={atualizar} />}
+              {aberto === a.id && (
+                <div className="flex flex-col gap-2.5 rounded-[14px] bg-surface-2 p-3">
+                  <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas} escolhidas={a.turmas} atualizar={atualizar} />
+                  {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -412,7 +435,7 @@ function TurmasDoAluno({
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
-    <div className="flex flex-col gap-2 rounded-[14px] bg-surface-2 p-3">
+    <div className="flex flex-col gap-2">
       {turmas.length === 0 ? (
         <p className="text-[14px] text-ink-3">Crie as turmas primeiro.</p>
       ) : (
