@@ -7,6 +7,7 @@ import { Icone } from "@/components/Icone";
 import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { aniversariantesDoMes } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { soNoEstudio } from "@/data/so-estudio";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { aulasDeTurmaParaMim, type AulaDeTurma } from "@/data/estudio";
 import { lerRegraDeFeriados } from "@/data/feriados";
@@ -56,6 +57,7 @@ export default function PaginaAgenda({ searchParams }: PageProps<"/agenda/calend
 
 async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/calendario">["searchParams"] }) {
   await exigirPersonal("/agenda/calendario");
+  const soEstudio = await soNoEstudio();
   const { dia: pedido, ver, mes: mesPedido } = await searchParams;
   const hoje = agoraEmBrasilia().data;
 
@@ -300,7 +302,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               Bloqueado: {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).join(", ")}
             </p>
           )}
-          {faixas.length === 0 && (
+          {faixas.length === 0 && !soEstudio && (
             <p className="text-[14px] text-ink-3">
               Você ainda não configurou seus horários de trabalho.{" "}
               <Link href="/agenda/horarios" className="font-semibold text-brand">
@@ -394,7 +396,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             </ol>
           )}
         </section>
-        {!expandida && (
+        {!expandida && !soEstudio && (
         <p className="text-[13px] text-ink-3">
           Nesta semana: {aulasQueOcupam.length} aula{aulasQueOcupam.length === 1 ? "" : "s"} · {totalLivres} horário
           {totalLivres === 1 ? "" : "s"} livre{totalLivres === 1 ? "" : "s"} de {duracao} min.
@@ -403,7 +405,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         </div>
       </section>
 
-      {dia >= hoje && (
+      {dia >= hoje && !soEstudio && (
         <Link
           href={novaAula()}
           className="botao-macio fixed right-[max(18px,calc(50vw-14rem+18px))] bottom-[calc(88px+env(safe-area-inset-bottom))] z-10 lg:right-8 lg:bottom-8 flex items-center gap-1.5 rounded-full bg-brand px-4 py-3 text-[15px] font-extrabold text-brand-ink"

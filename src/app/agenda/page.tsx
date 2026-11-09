@@ -6,6 +6,7 @@ import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { EstudioNoInicio } from "@/components/estudio/EstudioNoInicio";
+import { InicioDoSoEstudio } from "@/components/estudio/InicioDoSoEstudio";
 import { InstalarApp } from "@/components/InstalarApp";
 import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
@@ -13,6 +14,7 @@ import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { aulasDeTurmaParaMim, meusEstudios } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { soNoEstudio } from "@/data/so-estudio";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { situacaoDaCobranca } from "@/lib/cobranca";
@@ -40,6 +42,13 @@ async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
+  if (await soNoEstudio()) {
+    const [estudiosDoProfissional, turmasDeHoje] = await Promise.all([
+      meusEstudios(),
+      aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
+    ]);
+    return <InicioDoSoEstudio nome={personal.nomeCompleto} estudios={estudiosDoProfissional} aulasHoje={turmasDeHoje} agora={agora} />;
+  }
   const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes, estudios, turmasHoje] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),

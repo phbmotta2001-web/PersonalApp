@@ -9,7 +9,8 @@ import { lerAntecedencia } from "@/data/aulas";
 import { sair } from "@/data/conta";
 import { souDaEquipe } from "@/data/equipe";
 import { meusEstudios } from "@/data/estudio";
-import { exigirPersonal } from "@/data/exigir-personal";
+import { exigirPersonal, PRIMEIRO_ACESSO } from "@/data/exigir-personal";
+import { soNoEstudio } from "@/data/so-estudio";
 import { lerRegraDeFeriados } from "@/data/feriados";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
 import { textoDeHoras } from "@/lib/aula";
@@ -33,13 +34,14 @@ export default function PaginaConta() {
 // Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [antecedencia, expediente, bloqueios, feriados, estudios, equipe] = await Promise.all([
+  const [antecedencia, expediente, bloqueios, feriados, estudios, equipe, soEstudio] = await Promise.all([
     lerAntecedencia(),
     lerExpediente(),
     listarBloqueios(true),
     lerRegraDeFeriados(),
     meusEstudios(),
     souDaEquipe(),
+    soNoEstudio(),
   ]);
 
   return (
@@ -58,6 +60,16 @@ async function Conteudo() {
         </div>
       </section>
 
+      {soEstudio ? (
+        <Grupo titulo="Personal">
+          <Linha
+            href={PRIMEIRO_ACESSO}
+            icone="mais"
+            titulo="Criar o meu cadastro de personal"
+            texto="Incluso gratuitamente com o plano TEAM. Para os seus alunos de fora do estúdio"
+          />
+        </Grupo>
+      ) : (
       <Grupo titulo="Agenda">
         <Linha
           href="/agenda/horarios"
@@ -79,6 +91,7 @@ async function Conteudo() {
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
       </Grupo>
+      )}
 
       {equipe && (
         <Grupo titulo="Equipe P-Bell">
@@ -100,9 +113,11 @@ async function Conteudo() {
       </Grupo>
       )}
 
+      {!soEstudio && (
       <Grupo titulo="Alunos online">
         <Linha href="/agenda/online/questionarios" icone="conversa" titulo="Questionários" texto="Modelos de check-in e acompanhamento" />
       </Grupo>
+      )}
 
       <form action={sair}>
         <button type="submit" className={ESTILO_BOTAO_SECUNDARIO}>

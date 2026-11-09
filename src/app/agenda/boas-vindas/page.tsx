@@ -12,6 +12,7 @@ import { FormValores } from "@/components/agenda/FormValores";
 import { Carregando, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { lerRegras } from "@/data/aulas";
 import { lerPix } from "@/data/cobrancas";
+import { soNoEstudio } from "@/data/so-estudio";
 import { exigirPersonal, PRIMEIRO_ACESSO } from "@/data/exigir-personal";
 import { lerExpediente } from "@/data/expediente";
 import { lerRegraDeFeriados } from "@/data/feriados";
@@ -57,6 +58,8 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/boa
   const etapa = ETAPAS[n - 1];
   const proximo = n < ETAPAS.length ? passo(n + 1) : passo("fim");
   const primeiroNome = personal.nomeCompleto.split(" ")[0];
+  // Para quem já trabalha num estúdio, o cadastro de personal é opcional.
+  const opcional = await soNoEstudio();
 
   return (
     <div className="flex flex-1 flex-col">
@@ -68,6 +71,11 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/boa
               Vamos deixar tudo pronto de uma vez: leva uns 3 minutos. Tudo pode ser mudado depois, em Conta.
             </p>
           </div>
+        )}
+        {opcional && !fim && (
+          <Link href="/agenda" className="self-start text-[14px] font-semibold text-brand">
+            ← Agora não, voltar ao estúdio
+          </Link>
         )}
         {!fim && (
           <>

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AceitarConviteEstudio } from "@/components/estudio/AceitarConviteEstudio";
-import { Carregando } from "@/components/Formulario";
+import { FormCadastroProfessor } from "@/components/estudio/FormCadastroProfessor";
+import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
+import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 import { verConviteEstudio } from "@/data/estudio";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 
@@ -43,15 +45,18 @@ async function Conteudo({ params }: { params: PageProps<"/estudio/convite/[codig
       {id ? (
         <AceitarConviteEstudio codigo={codigo} />
       ) : (
-        <div className="flex flex-col gap-2">
-          <Link href={`/entrar?voltar=${encodeURIComponent(aqui)}`} className="rounded-[15px] bg-brand px-5 py-3.5 text-center font-bold text-brand-ink">
-            Entrar para aceitar
-          </Link>
-          <Link href="/cadastro" className="text-center font-semibold text-brand">
-            Ainda não tenho conta: criar conta de personal
-          </Link>
-          <p className="text-center text-[13px] text-ink-3">Depois de criar a conta, abra este link de novo.</p>
-        </div>
+        <>
+          <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
+            <p className="font-bold">Já tem conta no P-Bell?</p>
+            <Link href={`/entrar?voltar=${encodeURIComponent(aqui)}`} className={ESTILO_BOTAO_SECUNDARIO}>
+              Entrar e aceitar o convite
+            </Link>
+          </section>
+          <section className="flex flex-col gap-3">
+            <h2 className="text-[17px] font-semibold">Ou crie sua conta (leva 1 minuto)</h2>
+            <FormCadastroProfessor codigo={codigo} termos={TERMOS_PUBLICADOS} />
+          </section>
+        </>
       )}
     </>
   );

@@ -104,6 +104,42 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
 }
 
 /**
+ * Cadastro curto do PROFISSIONAL convidado por um estúdio: só nome, WhatsApp, e-mail e senha.
+ * Entra direto na equipe, sem o primeiro acesso de personal (que fica opcional depois).
+ */
+export async function cadastrarProfessorDoEstudio(
+  dados: DadosCadastroPersonal,
+  codigo: string,
+): Promise<RespostaCadastro & { estudio?: string }> {
+  const problemas = problemasDoCadastroPersonal({ ...dados, cref: "", crefUf: "" });
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
+  if (typeof codigo !== "string" || !/^[A-Za-z0-9_-]{4,64}$/.test(codigo)) return { ok: false, erro: "Convite inválido." };
+
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.auth.signUp({
+    email: dados.email.trim(),
+    password: dados.senha,
+    options: {
+      // Se precisar confirmar o e-mail, volta ao convite para entrar na equipe.
+      emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=${encodeURIComponent(`/estudio/convite/${codigo}`)}`,
+      data: {
+        tipo_conta: "personal",
+        conta: "professor",
+        termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
+        nome_completo: dados.nomeCompleto.trim(),
+        whatsapp: soDigitos(dados.whatsapp),
+        termo_confidencialidade: VERSAO_TERMO_CONFIDENCIALIDADE,
+      },
+    },
+  });
+  if (error) return { ok: false, erro: traduzirErro(error.message) };
+  if (!data.session) return { ok: true, logado: false };
+  const { data: estudio, error: erroConvite } = await supabase.rpc("aceitar_convite_estudio", { p_codigo: codigo });
+  if (erroConvite) console.error("Convite do estúdio não aceito no cadastro:", erroConvite.message);
+  return { ok: true, logado: true, estudio: (estudio as string | null) ?? undefined };
+}
+
+/**
  * Cadastro da conta EMPRESARIAL (estúdio ou academia de rede). No banco é um personal (a
  * equipe do estúdio aponta para personais), marcado com conta: "empresa"; abre direto na
  * coordenação do estúdio, sem agenda particular nem primeiro acesso.
