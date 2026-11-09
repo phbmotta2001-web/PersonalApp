@@ -80,6 +80,12 @@ export default function Home() {
               >
                 Criar conta de personal
               </Link>
+              <Link
+                href="/cadastro/empresa"
+                className="flex min-h-[54px] items-center rounded-[15px] border border-white/25 px-6 text-[16px] font-bold hover:bg-white/8"
+              >
+                Estúdio ou academia
+              </Link>
               <a
                 href="#como-funciona"
                 className="flex min-h-[54px] items-center rounded-[15px] border border-white/25 px-6 text-[16px] font-bold hover:bg-white/8"

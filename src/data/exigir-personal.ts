@@ -4,7 +4,7 @@
 
 import { redirect } from "next/navigation";
 import type { Personal } from "@/lib/personal";
-import { tipoDaConta } from "./conta";
+import { souContaEmpresa, tipoDaConta } from "./conta";
 import { souDaEquipe } from "./equipe";
 import { lerPersonalAtual } from "./profissional";
 
@@ -14,7 +14,9 @@ export const PRIMEIRO_ACESSO = "/agenda/boas-vindas";
 export async function exigirPersonal(voltar: string): Promise<Personal> {
   const personal = await lerPersonalAtual();
   if (personal) {
-    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO)) {
+    // A conta empresarial não tem agenda particular: fica só na coordenação do estúdio.
+    if (!personal.configurado && !voltar.startsWith("/estudio") && (await souContaEmpresa())) redirect("/estudio");
+    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO) && !voltar.startsWith("/estudio")) {
       // A conta de administração é criada como personal, mas abre direto no painel da beta.
       if (await souDaEquipe()) redirect("/equipe");
       redirect(PRIMEIRO_ACESSO);

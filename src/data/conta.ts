@@ -15,6 +15,7 @@ import { destinoSeguro } from "@/lib/destino";
 import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 import { VERSAO_TERMOS } from "@/lib/textos-legais";
 import { frase } from "@/lib/formato";
+import { problemasDoCadastroEmpresa, type DadosCadastroEmpresa } from "@/lib/empresa";
 import { problemasDoCadastroPersonal, soDigitos, type DadosCadastroPersonal } from "@/lib/personal";
 import { criarClienteSupabase, origemDoSite, usuarioAtual } from "@/lib/supabase/servidor";
 
@@ -101,6 +102,61 @@ export async function cadastrarPersonal(dados: DadosCadastroPersonal): Promise<R
   return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true, logado: data.session != null };
 }
 
+/**
+ * Cadastro da conta EMPRESARIAL (estúdio ou academia de rede). No banco é um personal (a
+ * equipe do estúdio aponta para personais), marcado com conta: "empresa"; abre direto na
+ * coordenação do estúdio, sem agenda particular nem primeiro acesso.
+ */
+export async function cadastrarEmpresa(dados: DadosCadastroEmpresa): Promise<RespostaCadastro & { estudio?: string }> {
+  const problemas = problemasDoCadastroEmpresa(dados);
+  if (problemas.length > 0) return { ok: false, erro: frase(problemas) };
+
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.auth.signUp({
+    email: dados.email.trim(),
+    password: dados.senha,
+    options: {
+      emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=/estudio`,
+      data: {
+        tipo_conta: "personal",
+        conta: "empresa",
+        // Se a conta precisar confirmar o e-mail, o estúdio é criado depois, com estes dados.
+        estudio_nome: dados.nomeEstudio.trim(),
+        estudio_tipo: dados.tipo,
+        termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
+        nome_completo: dados.nomeCompleto.trim(),
+        whatsapp: soDigitos(dados.whatsapp),
+        termo_confidencialidade: VERSAO_TERMO_CONFIDENCIALIDADE,
+      },
+    },
+  });
+  if (error) return { ok: false, erro: traduzirErro(error.message) };
+  if (!data.session) return { ok: true, logado: false };
+
+  // Já entrou: cria o estúdio agora (quem cria fica na coordenação).
+  const { data: estudio } = await supabase.rpc("criar_estudio", { p_nome: dados.nomeEstudio.trim() });
+  if (estudio && dados.tipo === "academia") {
+    await supabase.rpc("salvar_config_estudio", { p_estudio: estudio, p: { tipo: "academia", pagamento_modelo: "hora" } });
+  }
+  return { ok: true, logado: true, estudio: (estudio as string | null) ?? undefined };
+}
+
+/** A conta logada é empresarial (estúdio ou academia)? */
+export async function souContaEmpresa(): Promise<boolean> {
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase.auth.getClaims();
+  return data?.claims?.user_metadata?.conta === "empresa";
+}
+
+/** Nome e tipo informados no cadastro empresarial (para criar o estúdio depois de confirmar o e-mail). */
+export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudio" | "academia" } | null> {
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase.auth.getClaims();
+  const m = data?.claims?.user_metadata;
+  if (m?.conta !== "empresa" || typeof m.estudio_nome !== "string") return null;
+  return { nome: m.estudio_nome, tipo: m.estudio_tipo === "academia" ? "academia" : "estudio" };
+}
+
 export type TipoConta = "personal" | "aluno";
 
 /** Que tipo de conta está logada (ou null). Usado para levar cada um para a sua área. */
@@ -120,10 +176,16 @@ export async function entrar(
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha });
   if (error) return { ok: false, erro: traduzirErro(error.message) };
-  const [{ data }, { data: equipe }] = await Promise.all([supabase.rpc("tipo_da_conta"), supabase.rpc("sou_da_equipe")]);
+  const [{ data }, { data: equipe }, { data: claims }] = await Promise.all([
+    supabase.rpc("tipo_da_conta"),
+    supabase.rpc("sou_da_equipe"),
+    supabase.auth.getClaims(),
+  ]);
   const tipo = data === "personal" || data === "aluno" ? data : null;
-  // Para onde cada conta vai depois de entrar: a da equipe abre no painel da beta.
-  const destino = equipe === true ? "/equipe" : tipo === "personal" ? "/agenda" : "/aluno";
+  // Para onde cada conta vai depois de entrar: a da equipe abre no painel da beta e a
+  // empresarial, na coordenação do estúdio.
+  const empresa = claims?.claims?.user_metadata?.conta === "empresa";
+  const destino = equipe === true ? "/equipe" : empresa ? "/estudio" : tipo === "personal" ? "/agenda" : "/aluno";
   return { ok: true, tipo, destino };
 }
 

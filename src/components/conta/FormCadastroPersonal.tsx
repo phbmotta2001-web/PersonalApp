@@ -73,7 +73,11 @@ export function FormCadastroPersonal({ termos = false }: { termos?: boolean } = 
   return (
     <form onSubmit={enviar} noValidate className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
       <p className="text-[14px] text-ink-3">
-        É aluno? Você entra pelo link de convite que o seu personal envia.
+        É aluno? Você entra pelo link de convite que o seu personal envia. Estúdio ou academia? Crie a{" "}
+        <Link href="/cadastro/empresa" className="font-semibold text-brand">
+          conta empresarial
+        </Link>
+        .
       </p>
 
       <Campo id="pf-email" rotulo="E-mail">

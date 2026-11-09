@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { BotaoSair } from "@/components/estudio/BotaoSair";
 import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio";
 import { Carregando } from "@/components/Formulario";
+import { souContaEmpresa } from "@/data/conta";
 import { lerEstudio } from "@/data/estudio";
 import { lerFinanceiroDoMes } from "@/data/estudio-financeiro";
 import { exigirPersonal } from "@/data/exigir-personal";
@@ -35,7 +37,7 @@ async function Conteudo({
   const { estudio: id } = await params;
   const { aba, mes } = await searchParams;
   await exigirPersonal(`/estudio/${id}`);
-  const estudio = await lerEstudio(id);
+  const [estudio, empresa] = await Promise.all([lerEstudio(id), souContaEmpresa()]);
   if (!estudio || estudio.papel !== "coordenacao") notFound();
   const qual = ABAS.find((a) => a === aba) ?? "turmas";
   const hoje = emBrasilia(new Date().toISOString()).data;
@@ -45,11 +47,12 @@ async function Conteudo({
   return (
     <div className="flex flex-col gap-4">
       <header className="flex items-center gap-2.5 pt-1.5">
-        <BotaoVoltar reserva="/agenda/conta" className="hover:bg-surface-2" />
-        <div>
+        {!empresa && <BotaoVoltar reserva="/agenda/conta" className="hover:bg-surface-2" />}
+        <div className="flex-1">
           <p className="text-[13px] text-ink-3">Coordenação</p>
           <h1 className="text-[24px] leading-tight font-extrabold">{estudio.nome}</h1>
         </div>
+        {empresa && <BotaoSair />}
       </header>
       <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} />
     </div>

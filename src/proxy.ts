@@ -38,7 +38,8 @@ export async function proxy(request: NextRequest) {
     const tipo = data?.claims?.user_metadata?.tipo_conta;
     const destino = request.nextUrl.clone();
     // Conta sem o tipo guardado é de aluno (a mesma regra do cadastro no banco).
-    destino.pathname = !data?.claims ? "/entrar" : tipo === "personal" ? "/agenda" : "/aluno";
+    const empresa = data?.claims?.user_metadata?.conta === "empresa";
+    destino.pathname = !data?.claims ? "/entrar" : empresa ? "/estudio" : tipo === "personal" ? "/agenda" : "/aluno";
     destino.search = "";
     const redirecionar = NextResponse.redirect(destino);
     for (const cookie of resposta.cookies.getAll()) redirecionar.cookies.set(cookie);

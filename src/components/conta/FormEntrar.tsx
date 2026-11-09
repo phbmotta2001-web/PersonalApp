@@ -87,6 +87,12 @@ export function FormEntrar() {
         <Link href="/cadastro" className="font-semibold text-brand">
           Criar conta de personal
         </Link>
+        <span className="mt-1 block">
+          Estúdio ou academia?{" "}
+          <Link href="/cadastro/empresa" className="font-semibold text-brand">
+            Criar conta empresarial
+          </Link>
+        </span>
         <span className="mt-1 block">Aluno: sua conta é criada pelo link de convite do seu personal.</span>
       </p>
     </form>

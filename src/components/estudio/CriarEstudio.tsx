@@ -7,10 +7,10 @@ import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 /** Cria o estúdio; quem cria fica na coordenação. */
-export function CriarEstudio() {
+export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "estudio" | "academia" } | null }) {
   const router = useRouter();
-  const [nome, setNome] = useState("");
-  const [tipo, setTipo] = useState<"estudio" | "academia">("estudio");
+  const [nome, setNome] = useState(inicial?.nome ?? "");
+  const [tipo, setTipo] = useState<"estudio" | "academia">(inicial?.tipo ?? "estudio");
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
