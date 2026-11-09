@@ -482,6 +482,46 @@ begin
 end
 $$;
 
+-- ─── Horários livres do personal: as turmas do estúdio também ocupam ─────────
+-- (Mesma função de 20261018100000_aprovacao_de_pedidos.sql, com as aulas de turma.)
+create or replace function public.livres_para_aluno(p_vinculo uuid, p_de date, p_ate date)
+returns table (inicio timestamptz)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v       public.vinculos := public.vinculo_do_aluno(p_vinculo);
+  v_dur   integer := public.duracao_do_vinculo(p_vinculo);
+  v_minimo timestamptz := now() + make_interval(hours =>
+             (select antecedencia_reposicao_h from public.personais where id = v.personal_id));
+begin
+  return query
+  select s.ini
+    from generate_series(p_de, least(p_ate, p_de + 45), interval '1 day') as d(dia)
+    join public.horarios_trabalho h
+      on h.personal_id = v.personal_id and h.dia_semana = extract(dow from d.dia)
+    cross join lateral generate_series(h.inicio_min, h.fim_min - v_dur, v_dur) as m(minuto)
+    cross join lateral (select public.instante_brasilia(d.dia::date, m.minuto) as ini) s
+   where s.ini >= v_minimo
+     and not exists (
+       select 1 from public.aulas a
+        where a.personal_id = v.personal_id
+          and a.situacao in ('agendada', 'confirmada', 'realizada', 'falta', 'pendente')
+          and a.inicio < s.ini + make_interval(mins => v_dur) and a.fim > s.ini)
+     and not exists (
+       select 1 from public.aulas_turma t
+        where t.professor_id = v.personal_id and t.situacao = 'agendada'
+          and t.inicio < s.ini + make_interval(mins => v_dur) and t.fim > s.ini)
+     and not exists (
+       select 1 from public.bloqueios b
+        where b.personal_id = v.personal_id
+          and b.inicio < s.ini + make_interval(mins => v_dur) and b.fim > s.ini)
+   order by 1;
+end
+$$;
+
 -- Equipe do estúdio com nomes (os dados de cada personal são protegidos; aqui só o nome e o papel).
 create or replace function public.equipe_do_estudio(p_estudio uuid)
 returns table (personal_id uuid, nome text, papel text)

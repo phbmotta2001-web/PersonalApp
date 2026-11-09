@@ -7,6 +7,7 @@ import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
 import { sair } from "@/data/conta";
+import { meusEstudios } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerRegraDeFeriados } from "@/data/feriados";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
@@ -31,11 +32,12 @@ export default function PaginaConta() {
 // Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [antecedencia, expediente, bloqueios, feriados] = await Promise.all([
+  const [antecedencia, expediente, bloqueios, feriados, estudios] = await Promise.all([
     lerAntecedencia(),
     lerExpediente(),
     listarBloqueios(true),
     lerRegraDeFeriados(),
+    meusEstudios(),
   ]);
 
   return (
@@ -74,6 +76,21 @@ async function Conteudo() {
           texto={`${feriados.trabalha ? "Trabalho" : "Não trabalho"} em feriados${feriados.excecoes.length ? " (com exceções)" : ""}`}
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+      </Grupo>
+
+      <Grupo titulo="Estúdio">
+        {estudios.map((e) => (
+          <Linha
+            key={e.id}
+            href={e.papel === "coordenacao" ? `/estudio/${e.id}` : `/agenda/estudio/${e.id}`}
+            icone="pessoas"
+            titulo={e.nome}
+            texto={e.papel === "coordenacao" ? "Você coordena: turmas, professores e alunos" : "Suas turmas e a equipe"}
+          />
+        ))}
+        {estudios.every((e) => e.papel !== "coordenacao") && (
+          <Linha href="/estudio" icone="mais" titulo="Cadastrar um estúdio" texto="Turmas, chamada e reposições de um estúdio ou academia" />
+        )}
       </Grupo>
 
       <Grupo titulo="Alunos online">

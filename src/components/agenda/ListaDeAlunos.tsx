@@ -3,6 +3,7 @@ import { Alunos, type DetalheDoAluno, type FiltroAluno } from "@/components/agen
 import { Icone } from "@/components/Icone";
 import { listarMeusAlunos } from "@/data/convites";
 import { alunosComAtraso } from "@/data/cobrancas";
+import { alunosDasMinhasTurmas } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { matriculasAtivasPorAluno, matriculasSuspensas } from "@/data/matriculas";
 import { alunosEmPausa } from "@/data/pausas";
@@ -16,13 +17,14 @@ const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 export async function ListaDeAlunos() {
   await exigirPersonal("/agenda/alunos");
   const hoje = agoraEmBrasilia().data;
-  const [alunos, origem, comAtraso, suspensas, matriculas, pausas] = await Promise.all([
+  const [alunos, origem, comAtraso, suspensas, matriculas, pausas, doEstudio] = await Promise.all([
     listarMeusAlunos(),
     origemDoSite(),
     alunosComAtraso(hoje),
     matriculasSuspensas(),
     matriculasAtivasPorAluno(),
     alunosEmPausa(hoje),
+    alunosDasMinhasTurmas(),
   ]);
 
   // Uma etiqueta por aluno, na ordem do que mais pede atenção.
@@ -78,6 +80,28 @@ export async function ListaDeAlunos() {
         </Link>
       )}
       <Alunos alunos={alunos} origem={origem} detalhes={detalhes} />
+      {/* Alunos das turmas que ele dá no estúdio (decisão 54): em roxo, sempre abaixo dos particulares. */}
+      {doEstudio.map((g) => (
+        <section key={g.estudio} className="flex flex-col gap-2 px-[18px] pb-6" aria-label={`Alunos do ${g.estudio}`}>
+          <h2 className="flex items-center gap-2 text-[13px] font-extrabold tracking-[0.06em] text-estudio uppercase">
+            <span className="size-2.5 rounded-full bg-estudio" aria-hidden="true" />
+            {g.estudio} · {g.alunos.length}
+          </h2>
+          <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5">
+            {g.alunos.map((a) => (
+              <li key={a.id} className="flex items-center gap-3 py-2.5">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-estudio text-[14px] font-extrabold text-white">
+                  {a.nome.trim()[0]?.toUpperCase()}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[16px] font-bold">{a.nome}</span>
+                  <span className="block truncate text-[14px] text-estudio">Turma {a.turmas.join(", ")}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </>
   );
 }

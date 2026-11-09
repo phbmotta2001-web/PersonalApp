@@ -5,16 +5,18 @@ import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
+import { EstudioNoInicio } from "@/components/estudio/EstudioNoInicio";
 import { InstalarApp } from "@/components/InstalarApp";
 import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
+import { aulasDeTurmaParaMim, meusEstudios } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { situacaoDaCobranca } from "@/lib/cobranca";
-import { agoraEmBrasilia, curtoDoDia, dataCurta, diaDaSemana, emBrasilia, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, curtoDoDia, dataCurta, diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 
 export const metadata: Metadata = {
@@ -38,7 +40,7 @@ async function Conteudo() {
   const personal = await exigirPersonal("/agenda");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes] = await Promise.all([
+  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes, estudios, turmasHoje] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),
     listarAulas(agora.toISOString(), new Date(agora.getTime() + 7 * 86_400_000).toISOString()),
@@ -49,6 +51,8 @@ async function Conteudo() {
     listarMeusAlunos(),
     aulasParaDecidir(),
     reposicoesPorAluno(),
+    meusEstudios(),
+    aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
   ]);
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
@@ -113,6 +117,8 @@ async function Conteudo() {
 
       <InstalarApp />
       <AtivarNotificacoes texto="Receba na hora os pedidos e avisos dos alunos, os pagamentos e as mensalidades que vencem hoje." />
+
+      <EstudioNoInicio estudios={estudios} aulasHoje={turmasHoje} agora={agora} />
 
       {/* Fase 1: as contas nascem liberadas (sem conferência do CREF); só a suspensão avisa. */}
       {personal.situacao === "suspenso" && (

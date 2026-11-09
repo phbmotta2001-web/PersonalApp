@@ -8,6 +8,7 @@ import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { aniversariantesDoMes } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
+import { aulasDeTurmaParaMim, type AulaDeTurma } from "@/data/estudio";
 import { lerRegraDeFeriados } from "@/data/feriados";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
 import {
@@ -73,13 +74,14 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
   const semanaN = Math.floor(distancia / 7);
   const inicioSemana = somarDias(hoje, semanaN * 7);
 
-  const [expediente, bloqueios, aulas, aniversarios, suspensas, regraFeriados] = await Promise.all([
+  const [expediente, bloqueios, aulas, aniversarios, suspensas, regraFeriados, turmasDaSemana] = await Promise.all([
     lerExpediente(),
     listarBloqueios(),
     listarAulas(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
     aniversariantesDoMes(dia),
     matriculasSuspensas(),
     lerRegraDeFeriados(),
+    aulasDeTurmaParaMim(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
   ]);
   const doMes = expandida
     ? paraCalendario(
@@ -95,9 +97,12 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
 
   const agora = new Date();
   const aulasQueOcupam = aulas.filter((a) => SITUACOES_QUE_OCUPAM.includes(a.situacao as SituacaoAula));
-  const semana = horariosLivres(faixas, bloqueios, duracao, 7, new Date(), aulasQueOcupam, inicioSemana);
+  // Turmas do estúdio (decisão 54): ocupam o horário do professor e aparecem em roxo.
+  const turmas = turmasDaSemana.filter((a) => !a.cancelada);
+  const semana = horariosLivres(faixas, bloqueios, duracao, 7, new Date(), [...aulasQueOcupam, ...turmas], inicioSemana);
   const doDia = semana.find((d) => d.data === dia) ?? semana[0];
   const aulasDe = (data: string) => aulasQueOcupam.filter((a) => emBrasilia(a.inicio).data === data);
+  const turmasDe = (data: string) => turmas.filter((a) => emBrasilia(a.inicio).data === data);
   // Aulas em pausa: o horário fica livre só para reposição ou aula avulsa (exceção).
   const pausasDe = (data: string) => aulas.filter((a) => a.situacao === "pausada" && emBrasilia(a.inicio).data === data);
   const pausasDoDia = pausasDe(dia);
@@ -120,8 +125,9 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
     return h * 60 + m;
   };
   const linhas = [
-    ...aulasDoDia.map((a) => ({ min: minutoDe(a.inicio), tipo: a.situacao === "pausada" ? ("pausa" as const) : ("aula" as const), aula: a })),
-    ...(dia >= hoje ? doDia.livres.filter((m) => !pausaNoHorario(m)).map((m) => ({ min: m, tipo: "livre" as const, aula: null })) : []),
+    ...aulasDoDia.map((a) => ({ min: minutoDe(a.inicio), tipo: a.situacao === "pausada" ? ("pausa" as const) : ("aula" as const), aula: a, turma: null })),
+    ...turmasDe(dia).map((x) => ({ min: minutoDe(x.inicio), tipo: "turma" as const, aula: null, turma: x })),
+    ...(dia >= hoje ? doDia.livres.filter((m) => !pausaNoHorario(m)).map((m) => ({ min: m, tipo: "livre" as const, aula: null, turma: null })) : []),
   ].sort((x, y) => x.min - y.min || (x.tipo === "livre" ? 1 : -1));
   const novaAula = (min?: number) => `/agenda/aula/nova?dia=${dia}${min != null ? `&hora=${min}` : ""}`;
   const totalLivres = semana.reduce((n, d) => n + d.livres.length, 0);
@@ -225,6 +231,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         <GradeDaSemana
           dias={semana}
           aulas={aulas.filter((a) => a.situacao !== "recusada")}
+          turmas={turmas}
           duracao={duracao}
           dia={dia}
           hoje={hoje}
@@ -232,7 +239,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
         />
         <nav className="grid grid-cols-7 gap-1 lg:hidden" aria-label="Dias da semana">
           {semana.map((d) => {
-            const n = aulasDe(d.data).length;
+            const n = aulasDe(d.data).length + turmasDe(d.data).length;
             const p = pausasDe(d.data).length;
             const ativo = d.data === dia;
             return (
@@ -311,13 +318,28 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 const riscada = s ? naoAcontece(s) : false;
                 return (
                   <li
-                    key={a ? a.id : `livre-${l.min}`}
+                    key={a ? a.id : l.turma ? l.turma.id : `livre-${l.min}`}
                     className="grid grid-cols-[46px_1fr] items-start gap-2 border-t border-dashed border-line py-1.5 first:border-t-0"
                   >
                     <span className={`pt-2 text-[14px] font-bold tabular-nums ${l.tipo === "livre" ? "text-ink-3" : ""}`}>
                       {minParaHora(l.min)}
                     </span>
-                    {l.tipo === "livre" ? (
+                    {l.tipo === "turma" && l.turma ? (
+                      <Link
+                        href={`/agenda/turma/${l.turma.id}`}
+                        className="flex items-start gap-2 rounded-[12px] border-l-[3px] border-estudio bg-estudio-soft px-3 py-2 text-estudio"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[15px] font-bold">Turma {l.turma.modalidade}</span>
+                          <span className="block truncate text-[13px]">
+                            {l.turma.estudioNome} · até {emBrasilia(l.turma.fim).hora} · {l.turma.alunos}/{l.turma.vagas}
+                          </span>
+                        </span>
+                        {!l.turma.chamadaEm && Date.parse(l.turma.inicio) - 30 * 60_000 <= agora.getTime() && (
+                          <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-[12.5px] font-bold text-gold">chamada</span>
+                        )}
+                      </Link>
+                    ) : l.tipo === "livre" ? (
                       <Link href={novaAula(l.min)} className="flex min-h-9 items-center gap-1.5 text-[14px] text-ink-3">
                         livre <span className="font-semibold text-brand">· marcar aula</span>
                       </Link>
@@ -404,6 +426,7 @@ const PX_POR_MIN = 0.9;
 function GradeDaSemana({
   dias,
   aulas,
+  turmas,
   duracao,
   dia,
   hoje,
@@ -411,6 +434,8 @@ function GradeDaSemana({
 }: {
   dias: { data: string; diaSemana: number; livres: number[]; trabalha: boolean }[];
   aulas: AulaDaSemana[];
+  /** Aulas de turma do estúdio, em roxo. */
+  turmas: AulaDeTurma[];
   duracao: number;
   dia: string;
   hoje: string;
@@ -422,9 +447,10 @@ function GradeDaSemana({
   };
   const doDia = (data: string) => aulas.filter((a) => emBrasilia(a.inicio).data === data);
   // Faixa de horas: do primeiro ao último compromisso ou horário livre da semana (padrão 7h–20h).
-  const inicios = [...aulas.map((a) => minutoDe(a.inicio)), ...dias.flatMap((d) => d.livres)];
+  const turmasDoDia = (data: string) => turmas.filter((a) => emBrasilia(a.inicio).data === data);
+  const inicios = [...aulas.map((a) => minutoDe(a.inicio)), ...turmas.map((a) => minutoDe(a.inicio)), ...dias.flatMap((d) => d.livres)];
   const fins = [
-    ...aulas.map((a) => Math.max(minutoDe(a.inicio) + 30, minutoDe(a.fim) || 24 * 60)),
+    ...[...aulas, ...turmas].map((a) => Math.max(minutoDe(a.inicio) + 30, minutoDe(a.fim) || 24 * 60)),
     ...dias.flatMap((d) => d.livres.map((m) => m + duracao)),
   ];
   const de = inicios.length ? Math.floor(Math.min(...inicios) / 60) * 60 : 7 * 60;
@@ -472,8 +498,9 @@ function GradeDaSemana({
         </div>
         {dias.map((d) => {
           const lista = doDia(d.data);
+          const dasTurmas = turmasDoDia(d.data);
           const ocupado = (m: number) =>
-            lista.some((a) => m < Math.max(minutoDe(a.fim), minutoDe(a.inicio) + 1) && m + duracao > minutoDe(a.inicio));
+            [...lista, ...dasTurmas].some((a) => m < Math.max(minutoDe(a.fim), minutoDe(a.inicio) + 1) && m + duracao > minutoDe(a.inicio));
           return (
             <div
               key={d.data}
@@ -522,6 +549,24 @@ function GradeDaSemana({
                     <span className="block truncate">{a.nome.split(" ")[0]}</span>
                     <span className="block truncate text-[11px] font-semibold opacity-80">
                       {pausa ? "pausa · livre" : pendente ? "pedido" : emBrasilia(a.inicio).hora}
+                    </span>
+                  </Link>
+                );
+              })}
+              {dasTurmas.map((x) => {
+                const ini = minutoDe(x.inicio);
+                const fim = Math.max(ini + 20, minutoDe(x.fim) || 24 * 60);
+                return (
+                  <Link
+                    key={x.id}
+                    href={`/agenda/turma/${x.id}`}
+                    title={`${emBrasilia(x.inicio).hora} · Turma ${x.modalidade} · ${x.estudioNome}`}
+                    className="absolute inset-x-1 overflow-hidden rounded-[8px] border-l-[3px] border-estudio bg-estudio-soft px-1.5 py-1 text-[12px] leading-tight font-bold text-estudio hover:brightness-95"
+                    style={{ top: (ini - de) * PX_POR_MIN + 1, height: (fim - ini) * PX_POR_MIN - 2 }}
+                  >
+                    <span className="block truncate">{x.modalidade}</span>
+                    <span className="block truncate text-[11px] font-semibold opacity-80">
+                      {x.estudioNome} · {x.alunos}/{x.vagas}
                     </span>
                   </Link>
                 );
