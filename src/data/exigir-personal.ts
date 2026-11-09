@@ -14,8 +14,9 @@ export async function exigirPersonal(voltar: string): Promise<Personal> {
   const personal = await lerPersonalAtual();
   if (personal) {
     // A conta empresarial não tem agenda particular: fica só na coordenação do estúdio.
-    if (!personal.configurado && !voltar.startsWith("/estudio") && (await souContaEmpresa())) redirect("/estudio");
-    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO) && !voltar.startsWith("/estudio")) redirect(PRIMEIRO_ACESSO);
+    const doEstudio = voltar.startsWith("/estudio") || voltar.startsWith("/agenda/turma/");
+    if (!personal.configurado && !doEstudio && (await souContaEmpresa())) redirect("/estudio");
+    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO) && !doEstudio) redirect(PRIMEIRO_ACESSO);
     return personal;
   }
   if ((await tipoDaConta()) === "aluno") redirect("/perfil");

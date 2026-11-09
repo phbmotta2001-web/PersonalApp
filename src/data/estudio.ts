@@ -444,3 +444,49 @@ export async function fazerChamada(aulaId: string, marcas: { aluno: string; situ
   const { error } = await supabase.rpc("fazer_chamada", { p_aula: aulaId, p_marcas: marcas });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a chamada.") } : { ok: true };
 }
+
+export interface AulaNaAgendaDoEstudio {
+  id: string;
+  inicio: string;
+  fim: string;
+  turmaId: string;
+  modalidade: string;
+  vagas: number;
+  alunos: number;
+  professorId: string | null;
+  chamadaEm: string | null;
+  cancelada: boolean;
+}
+
+/** Aulas de todas as turmas do estúdio entre dois instantes (ISO), para a agenda da coordenação. */
+export async function aulasDoEstudio(estudioId: string, de: string, ate: string): Promise<AulaNaAgendaDoEstudio[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const [{ data: aulas }, { data: matriculas }] = await Promise.all([
+    supabase
+      .from("aulas_turma")
+      .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas)")
+      .eq("estudio_id", estudioId)
+      .gte("inicio", de)
+      .lt("inicio", ate)
+      .order("inicio"),
+    supabase.from("turma_alunos").select("turma_id, turmas!inner(estudio_id)").eq("turmas.estudio_id", estudioId),
+  ]);
+  const porTurma = new Map<string, number>();
+  for (const m of matriculas ?? []) porTurma.set(m.turma_id, (porTurma.get(m.turma_id) ?? 0) + 1);
+  return (aulas ?? []).map((a) => {
+    const t = a.turmas as unknown as { modalidade: string; vagas: number } | null;
+    return {
+      id: a.id,
+      inicio: a.inicio,
+      fim: a.fim,
+      turmaId: a.turma_id,
+      modalidade: t?.modalidade ?? "Turma",
+      vagas: t?.vagas ?? 0,
+      alunos: porTurma.get(a.turma_id) ?? 0,
+      professorId: a.professor_id,
+      chamadaEm: a.chamada_em,
+      cancelada: a.situacao === "cancelada",
+    };
+  });
+}

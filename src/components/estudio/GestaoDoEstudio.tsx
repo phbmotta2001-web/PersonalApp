@@ -21,8 +21,9 @@ import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
-export type Aba = "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
+export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
 const ABAS: { valor: Aba; rotulo: string }[] = [
+  { valor: "agenda", rotulo: "Agenda" },
   { valor: "turmas", rotulo: "Turmas" },
   { valor: "equipe", rotulo: "Professores" },
   { valor: "alunos", rotulo: "Alunos" },
@@ -39,9 +40,12 @@ export function GestaoDoEstudio({
   estudio,
   aba,
   financeiro,
+  agenda,
 }: {
   estudio: EstudioCompleto;
   aba: Aba;
+  /** Só na aba Agenda: a grade da semana, montada no servidor. */
+  agenda?: React.ReactNode;
   /** Só na aba Financeiro: o mês ("AAAA-MM"), hoje e os dados. */
   financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes };
 }) {
@@ -63,6 +67,7 @@ export function GestaoDoEstudio({
           </Link>
         ))}
       </nav>
+      {aba === "agenda" && agenda}
       {aba === "turmas" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} atualizar={() => router.refresh()} />}
