@@ -40,6 +40,7 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
               <span className="min-w-0 flex-1">
                 <span className={`block truncate text-[16px] font-semibold ${faltou ? "text-ink-3 line-through" : ""}`}>{a.nome}</span>
                 {avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
+                {a.reposicao && !avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-estudio">Reposição</span>}
               </span>
               {!avisadas.has(a.id) && (
                 <button

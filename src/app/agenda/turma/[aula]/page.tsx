@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
+import { AlunosAntesDaAula } from "@/components/estudio/AlunosAntesDaAula";
 import { ChamadaDaTurma } from "@/components/estudio/ChamadaDaTurma";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { lerAulaParaChamada } from "@/data/estudio";
@@ -55,14 +56,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/turma/[aula]">[
         <div className="flex flex-col gap-2">
           <p className="text-ink-2">A chamada abre 30 minutos antes da aula, às {emBrasilia(new Date(abre).toISOString()).hora}.</p>
           <h2 className="pt-2 text-[16px] font-bold">Alunos da turma ({aula.alunos.length})</h2>
-          <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
-            {aula.alunos.map((a) => (
-              <li key={a.id} className="py-2.5 font-semibold">
-                {a.nome}
-                {a.situacao === "falta_avisada" && <span className="ml-2 text-[13px] text-gold">vai faltar</span>}
-              </li>
-            ))}
-          </ul>
+          <AlunosAntesDaAula aulaId={aula.id} alunos={aula.alunos} />
         </div>
       ) : aula.alunos.length === 0 ? (
         <p className="text-ink-2">Nenhum aluno nesta turma ainda. A coordenação inclui os alunos.</p>

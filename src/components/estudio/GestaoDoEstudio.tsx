@@ -19,6 +19,7 @@ import type { FinanceiroDoMes } from "@/data/estudio-financeiro";
 import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
+import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
 export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
@@ -447,6 +448,7 @@ function Alunos({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
               </button>
               {aberto === a.id && (
                 <div className="flex flex-col gap-2.5 rounded-[14px] bg-surface-2 p-3">
+                  {!a.comApp && <ConviteDoAlunoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
                   <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={a.turmas} atualizar={atualizar} />
                   {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
                 </div>

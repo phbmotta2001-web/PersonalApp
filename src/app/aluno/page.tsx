@@ -7,6 +7,7 @@ import { Avatar, corPorId } from "@/components/Avatar";
 import { InstalarApp } from "@/components/InstalarApp";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -40,7 +41,17 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas] = await Promise.all([listarMeusPersonais(), matriculasSuspensas()]);
+  const [personais, suspensas, estudiosDoAluno] = await Promise.all([listarMeusPersonais(), matriculasSuspensas(), meusEstudiosComoAluno()]);
+  const estudios = await Promise.all(
+    estudiosDoAluno.map(async (e) => {
+      const [aulasDoEstudio, reposicoes] = await Promise.all([
+        agendaDoAlunoNoEstudio(e.id, hoje, somarDias(hoje, 7)),
+        minhasReposicoesNoEstudio(e.id),
+      ]);
+      const proximaNoEstudio = aulasDoEstudio.find((a) => a.minha && !a.aviseiFalta && !a.cancelada && Date.parse(a.inicio) > agora.getTime());
+      return { e, proxima: proximaNoEstudio, reposicoes: reposicoes.length };
+    }),
+  );
   const porPersonal = await Promise.all(
     personais.map(async (p) => {
       const [aulas, cobrancas, questionarios] = await Promise.all([
@@ -115,7 +126,19 @@ async function Conteudo() {
         </section>
       )}
 
-      {personais.length === 0 ? (
+      {estudios.map(({ e, proxima: p, reposicoes }) => (
+        <Link key={e.id} href={`/aluno/estudio/${e.id}`} className="flex flex-col gap-1 rounded-[24px] bg-estudio p-5 text-white">
+          <span className="text-[14px] opacity-85">{e.nome}</span>
+          <span className="font-display text-[24px] leading-tight font-extrabold">
+            {p ? `${p.modalidade} · ${quando(p.inicio)}` : "Nenhuma aula sua nos próximos dias"}
+          </span>
+          <span className="text-[14px] opacity-90">
+            {reposicoes > 0 ? `${reposicoes} ${reposicoes === 1 ? "reposição" : "reposições"} para usar · ` : ""}Ver a agenda e as vagas ›
+          </span>
+        </Link>
+      ))}
+
+      {personais.length === 0 && estudios.length > 0 ? null : personais.length === 0 ? (
         <section className="flex flex-col items-center gap-2 rounded-[20px] border border-dashed border-line p-6 text-center">
           <span className="grid size-11 place-items-center rounded-full bg-brand-soft text-brand">
             <Icone nome="calendario" />

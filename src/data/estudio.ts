@@ -243,6 +243,8 @@ export interface AlunoNaChamada {
   id: string;
   nome: string;
   situacao: "presente" | "falta" | "falta_avisada" | null;
+  /** Veio repor (não é da turma). */
+  reposicao?: boolean;
 }
 
 export interface AulaParaChamada {
@@ -272,7 +274,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   if (!a) return null;
   const [{ data: matriculas }, { data: presencas }] = await Promise.all([
     supabase.from("turma_alunos").select("estudio_alunos(id, nome, situacao)").eq("turma_id", a.turma_id),
-    supabase.from("presencas").select("estudio_aluno_id, situacao, estudio_alunos(id, nome)").eq("aula_turma_id", a.id),
+    supabase.from("presencas").select("estudio_aluno_id, situacao, origem, estudio_alunos(id, nome)").eq("aula_turma_id", a.id),
   ]);
   const marcas = new Map((presencas ?? []).map((p) => [p.estudio_aluno_id, p.situacao as AlunoNaChamada["situacao"]]));
   const alunos = new Map<string, AlunoNaChamada>();
@@ -283,7 +285,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   // Quem já tem marca na aula (ex.: reposição) entra na lista mesmo sem estar na turma.
   for (const p of presencas ?? []) {
     const x = p.estudio_alunos as unknown as { id: string; nome: string } | null;
-    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null });
+    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao" });
   }
   const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string };
   const e = a.estudios as unknown as { nome: string };
