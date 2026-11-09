@@ -5,7 +5,6 @@
 import { redirect } from "next/navigation";
 import type { Personal } from "@/lib/personal";
 import { souContaEmpresa, tipoDaConta } from "./conta";
-import { souDaEquipe } from "./equipe";
 import { lerPersonalAtual } from "./profissional";
 
 // Quem ainda não fez o primeiro acesso vai para ele antes de qualquer outra tela.
@@ -16,11 +15,7 @@ export async function exigirPersonal(voltar: string): Promise<Personal> {
   if (personal) {
     // A conta empresarial não tem agenda particular: fica só na coordenação do estúdio.
     if (!personal.configurado && !voltar.startsWith("/estudio") && (await souContaEmpresa())) redirect("/estudio");
-    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO) && !voltar.startsWith("/estudio")) {
-      // A conta de administração é criada como personal, mas abre direto no painel da beta.
-      if (await souDaEquipe()) redirect("/equipe");
-      redirect(PRIMEIRO_ACESSO);
-    }
+    if (!personal.configurado && !voltar.startsWith(PRIMEIRO_ACESSO) && !voltar.startsWith("/estudio")) redirect(PRIMEIRO_ACESSO);
     return personal;
   }
   if ((await tipoDaConta()) === "aluno") redirect("/perfil");

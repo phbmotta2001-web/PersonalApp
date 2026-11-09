@@ -29,7 +29,9 @@ export default function PaginaConvite({ params }: PageProps<"/convite/[codigo]">
 
 async function Conteudo({ params }: { params: PageProps<"/convite/[codigo]">["params"] }) {
   const { codigo } = await params;
-  const [convite, tipo] = await Promise.all([verConvite(codigo), tipoDaConta()]);
+  const [convite, tipoDoLogin, contaDeAluno] = await Promise.all([verConvite(codigo), tipoDaConta(), lerContaAtual()]);
+  // A conta da equipe é personal e também tem perfil de aluno: entra como aluno.
+  const tipo = contaDeAluno ? "aluno" : tipoDoLogin;
   const aqui = `/convite/${codigo}`;
 
   if (convite.situacao === "inexistente")

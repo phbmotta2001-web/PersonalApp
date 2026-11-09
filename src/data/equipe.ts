@@ -43,6 +43,21 @@ export async function souDaEquipe(): Promise<boolean> {
   return data === true;
 }
 
+/** A conta da equipe já tem o perfil de aluno de teste? */
+export async function equipeTemPerfilDeAluno(): Promise<boolean> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return false;
+  const { data } = await supabase.from("alunos").select("id").eq("id", id).maybeSingle();
+  return data != null;
+}
+
+/** Dá à conta da equipe um perfil de aluno (mesmo login), para testar a área do aluno. */
+export async function ativarAlunoDaEquipe(): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const { supabase } = await usuarioAtual();
+  const { error } = await supabase.rpc("ativar_aluno_da_equipe");
+  return error ? { ok: false, erro: "Não foi possível criar o perfil de aluno." } : { ok: true };
+}
+
 /** null: ninguém logado ou quem está logado não é da equipe. */
 export async function lerPainelBeta(): Promise<PainelBeta | null> {
   const { supabase, id } = await usuarioAtual();

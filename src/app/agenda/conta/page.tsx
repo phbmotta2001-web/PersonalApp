@@ -7,6 +7,7 @@ import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
 import { sair } from "@/data/conta";
+import { souDaEquipe } from "@/data/equipe";
 import { meusEstudios } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { lerRegraDeFeriados } from "@/data/feriados";
@@ -32,12 +33,13 @@ export default function PaginaConta() {
 // Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [antecedencia, expediente, bloqueios, feriados, estudios] = await Promise.all([
+  const [antecedencia, expediente, bloqueios, feriados, estudios, equipe] = await Promise.all([
     lerAntecedencia(),
     lerExpediente(),
     listarBloqueios(true),
     lerRegraDeFeriados(),
     meusEstudios(),
+    souDaEquipe(),
   ]);
 
   return (
@@ -77,6 +79,12 @@ async function Conteudo() {
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
       </Grupo>
+
+      {equipe && (
+        <Grupo titulo="Equipe P-Bell">
+          <Linha href="/equipe" icone="estrela" titulo="Painel da beta" texto="Números da beta e atalhos para testar cada área" />
+        </Grupo>
+      )}
 
       <Grupo titulo="Estúdio">
         {estudios.map((e) => (

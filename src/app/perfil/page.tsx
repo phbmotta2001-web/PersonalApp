@@ -1,8 +1,10 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { FormPerfilAluno } from "@/components/aluno/FormPerfilAluno";
 import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
 import { Carregando } from "@/components/Formulario";
+import { souDaEquipe } from "@/data/equipe";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { destinoSeguro } from "@/lib/destino";
 
@@ -31,7 +33,15 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/perfil">["
   const parametros = await searchParams;
   const voltar = typeof parametros.voltar === "string" ? destinoSeguro(parametros.voltar, "") : "";
 
+  const equipe = await souDaEquipe();
   return (
-    <FormPerfilAluno conta={conta} voltar={voltar.startsWith("/convite/") ? voltar : undefined} />
+    <>
+      {equipe && (
+        <Link href="/equipe" className="mx-[18px] mt-2 rounded-[14px] border border-line bg-surface px-4 py-3 text-[14.5px] font-bold text-brand">
+          ← Voltar ao painel da equipe
+        </Link>
+      )}
+      <FormPerfilAluno conta={conta} voltar={voltar.startsWith("/convite/") ? voltar : undefined} />
+    </>
   );
 }

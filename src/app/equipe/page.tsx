@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Carregando } from "@/components/Formulario";
-import { lerPainelBeta, type PersonalNoPainel } from "@/data/equipe";
+import { TestarComo } from "@/components/equipe/TestarComo";
+import { equipeTemPerfilDeAluno, lerPainelBeta, type PersonalNoPainel } from "@/data/equipe";
 import { linkWhatsapp } from "@/lib/convite";
 
 export const metadata: Metadata = {
@@ -39,7 +40,7 @@ function situacao(p: PersonalNoPainel): { texto: string; tom: string } {
 }
 
 async function Conteudo() {
-  const painel = await lerPainelBeta();
+  const [painel, temPerfilDeAluno] = await Promise.all([lerPainelBeta(), equipeTemPerfilDeAluno()]);
   if (!painel) notFound();
   const t = painel.totais;
   const numeros: [string, number, string?][] = [
@@ -56,6 +57,8 @@ async function Conteudo() {
         <p className="text-[14px] text-ink-3">Só a equipe vê esta página</p>
         <h1 className="text-[26px] font-extrabold">Painel da beta</h1>
       </header>
+
+      <TestarComo temPerfilDeAluno={temPerfilDeAluno} />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label="Números da beta">
         {numeros.map(([titulo, valor, detalhe]) => (
