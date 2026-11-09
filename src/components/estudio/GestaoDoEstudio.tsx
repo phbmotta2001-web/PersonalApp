@@ -41,11 +41,14 @@ export function GestaoDoEstudio({
   aba,
   financeiro,
   agenda,
+  complemento,
 }: {
   estudio: EstudioCompleto;
   aba: Aba;
   /** Só na aba Agenda: a grade da semana, montada no servidor. */
   agenda?: React.ReactNode;
+  /** Partes montadas no servidor que vão junto da aba (férias e faltas, reposição). */
+  complemento?: React.ReactNode;
   /** Só na aba Financeiro: o mês ("AAAA-MM"), hoje e os dados. */
   financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes };
 }) {
@@ -67,12 +70,14 @@ export function GestaoDoEstudio({
           </Link>
         ))}
       </nav>
+      {aba === "agenda" && complemento}
       {aba === "agenda" && agenda}
       {aba === "turmas" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
       {aba === "ajustes" && <AjustesDoEstudio estudio={estudio} />}
+      {aba !== "agenda" && complemento}
     </div>
   );
 }

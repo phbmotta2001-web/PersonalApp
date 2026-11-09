@@ -6,6 +6,10 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { aulasDeTurmaParaMim, lerEstudio } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
+import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
+import { ausenciasDoEstudio, reposicoesAbertas } from "@/data/reposicao";
+import { usuarioAtual } from "@/lib/supabase/servidor";
 import { agoraEmBrasilia, emBrasilia, instante, somarDias } from "@/lib/expediente";
 import { textoDaAula } from "@/lib/matricula";
 
@@ -29,11 +33,14 @@ export default function PaginaEstudioDoProfessor({ params }: PageProps<"/agenda/
 
 async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudio]">["params"] }) {
   const { estudio: id } = await params;
-  await exigirPersonal(`/agenda/estudio/${id}`);
+  const personal = await exigirPersonal(`/agenda/estudio/${id}`);
   const hoje = agoraEmBrasilia().data;
-  const [estudio, aulas] = await Promise.all([
+  const [estudio, aulas, reposicoes, ausencias, { id: eu }] = await Promise.all([
     lerEstudio(id),
     aulasDeTurmaParaMim(new Date().toISOString(), instante(somarDias(hoje, 7), 0).toISOString()),
+    reposicoesAbertas(id),
+    ausenciasDoEstudio(id),
+    usuarioAtual(),
   ]);
   if (!estudio) notFound();
   const minhas = aulas.filter((a) => a.estudioId === id && !a.cancelada);
@@ -47,6 +54,8 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudi
           {minhas.length} aula{minhas.length === 1 ? "" : "s"} suas nos próximos 7 dias · {estudio.alunos.length} alunos no estúdio
         </span>
       </section>
+
+      <ReposicoesAbertas reposicoes={reposicoes} />
 
       {estudio.papel === "coordenacao" && (
         <Link href={`/estudio/${id}`} className="rounded-[16px] border border-line bg-surface px-4 py-3 font-bold text-estudio">
@@ -77,6 +86,16 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudi
           </ul>
         )}
       </section>
+
+      {eu && (
+        <AusenciasDoEstudio
+          estudioId={id}
+          estudioNome={estudio.nome}
+          equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
+          fixo={{ personalId: eu, nome: personal.nomeCompleto }}
+          ausencias={ausencias}
+        />
+      )}
 
       {minhasTurmas.length > 0 && (
         <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Seus alunos no estúdio">

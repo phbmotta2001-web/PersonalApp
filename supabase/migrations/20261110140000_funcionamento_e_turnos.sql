@@ -3,7 +3,7 @@
 --
 -- • Funcionamento: cada dia da semana aberto tem um horário (abre e fecha). Definido no
 --   cadastro da academia/estúdio e alterável em Ajustes. Turmas e turnos ficam dentro dele.
--- • Turnos: além das turmas (aula com alunos e chamada), a coordenação atribui TURNOS de
+-- • Turnos: além das turmas (aula com alunos e chamada), a coordenação atribui TURNOS d  e
 --   trabalho a cada profissional (ex.: Musculação 6h–10h): sem alunos, sem vagas, sem
 --   chamada, até 12 h. Repetem toda semana como as turmas e ocupam a agenda do profissional.
 -- • Pagamento: o turno é pago pelo valor da hora em qualquer modelo; na comissão e no

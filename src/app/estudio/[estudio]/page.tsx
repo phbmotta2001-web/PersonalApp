@@ -9,6 +9,10 @@ import { Carregando } from "@/components/Formulario";
 import { souContaEmpresa } from "@/data/conta";
 import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
 import { lerFinanceiroDoMes } from "@/data/estudio-financeiro";
+import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
+import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
+import { ValorDaReposicao } from "@/components/estudio/ValorDaReposicao";
+import { ausenciasDoEstudio, lerConfigReposicao, reposicoesAbertas } from "@/data/reposicao";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { emBrasilia, instante, somarDias } from "@/lib/expediente";
 
@@ -55,8 +59,26 @@ async function Conteudo({
         </div>
         {empresa && <BotaoSair />}
       </header>
-      <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined} />
+      <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined} complemento={await complementoDaAba(estudio, qual)} />
     </div>
+  );
+}
+
+/** Férias e faltas e reposições (Agenda e Equipe); valor da reposição (Ajustes). */
+async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, aba: Aba) {
+  if (aba === "ajustes") return <ValorDaReposicao estudioId={estudio.id} config={await lerConfigReposicao(estudio.id)} />;
+  if (aba !== "agenda" && aba !== "equipe") return null;
+  const [ausencias, reposicoes] = await Promise.all([ausenciasDoEstudio(estudio.id), reposicoesAbertas(estudio.id)]);
+  return (
+    <>
+      <ReposicoesAbertas reposicoes={reposicoes} podeAssumir={false} />
+      <AusenciasDoEstudio
+        estudioId={estudio.id}
+        estudioNome={estudio.nome}
+        equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
+        ausencias={ausencias}
+      />
+    </>
   );
 }
 
