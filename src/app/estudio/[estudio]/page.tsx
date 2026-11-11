@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function PaginaEstudio({ params, searchParams }: PageProps<"/estudio/[estudio]">) {
   return (
-    <div className="flex w-full flex-1 flex-col lg:pl-60">
+    <div className="painel-estudio flex w-full flex-1 flex-col lg:pl-60">
       <Suspense fallback={<Carregando />}>
         <Conteudo params={params} searchParams={searchParams} />
       </Suspense>
@@ -62,7 +62,8 @@ async function Conteudo({
   return (
     <>
       <MenuDaCoordenacao estudioId={estudio.id} nome={estudio.nome} aba={qual} empresa={empresa} />
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-[18px] pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-12">
+      {/* A agenda usa a largura toda (uma coluna por profissional); as outras abas ficam centradas. */}
+      <main className={`mx-auto flex w-full flex-col gap-4 px-[18px] pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-12 ${qual === "agenda" ? "" : "max-w-6xl"}`}>
         <h1 className="text-[24px] leading-tight font-extrabold">{titulo}</h1>
         <GestaoDoEstudio
           estudio={estudio}

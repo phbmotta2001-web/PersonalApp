@@ -73,7 +73,6 @@ export function GestaoDoEstudio({
 const NOVA: Omit<DadosTurma, "vagas"> = { id: null, tipo: "turma", modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
 /** Turma: 30 min a 2 h. Turno: até 12 h. */
 const DURACOES_TURMA = [30, 45, 50, 60, 75, 90, 120];
-const DURACOES_TURNO = [60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720];
 const textoDuracao = (m: number) => (m < 60 || m % 60 ? `${m} min` : `${m / 60} h`);
 
 function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
@@ -163,8 +162,17 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
               </select>
             </label>
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
-              Horário
-              <select value={editando.inicioMin} onChange={(e) => setEditando({ ...editando, inicioMin: Number(e.target.value) })} className={ESTILO_CAIXA}>
+              {editando.tipo === "turno" ? "Das" : "Horário"}
+              <select
+                value={editando.inicioMin}
+                onChange={(e) => {
+                  const inicio = Number(e.target.value);
+                  // No turno, o fim fica onde estava (dentro de 1 h a 12 h e antes da meia-noite).
+                  const fim = editando.tipo === "turno" ? Math.min(Math.max(editando.inicioMin + editando.duracaoMin, inicio + 60), inicio + 720, 1440) : inicio + editando.duracaoMin;
+                  setEditando({ ...editando, inicioMin: inicio, duracaoMin: fim - inicio });
+                }}
+                className={ESTILO_CAIXA}
+              >
                 {opcoesDeHora(300, 1380).map((m) => (
                   <option key={m} value={m}>
                     {minParaHora(m)}
@@ -172,16 +180,33 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
-              Duração
-              <select value={editando.duracaoMin} onChange={(e) => setEditando({ ...editando, duracaoMin: Number(e.target.value) })} className={ESTILO_CAIXA}>
-                {(editando.tipo === "turno" ? DURACOES_TURNO : DURACOES_TURMA).map((m) => (
-                  <option key={m} value={m}>
-                    {textoDuracao(m)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {editando.tipo === "turno" ? (
+              <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
+                Às
+                <select
+                  value={editando.inicioMin + editando.duracaoMin}
+                  onChange={(e) => setEditando({ ...editando, duracaoMin: Number(e.target.value) - editando.inicioMin })}
+                  className={ESTILO_CAIXA}
+                >
+                  {opcoesDeHora(editando.inicioMin + 60, Math.min(editando.inicioMin + 720, 1440)).map((m) => (
+                    <option key={m} value={m}>
+                      {minParaHora(m)} ({textoDuracao(m - editando.inicioMin)})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
+                Duração
+                <select value={editando.duracaoMin} onChange={(e) => setEditando({ ...editando, duracaoMin: Number(e.target.value) })} className={ESTILO_CAIXA}>
+                  {DURACOES_TURMA.map((m) => (
+                    <option key={m} value={m}>
+                      {textoDuracao(m)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {editando.tipo === "turma" && (
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               Vagas
@@ -503,7 +528,7 @@ function Alunos({
                           href={linkWhatsapp(a.whatsapp, mensagemDeCobrancaDoEstudio(estudio, a, p, hoje))}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded-[10px] bg-[#1f8f4e] px-3 py-1.5 text-[14px] font-bold text-white"
+                          className="rounded-[10px] bg-brand px-3 py-1.5 text-[14px] font-bold text-brand-ink"
                         >
                           Cobrar no WhatsApp
                         </a>

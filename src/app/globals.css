@@ -99,6 +99,7 @@
   --color-estudio: var(--estudio);
   --color-estudio-soft: var(--estudio-soft);
   --color-estudio-fundo: var(--estudio-fundo);
+  --color-estudio-claro: var(--estudio-claro);
   --color-on-estudio: var(--on-estudio);
   --color-on-estudio-2: var(--on-estudio-2);
   --color-ok: var(--ok);
@@ -401,4 +402,52 @@ input[type="checkbox"]:checked {
 }
 @media (prefers-reduced-motion: reduce) {
   .abertura { display: none; }
+}
+
+/* Painel da coordenação (decisão 62): por enquanto tudo em roxo. As cores do app são
+   trocadas só dentro do painel; verde/amarelo/vermelho de pagamento continuam. */
+.painel-estudio {
+  --app: #f6f3fb;
+  --surface: #ffffff;
+  --surface-2: #efe9f8;
+  --ink: #1d1428;
+  --ink-2: #4a3f5c;
+  --ink-3: #564a68;
+  --line: #e0d7ee;
+  --brand: #6a3fb5;
+  --brand-ink: #ffffff;
+  --brand-soft: #ece4fa;
+  --brand-2: #7d52c9;
+  --sombra: 40 20 70;
+  --estudio-claro: #c9b3ef;
+  background: var(--app);
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  .painel-estudio {
+    --app: #110d17;
+    --surface: #19131f;
+    --surface-2: #221a2c;
+    --ink: #ece7f4;
+    --ink-2: #c3b8d6;
+    --ink-3: #b2a6c6;
+    --line: #33284a;
+    --brand: #b89af0;
+    --brand-ink: #1a0f2e;
+    --brand-soft: #2c1f45;
+    --brand-2: #cbb3f6;
+    --estudio-claro: #5e4590;
+  }
+}
+.painel-estudio {
+  accent-color: var(--brand);
+}
+.painel-estudio :focus-visible {
+  outline-color: var(--brand);
+}
+/* Escolhas marcadas (chips) também em roxo. */
+.painel-estudio [aria-pressed="true"].bg-ink {
+  background-color: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
 }

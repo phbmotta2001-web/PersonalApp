@@ -11,7 +11,6 @@ import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } 
 const PX_POR_MIN = 1.6;
 const PASSO = 30;
 const DURACOES_TURMA = [30, 45, 50, 60, 75, 90, 120];
-const DURACOES_TURNO = [60, 120, 180, 240, 300, 360, 420, 480, 540, 600, 660, 720];
 const SEM_PROFESSOR = "sem";
 
 const minutoDe = (iso: string) => {
@@ -175,7 +174,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
       ) : definido && !aberto && aulas.length === 0 ? (
         <p className="text-ink-3">O estúdio não abre neste dia.</p>
       ) : (
-        <div className="max-h-[calc(100dvh-140px)] overflow-auto rounded-[20px] border border-line bg-surface xl:relative xl:left-1/2 xl:w-[calc(100vw-56px)] xl:-translate-x-1/2">
+        <div className="max-h-[calc(100dvh-140px)] overflow-auto rounded-[20px] border border-line bg-surface">
           <div className="grid" style={{ gridTemplateColumns: `56px repeat(${colunas.length}, minmax(150px, 1fr))` }}>
             <div className="sticky top-0 left-0 z-30 border-b border-line bg-surface" />
             {colunas.map((c) => (
@@ -290,8 +289,14 @@ function NovoHorario({
   const [salvando, iniciar] = useTransition();
   const fecha = aberto?.fim ?? 1440;
   const turno = tipo === "turno";
-  const duracoes = (turno ? DURACOES_TURNO : DURACOES_TURMA).filter((m) => inicio + m <= fecha);
-  const duracaoValida = duracoes.includes(duracao) ? duracao : (duracoes.at(-1) ?? 30);
+  const duracoes = DURACOES_TURMA.filter((m) => inicio + m <= fecha);
+  // Turno: "das … às …", de 1 h a 12 h, sem passar do fechamento.
+  const finsDoTurno = opcoesDeHora(Math.min(inicio + 60, fecha), Math.min(inicio + 720, fecha));
+  const duracaoValida = turno
+    ? Math.min(Math.max(duracao, finsDoTurno[0] - inicio), finsDoTurno.at(-1)! - inicio)
+    : duracoes.includes(duracao)
+      ? duracao
+      : (duracoes.at(-1) ?? 30);
   const nome = estudio.equipe.find((m) => m.personalId === novo.professorId)?.nome ?? "Sem professor";
 
   const mudarTipo = (t: TipoDeHorario) => {
@@ -351,7 +356,7 @@ function NovoHorario({
         </label>
         <div className="grid grid-cols-2 gap-2.5">
           <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-            Início
+            {turno ? "Das" : "Início"}
             <select value={inicio} onChange={(e) => setInicio(Number(e.target.value))} className={ESTILO_CAIXA}>
               {opcoesDeHora(aberto?.inicio ?? 0, fecha - 30).map((m) => (
                 <option key={m} value={m}>
@@ -360,16 +365,29 @@ function NovoHorario({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-            Duração
-            <select value={duracaoValida} onChange={(e) => setDuracao(Number(e.target.value))} className={ESTILO_CAIXA}>
-              {duracoes.map((m) => (
-                <option key={m} value={m}>
-                  {textoDuracao(m)} (até {minParaHora(inicio + m)})
-                </option>
-              ))}
-            </select>
-          </label>
+          {turno ? (
+            <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
+              Às
+              <select value={inicio + duracaoValida} onChange={(e) => setDuracao(Number(e.target.value) - inicio)} className={ESTILO_CAIXA}>
+                {finsDoTurno.map((m) => (
+                  <option key={m} value={m}>
+                    {minParaHora(m)} ({textoDuracao(m - inicio)})
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
+              Duração
+              <select value={duracaoValida} onChange={(e) => setDuracao(Number(e.target.value))} className={ESTILO_CAIXA}>
+                {duracoes.map((m) => (
+                  <option key={m} value={m}>
+                    {textoDuracao(m)} (até {minParaHora(inicio + m)})
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
         {!turno && (
           <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">

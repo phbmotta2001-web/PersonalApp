@@ -462,11 +462,11 @@ function GraficoDoEstudio({ historico, academia, mes }: { historico: MesDoEstudi
         <h3 className="flex-1 text-[16px] font-bold">{academia ? "Professores por mês" : "Receita × professores"}</h3>
         {!academia && (
           <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
-            <span className="size-3 rounded-[4px] bg-ok" /> Receita
+            <span className="size-3 rounded-[4px] bg-estudio" /> Receita
           </span>
         )}
         <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
-          <span className="size-3 rounded-[4px] bg-estudio" /> Professores
+          <span className="size-3 rounded-[4px] bg-estudio-claro" /> Professores
         </span>
       </div>
       <div className="flex h-44 items-end gap-2 lg:h-56 lg:gap-4">
@@ -480,7 +480,7 @@ function GraficoDoEstudio({ historico, academia, mes }: { historico: MesDoEstudi
                   <div className="flex h-full w-1/2 max-w-7 flex-col items-center justify-end gap-0.5">
                     <span className="text-[10.5px] text-ink-3 tabular-nums">{h.receita > 0 ? curto(h.receita) : ""}</span>
                     <span
-                      className={`w-full rounded-t-[6px] rounded-b-[2px] bg-ok ${atual ? "" : "opacity-55"}`}
+                      className={`w-full rounded-t-[6px] rounded-b-[2px] bg-estudio ${atual ? "" : "opacity-55"}`}
                       style={{ height: barra(h.receita) }}
                       title={`Receita em ${nome}: ${centavosParaReais(h.receita)}`}
                     />
@@ -489,7 +489,7 @@ function GraficoDoEstudio({ historico, academia, mes }: { historico: MesDoEstudi
                 <div className="flex h-full w-1/2 max-w-7 flex-col items-center justify-end gap-0.5">
                   <span className="text-[10.5px] text-ink-3 tabular-nums">{h.professores > 0 ? curto(h.professores) : ""}</span>
                   <span
-                    className={`w-full rounded-t-[6px] rounded-b-[2px] bg-estudio ${atual ? "" : "opacity-55"}`}
+                    className={`w-full rounded-t-[6px] rounded-b-[2px] bg-estudio-claro ${atual ? "" : "opacity-55"}`}
                     style={{ height: barra(h.professores) }}
                     title={`Professores em ${nome}: ${centavosParaReais(h.professores)}`}
                   />
@@ -510,6 +510,65 @@ function GraficoDoEstudio({ historico, academia, mes }: { historico: MesDoEstudi
           </p>
         );
       })()}
+    </section>
+  );
+}
+
+/** Planos (vezes na semana) com o preço da tabela e quantos alunos estão em cada um. */
+function PlanosDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
+  const planos = new Map<number, { alunos: number; diferentes: number; total: number }>();
+  let semTurma = 0;
+  for (const a of estudio.alunos) {
+    const vezes = Math.min(7, a.turmas.length);
+    if (vezes === 0) {
+      semTurma++;
+      continue;
+    }
+    const p = planos.get(vezes) ?? { alunos: 0, diferentes: 0, total: 0 };
+    p.alunos++;
+    if (a.valorMensal != null) p.diferentes++;
+    p.total += a.valorMensal ?? estudio.config.precos[vezes] ?? 0;
+    planos.set(vezes, p);
+  }
+  const linhas = [...new Set([...Object.keys(estudio.config.precos).map(Number), ...planos.keys()])]
+    .filter((v) => estudio.config.precos[v] != null || planos.has(v))
+    .sort((a, b) => a - b);
+  const total = [...planos.values()].reduce((s, p) => s + p.total, 0);
+  const alunos = (n: number) => `${n} aluno${n === 1 ? "" : "s"}`;
+  return (
+    <section className="flex flex-col gap-2" aria-label="Planos">
+      <h3 className="text-[16px] font-bold">Planos</h3>
+      {linhas.length === 0 ? (
+        <p className="text-ink-3">Cadastre a tabela de mensalidades em Ajustes e as turmas dos alunos para ver os planos.</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
+          {linhas.map((v) => {
+            const p = planos.get(v);
+            const preco = estudio.config.precos[v];
+            return (
+              <li key={v} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">
+                    {v}x na semana{preco != null && <span className="font-normal text-ink-3"> · {centavosParaReais(preco)}</span>}
+                  </span>
+                  {p && p.diferentes > 0 && (
+                    <span className="block text-[13px] text-ink-3">
+                      {p.diferentes} com valor diferente da tabela
+                    </span>
+                  )}
+                </span>
+                <span className="rounded-full bg-brand-soft px-2.5 py-0.5 text-[13.5px] font-bold text-brand">{alunos(p?.alunos ?? 0)}</span>
+                <span className="w-24 text-right font-extrabold tabular-nums">{p ? centavosParaReais(p.total) : "—"}</span>
+              </li>
+            );
+          })}
+          <li className="flex items-center gap-3 py-3">
+            <span className="flex-1 font-bold">Total por mês</span>
+            <span className="font-extrabold tabular-nums">{centavosParaReais(total)}</span>
+          </li>
+        </ul>
+      )}
+      {semTurma > 0 && <p className="text-[13px] text-ink-3">{alunos(semTurma)} sem turma (fora dos planos).</p>}
     </section>
   );
 }
@@ -595,6 +654,7 @@ export function FinanceiroDoEstudio({
       </div>
 
       <GraficoDoEstudio historico={historico} academia={academia} mes={mes} />
+      <PlanosDoEstudio estudio={estudio} />
       <Professores estudio={estudio} mes={mes} dados={dados} atualizar={() => router.refresh()} />
       <FaltasDosProfessores estudio={estudio} faltas={faltas} />
       {!academia && <Mensalidades estudio={estudio} hoje={hoje} dados={dados} atualizar={() => router.refresh()} />}
