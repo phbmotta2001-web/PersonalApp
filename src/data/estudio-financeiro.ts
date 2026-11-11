@@ -185,3 +185,145 @@ export async function lerFinanceiroDoMes(estudioId: string, mes: string): Promis
     })),
   };
 }
+
+// ─── Painel da coordenação (decisão 62) ──────────────────────────────────────
+
+export interface PagamentoDoAluno {
+  /** devendo: mensalidade vencida em aberto; vencendo: vence em até 7 dias; pago: a última foi paga. */
+  situacao: "devendo" | "vencendo" | "pago" | "em_dia";
+  cobrancaId: string | null;
+  valor: number;
+  vencimento: string | null;
+  pagoEm: string | null;
+  alunoAvisou: boolean;
+  /** Mensalidades vencidas em aberto (soma), quando devendo. */
+  devido: number;
+}
+
+const DIAS_VENCENDO = 7;
+
+/** A situação de pagamento de cada aluno do estúdio (pela mensalidade mais recente). */
+export async function pagamentosDosAlunos(estudioId: string, hoje: string): Promise<Record<string, PagamentoDoAluno>> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id || !/^\d{4}-\d{2}-\d{2}$/.test(hoje)) return {};
+  const { data, error } = await supabase
+    .from("estudio_cobrancas")
+    .select("id, estudio_aluno_id, vencimento, valor_centavos, situacao, pago_em, aluno_avisou_em")
+    .eq("estudio_id", estudioId)
+    .neq("situacao", "cancelada")
+    .order("vencimento", { ascending: false })
+    .limit(2000);
+  if (error || !data) return {};
+  const [a, m, d] = hoje.split("-").map(Number);
+  const limite = new Date(Date.UTC(a, m - 1, d + DIAS_VENCENDO)).toISOString().slice(0, 10);
+  const porAluno: Record<string, PagamentoDoAluno> = {};
+  for (const c of data) {
+    const atual = porAluno[c.estudio_aluno_id];
+    const aberta = c.situacao === "aberta";
+    if (aberta && c.vencimento < hoje) {
+      // A mais antiga vencida é a que se cobra; a soma vai junto.
+      const devido = (atual?.situacao === "devendo" ? atual.devido : 0) + c.valor_centavos;
+      porAluno[c.estudio_aluno_id] = {
+        situacao: "devendo",
+        cobrancaId: c.id,
+        valor: c.valor_centavos,
+        vencimento: c.vencimento,
+        pagoEm: null,
+        alunoAvisou: c.aluno_avisou_em != null,
+        devido,
+      };
+      continue;
+    }
+    if (atual) continue;
+    porAluno[c.estudio_aluno_id] = {
+      situacao: aberta ? (c.vencimento <= limite ? "vencendo" : "em_dia") : "pago",
+      cobrancaId: c.id,
+      valor: c.valor_centavos,
+      vencimento: c.vencimento,
+      pagoEm: c.pago_em,
+      alunoAvisou: c.aluno_avisou_em != null,
+      devido: 0,
+    };
+  }
+  return porAluno;
+}
+
+export interface MesDoEstudio {
+  /** "AAAA-MM". */
+  mes: string;
+  /** Mensalidades recebidas no mês (pela data do pagamento). */
+  receita: number;
+  /** O que os professores ganharam no mês (o valor pago, se já foi marcado). */
+  professores: number;
+}
+
+/** Receita e custo dos professores dos últimos `n` meses, terminando em `ate` ("AAAA-MM"). */
+export async function historicoDoEstudio(estudioId: string, ate: string, n = 6): Promise<MesDoEstudio[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id || !/^\d{4}-\d{2}$/.test(ate)) return [];
+  const [a, m] = ate.split("-").map(Number);
+  const meses = Array.from({ length: n }, (_, i) => {
+    const d = new Date(Date.UTC(a, m - n + i, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  });
+  const fim = new Date(Date.UTC(a, m, 1)).toISOString().slice(0, 10);
+  const [{ data: pagas }, ...professores] = await Promise.all([
+    supabase
+      .from("estudio_cobrancas")
+      .select("valor_centavos, pago_em")
+      .eq("estudio_id", estudioId)
+      .eq("situacao", "paga")
+      .gte("pago_em", `${meses[0]}-01`)
+      .lt("pago_em", fim),
+    ...meses.map((mes) => supabase.rpc("pagamento_professores", { p_estudio: estudioId, p_mes: `${mes}-01` })),
+  ]);
+  return meses.map((mes, i) => ({
+    mes,
+    receita: (pagas ?? []).filter((c) => c.pago_em?.startsWith(mes)).reduce((s, c) => s + c.valor_centavos, 0),
+    professores: ((professores[i].data ?? []) as { valor_centavos: number; valor_pago_centavos: number | null }[]).reduce(
+      (s, p) => s + (p.valor_pago_centavos ?? p.valor_centavos),
+      0,
+    ),
+  }));
+}
+
+export interface FaltasDoProfessor {
+  personalId: string;
+  faltas: number;
+  ferias: number;
+}
+
+/**
+ * Dias de falta e de férias de cada professor no mês ("AAAA-MM"), até hoje. Com o
+ * funcionamento definido, contam só os dias em que o estúdio abre.
+ */
+export async function faltasDosProfessores(estudioId: string, mes: string, hoje: string, diasAbertos: number[] | null): Promise<FaltasDoProfessor[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id || !/^\d{4}-\d{2}$/.test(mes)) return [];
+  const inicio = `${mes}-01`;
+  const [a, m] = mes.split("-").map(Number);
+  const ultimo = new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+  const ate = ultimo < hoje ? ultimo : hoje;
+  if (ate < inicio) return [];
+  const { data, error } = await supabase
+    .from("estudio_ausencias")
+    .select("personal_id, tipo, de, ate")
+    .eq("estudio_id", estudioId)
+    .is("cancelada_em", null)
+    .lte("de", ate)
+    .gte("ate", inicio);
+  if (error || !data) return [];
+  const contagem = new Map<string, { faltas: Set<string>; ferias: Set<string> }>();
+  for (const x of data) {
+    const c = contagem.get(x.personal_id) ?? { faltas: new Set<string>(), ferias: new Set<string>() };
+    contagem.set(x.personal_id, c);
+    const de = x.de > inicio ? x.de : inicio;
+    const fim = x.ate < ate ? x.ate : ate;
+    for (let t = Date.parse(de); t <= Date.parse(fim); t += 86_400_000) {
+      const dia = new Date(t);
+      if (diasAbertos && !diasAbertos.includes(dia.getUTCDay())) continue;
+      (x.tipo === "falta" ? c.faltas : c.ferias).add(dia.toISOString().slice(0, 10));
+    }
+  }
+  return [...contagem].map(([personalId, c]) => ({ personalId, faltas: c.faltas.size, ferias: c.ferias.size }));
+}

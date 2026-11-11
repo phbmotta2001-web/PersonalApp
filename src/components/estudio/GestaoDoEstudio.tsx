@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
@@ -11,11 +10,15 @@ import {
   removerDaEquipe,
   salvarTurma,
   salvarTurmasDoAluno,
+  type AlunoDoEstudio,
   type DadosTurma,
   type EstudioCompleto,
   type TurmaDoEstudio,
 } from "@/data/estudio";
-import type { FinanceiroDoMes } from "@/data/estudio-financeiro";
+import { marcarMensalidade, type FaltasDoProfessor, type FinanceiroDoMes, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
+import { textoDoVencimento } from "@/lib/cobranca";
+import { centavosParaReais } from "@/lib/matricula";
+import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
 import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
@@ -23,14 +26,6 @@ import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
 export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
-const ABAS: { valor: Aba; rotulo: string }[] = [
-  { valor: "agenda", rotulo: "Agenda" },
-  { valor: "turmas", rotulo: "Turmas" },
-  { valor: "equipe", rotulo: "Professores" },
-  { valor: "alunos", rotulo: "Alunos" },
-  { valor: "financeiro", rotulo: "Financeiro" },
-  { valor: "ajustes", rotulo: "Ajustes" },
-];
 
 const nomeDoDia = (d: number) => DIAS.find((x) => x.valor === d)?.nome ?? "";
 export const rotuloDaTurma = (t: Pick<TurmaDoEstudio, "modalidade" | "diaSemana" | "inicioMin">) =>
@@ -43,6 +38,8 @@ export function GestaoDoEstudio({
   financeiro,
   agenda,
   complemento,
+  pagamentos,
+  hoje,
 }: {
   estudio: EstudioCompleto;
   aba: Aba;
@@ -51,31 +48,19 @@ export function GestaoDoEstudio({
   /** Partes montadas no servidor que vão junto da aba (férias e faltas, reposição). */
   complemento?: React.ReactNode;
   /** Só na aba Financeiro: o mês ("AAAA-MM"), hoje e os dados. */
-  financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes };
+  financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes; historico: MesDoEstudio[]; faltas: FaltasDoProfessor[] };
+  /** Só na aba Alunos (estúdio que cobra mensalidade): a situação de pagamento de cada aluno. */
+  pagamentos?: Record<string, PagamentoDoAluno>;
+  hoje: string;
 }) {
   const router = useRouter();
   return (
     <div className="flex flex-col gap-5">
-      <nav className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1" aria-label="Partes do estúdio">
-        {ABAS.map((a) => (
-          <Link
-            key={a.valor}
-            href={`/estudio/${estudio.id}?aba=${a.valor}`}
-            scroll={false}
-            aria-current={aba === a.valor ? "page" : undefined}
-            className={`shrink-0 rounded-full border px-4 py-2 text-[15px] font-bold ${
-              aba === a.valor ? "border-ink bg-ink text-app" : "border-line bg-surface text-ink-2"
-            }`}
-          >
-            {a.rotulo}
-          </Link>
-        ))}
-      </nav>
       {aba === "agenda" && complemento}
       {aba === "agenda" && agenda}
       {aba === "turmas" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
-      {aba === "alunos" && <Alunos estudio={estudio} atualizar={() => router.refresh()} />}
+      {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
       {aba === "ajustes" && <AjustesDoEstudio estudio={estudio} />}
       {aba !== "agenda" && complemento}
@@ -380,15 +365,168 @@ function Equipe({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
 
 // ─── Alunos ─────────────────────────────────────────────────────────────────
 
-function Alunos({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
+const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+const SITUACAO_PAGAMENTO: Record<PagamentoDoAluno["situacao"], { rotulo: string; borda: string; selo: string }> = {
+  devendo: { rotulo: "Devendo", borda: "border-l-bad", selo: "bg-bad text-white" },
+  vencendo: { rotulo: "Vence em até 7 dias", borda: "border-l-star", selo: "bg-gold-soft text-gold" },
+  pago: { rotulo: "Pago", borda: "border-l-ok", selo: "bg-ok-soft text-ok" },
+  em_dia: { rotulo: "Em dia", borda: "border-l-line", selo: "bg-surface-2 text-ink-2" },
+};
+
+/** Mensagem pronta para a coordenação cobrar o aluno pelo WhatsApp (com o Pix do estúdio). */
+function mensagemDeCobrancaDoEstudio(estudio: EstudioCompleto, aluno: AlunoDoEstudio, p: PagamentoDoAluno, hoje: string): string {
+  const total = p.situacao === "devendo" ? p.devido : p.valor;
+  const linhas = [
+    `Oi, ${aluno.nome.split(" ")[0]}! ${p.situacao === "devendo" ? "Passando para lembrar" : "Lembrete"} do ${estudio.nome}: a mensalidade de ${centavosParaReais(p.valor)} ${p.vencimento ? textoDoVencimento(p.vencimento, hoje) : "está em aberto"}.`,
+  ];
+  if (p.situacao === "devendo" && p.devido > p.valor) linhas.push(`Com as anteriores, o total em aberto é ${centavosParaReais(p.devido)}.`);
+  const pix = estudio.config.pix;
+  if (pix?.chave) {
+    try {
+      linhas.push("", "Pix copia e cola:", pixCopiaECola({ ...pix, tipo: pix.tipo as TipoChavePix }, total, "MENSALIDADE"));
+    } catch {
+      linhas.push("", `Pix: ${pix.chave}`);
+    }
+  }
+  linhas.push("", "Obrigado!");
+  return linhas.join("\n");
+}
+
+function Alunos({
+  estudio,
+  pagamentos,
+  hoje,
+  atualizar,
+}: {
+  estudio: EstudioCompleto;
+  pagamentos?: Record<string, PagamentoDoAluno>;
+  hoje: string;
+  atualizar: () => void;
+}) {
   const [texto, setTexto] = useState("");
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [aberto, setAberto] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<PagamentoDoAluno["situacao"] | null>(null);
+  const [erroPagamento, setErroPagamento] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   const turmaPorId = new Map(estudio.turmas.map((t) => [t.id, t]));
+  const situacao = (id: string) => pagamentos?.[id]?.situacao ?? "em_dia";
+  const contar = (s: PagamentoDoAluno["situacao"]) => estudio.alunos.filter((a) => situacao(a.id) === s).length;
+  // Quem deve vem primeiro, depois quem vence logo; os demais em ordem alfabética.
+  const ORDEM = { devendo: 0, vencendo: 1, em_dia: 2, pago: 3 } as const;
+  const lista = estudio.alunos
+    .filter((a) => !filtro || situacao(a.id) === filtro)
+    .sort((x, y) => (pagamentos ? ORDEM[situacao(x.id)] - ORDEM[situacao(y.id)] : 0));
+
+  const recebido = (cobrancaId: string) =>
+    iniciar(async () => {
+      setErroPagamento(null);
+      const r = await marcarMensalidade(cobrancaId, "paga");
+      if (!r.ok) return setErroPagamento(r.erro);
+      atualizar();
+    });
 
   return (
     <section className="flex flex-col gap-4" aria-label="Alunos">
+      {pagamentos && (
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Pagamentos">
+          {(
+            [
+              ["pago", "Pagos", "text-ok", "border-ok"],
+              ["vencendo", "Vencem em 7 dias", "text-gold", "border-star"],
+              ["devendo", "Devendo", "text-bad", "border-bad"],
+            ] as const
+          ).map(([s, rotulo, cor, borda]) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={filtro === s}
+              onClick={() => setFiltro(filtro === s ? null : s)}
+              className={`flex flex-col rounded-[18px] border-[1.5px] bg-surface p-3 text-left ${filtro === s ? borda : "border-line"}`}
+            >
+              <span className={`text-[26px] leading-none font-extrabold ${cor}`}>{contar(s)}</span>
+              <span className="mt-1 text-[13px] font-semibold text-ink-2">{rotulo}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <h2 className="flex-1 text-[18px] font-bold">
+          {filtro ? `${SITUACAO_PAGAMENTO[filtro].rotulo} (${lista.length})` : `Alunos (${estudio.alunos.length})`}
+        </h2>
+        {filtro && (
+          <button type="button" onClick={() => setFiltro(null)} className="text-[14px] font-bold text-brand">
+            Ver todos
+          </button>
+        )}
+      </div>
+      <Aviso>{erroPagamento}</Aviso>
+      {lista.length === 0 ? (
+        <p className="text-ink-3">{filtro ? "Ninguém nesta situação." : "Nenhum aluno ainda."}</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {lista.map((a) => {
+            const p = pagamentos?.[a.id];
+            const s = SITUACAO_PAGAMENTO[p?.situacao ?? "em_dia"];
+            const cobrar = p && (p.situacao === "devendo" || p.situacao === "vencendo") && p.cobrancaId;
+            return (
+              <li key={a.id} className={`flex flex-col gap-2 rounded-[18px] border border-l-[5px] border-line bg-surface px-4 py-3 ${pagamentos ? s.borda : ""}`}>
+                <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{a.nome}</span>
+                    <span className="block text-[13px] text-ink-3">
+                      {a.turmas.length ? a.turmas.map((id) => (turmaPorId.get(id) ? rotuloDaTurma(turmaPorId.get(id)!) : "")).join(" · ") : "Sem turma"}
+                    </span>
+                  </span>
+                  {!a.comApp && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12.5px] font-bold text-ink-2">sem app</span>}
+                  <span className="text-ink-3" aria-hidden="true">
+                    {aberto === a.id ? "▴" : "▾"}
+                  </span>
+                </button>
+                {p && (
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-bold ${s.selo}`}>
+                      {p.situacao === "pago"
+                        ? `Pago${p.pagoEm ? ` em ${dataBr(p.pagoEm)}` : ""}`
+                        : p.situacao === "devendo"
+                          ? `Devendo ${centavosParaReais(p.devido)}`
+                          : p.situacao === "vencendo"
+                            ? `${centavosParaReais(p.valor)} · ${textoDoVencimento(p.vencimento!, hoje)}`
+                            : `Próxima: ${dataBr(p.vencimento!)}`}
+                    </span>
+                    {p.situacao === "devendo" && p.vencimento && <span className="text-[13px] text-bad">{textoDoVencimento(p.vencimento, hoje)}</span>}
+                    {cobrar && p.alunoAvisou && <span className="text-[13px] font-semibold text-ok">avisou que pagou</span>}
+                    {cobrar && (
+                      <span className="ml-auto flex items-center gap-3">
+                        <a
+                          href={linkWhatsapp(a.whatsapp, mensagemDeCobrancaDoEstudio(estudio, a, p, hoje))}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-[10px] bg-[#1f8f4e] px-3 py-1.5 text-[14px] font-bold text-white"
+                        >
+                          Cobrar no WhatsApp
+                        </a>
+                        <button type="button" disabled={ocupado} onClick={() => recebido(p.cobrancaId!)} className="text-[14px] font-bold text-brand">
+                          Recebido
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                )}
+                {aberto === a.id && (
+                  <div className="flex flex-col gap-2.5 rounded-[14px] bg-surface-2 p-3">
+                    {!a.comApp && <ConviteDoAlunoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
+                    <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={a.turmas} atualizar={atualizar} />
+                    {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       <div className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
         <h2 className="font-bold">Cadastrar alunos</h2>
         <p className="text-[14px] text-ink-3">
@@ -426,37 +564,6 @@ function Alunos({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
           {ocupado ? "Cadastrando…" : "Cadastrar lista"}
         </button>
       </div>
-
-      <h2 className="text-[18px] font-bold">Alunos ({estudio.alunos.length})</h2>
-      {estudio.alunos.length === 0 ? (
-        <p className="text-ink-3">Nenhum aluno ainda.</p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
-          {estudio.alunos.map((a) => (
-            <li key={a.id} className="flex flex-col gap-2 py-3">
-              <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold">{a.nome}</span>
-                  <span className="block text-[13px] text-ink-3">
-                    {a.turmas.length ? a.turmas.map((id) => (turmaPorId.get(id) ? rotuloDaTurma(turmaPorId.get(id)!) : "")).join(" · ") : "Sem turma"}
-                  </span>
-                </span>
-                {!a.comApp && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12.5px] font-bold text-ink-2">sem app</span>}
-                <span className="text-ink-3" aria-hidden="true">
-                  {aberto === a.id ? "▴" : "▾"}
-                </span>
-              </button>
-              {aberto === a.id && (
-                <div className="flex flex-col gap-2.5 rounded-[14px] bg-surface-2 p-3">
-                  {!a.comApp && <ConviteDoAlunoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
-                  <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={a.turmas} atualizar={atualizar} />
-                  {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
     </section>
   );
 }

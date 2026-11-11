@@ -15,7 +15,9 @@ import {
   salvarPixEstudio,
   salvarPrecosEstudio,
   salvarValorProfessor,
+  type FaltasDoProfessor,
   type FinanceiroDoMes,
+  type MesDoEstudio,
 } from "@/data/estudio-financeiro";
 import { COR_COBRANCA, ROTULO_COBRANCA, situacaoDaCobranca } from "@/lib/cobranca";
 import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/matricula";
@@ -441,7 +443,128 @@ const mudarMes = (mes: string, n: number) => {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 };
 
-export function FinanceiroDoEstudio({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto; mes: string; hoje: string; dados: FinanceiroDoMes }) {
+/** "R$ 3,2 mil" / "R$ 850" — para caber em cima das barras. */
+function curto(centavos: number): string {
+  const r = centavos / 100;
+  if (r >= 1000) return `${(Math.round(r / 100) / 10).toLocaleString("pt-BR")} mil`;
+  return `R$ ${Math.round(r)}`;
+}
+const MES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+/** Receita (mensalidades recebidas) × custo dos professores, mês a mês (decisão 62). */
+function GraficoDoEstudio({ historico, academia, mes }: { historico: MesDoEstudio[]; academia: boolean; mes: string }) {
+  if (historico.length === 0) return null;
+  const maior = Math.max(1, ...historico.map((h) => Math.max(academia ? 0 : h.receita, h.professores)));
+  const barra = (v: number) => `${v > 0 ? Math.max(3, Math.round((v / maior) * 100)) : 0}%`;
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Meses anteriores">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <h3 className="flex-1 text-[16px] font-bold">{academia ? "Professores por mês" : "Receita × professores"}</h3>
+        {!academia && (
+          <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
+            <span className="size-3 rounded-[4px] bg-ok" /> Receita
+          </span>
+        )}
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
+          <span className="size-3 rounded-[4px] bg-estudio" /> Professores
+        </span>
+      </div>
+      <div className="flex h-44 items-end gap-2 lg:h-56 lg:gap-4">
+        {historico.map((h) => {
+          const atual = h.mes === mes;
+          const nome = MES_CURTO[Number(h.mes.slice(5)) - 1];
+          return (
+            <div key={h.mes} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+              <div className="flex h-full w-full items-end justify-center gap-1">
+                {!academia && (
+                  <div className="flex h-full w-1/2 max-w-7 flex-col items-center justify-end gap-0.5">
+                    <span className="text-[10.5px] text-ink-3 tabular-nums">{h.receita > 0 ? curto(h.receita) : ""}</span>
+                    <span
+                      className={`w-full rounded-t-[6px] rounded-b-[2px] bg-ok ${atual ? "" : "opacity-55"}`}
+                      style={{ height: barra(h.receita) }}
+                      title={`Receita em ${nome}: ${centavosParaReais(h.receita)}`}
+                    />
+                  </div>
+                )}
+                <div className="flex h-full w-1/2 max-w-7 flex-col items-center justify-end gap-0.5">
+                  <span className="text-[10.5px] text-ink-3 tabular-nums">{h.professores > 0 ? curto(h.professores) : ""}</span>
+                  <span
+                    className={`w-full rounded-t-[6px] rounded-b-[2px] bg-estudio ${atual ? "" : "opacity-55"}`}
+                    style={{ height: barra(h.professores) }}
+                    title={`Professores em ${nome}: ${centavosParaReais(h.professores)}`}
+                  />
+                </div>
+              </div>
+              <span className={`text-[12.5px] ${atual ? "font-bold text-ink" : "text-ink-3"}`}>{nome}</span>
+            </div>
+          );
+        })}
+      </div>
+      {!academia && (() => {
+        const h = historico.find((x) => x.mes === mes);
+        if (!h) return null;
+        const saldo = h.receita - h.professores;
+        return (
+          <p className="text-[14px] text-ink-2">
+            Neste mês, receita menos professores: <b className={saldo < 0 ? "text-bad" : "text-ok"}>{centavosParaReais(saldo)}</b>
+          </p>
+        );
+      })()}
+    </section>
+  );
+}
+
+/** Quantos dias cada professor faltou (e ficou de férias) no mês, até hoje. */
+function FaltasDosProfessores({ estudio, faltas }: { estudio: EstudioCompleto; faltas: FaltasDoProfessor[] }) {
+  const porId = new Map(faltas.map((f) => [f.personalId, f]));
+  const dias = (n: number) => `${n} dia${n === 1 ? "" : "s"}`;
+  return (
+    <section className="flex flex-col gap-2" aria-label="Faltas dos professores">
+      <h3 className="text-[16px] font-bold">Faltas dos professores no mês</h3>
+      {estudio.equipe.length === 0 ? (
+        <p className="text-ink-3">Nenhum professor na equipe.</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
+          {estudio.equipe.map((p) => {
+            const f = porId.get(p.personalId);
+            const faltou = f?.faltas ?? 0;
+            const ferias = f?.ferias ?? 0;
+            return (
+              <li key={p.personalId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
+                <span className="min-w-0 flex-1 font-semibold">{p.nome}</span>
+                {faltou === 0 && ferias === 0 ? (
+                  <span className="text-[14px] text-ink-3">Nenhuma falta</span>
+                ) : (
+                  <span className="flex flex-wrap gap-1.5">
+                    {faltou > 0 && <span className="rounded-full bg-bad px-2.5 py-0.5 text-[13px] font-bold text-white">{dias(faltou)} de falta</span>}
+                    {ferias > 0 && <span className="rounded-full bg-estudio-soft px-2.5 py-0.5 text-[13px] font-bold text-estudio">{dias(ferias)} de férias</span>}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="text-[13px] text-ink-3">Conta os dias marcados em férias e faltas (só os dias em que o estúdio abre), até hoje.</p>
+    </section>
+  );
+}
+
+export function FinanceiroDoEstudio({
+  estudio,
+  mes,
+  hoje,
+  dados,
+  historico,
+  faltas,
+}: {
+  estudio: EstudioCompleto;
+  mes: string;
+  hoje: string;
+  dados: FinanceiroDoMes;
+  historico: MesDoEstudio[];
+  faltas: FaltasDoProfessor[];
+}) {
   const router = useRouter();
   const [a, m] = mes.split("-").map(Number);
   const link = (n: number) => `/estudio/${estudio.id}?aba=financeiro&mes=${mudarMes(mes, n)}`;
@@ -457,7 +580,7 @@ export function FinanceiroDoEstudio({ estudio, mes, hoje, dados }: { estudio: Es
         <Link href={link(-1)} scroll={false} className="grid size-10 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Mês anterior">
           ‹
         </Link>
-        <h2 className="flex-1 text-center text-[18px] font-bold capitalize">
+        <h2 className="flex-1 text-center text-[18px] font-bold first-letter:uppercase">
           {NOMES_MES[m - 1]} de {a}
         </h2>
         <Link href={link(1)} scroll={false} className="grid size-10 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Próximo mês">
@@ -471,7 +594,9 @@ export function FinanceiroDoEstudio({ estudio, mes, hoje, dados }: { estudio: Es
         <Numero rotulo="Professores" valor={aPagar} cor="text-estudio" />
       </div>
 
+      <GraficoDoEstudio historico={historico} academia={academia} mes={mes} />
       <Professores estudio={estudio} mes={mes} dados={dados} atualizar={() => router.refresh()} />
+      <FaltasDosProfessores estudio={estudio} faltas={faltas} />
       {!academia && <Mensalidades estudio={estudio} hoje={hoje} dados={dados} atualizar={() => router.refresh()} />}
     </div>
   );

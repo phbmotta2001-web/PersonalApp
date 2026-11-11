@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { AgendaDoEstudio } from "@/components/estudio/AgendaDoEstudio";
-import { BotaoSair } from "@/components/estudio/BotaoSair";
+import { ABAS_DA_COORDENACAO, MenuDaCoordenacao } from "@/components/estudio/MenuDaCoordenacao";
 import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio";
 import { Carregando } from "@/components/Formulario";
 import { souContaEmpresa } from "@/data/conta";
 import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
-import { lerFinanceiroDoMes } from "@/data/estudio-financeiro";
+import { faltasDosProfessores, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos } from "@/data/estudio-financeiro";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { RegrasDosAlunos } from "@/components/estudio/RegrasDosAlunos";
@@ -26,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function PaginaEstudio({ params, searchParams }: PageProps<"/estudio/[estudio]">) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-[18px] pt-2 pb-12">
+    <div className="flex w-full flex-1 flex-col lg:pl-60">
       <Suspense fallback={<Carregando />}>
         <Conteudo params={params} searchParams={searchParams} />
       </Suspense>
@@ -49,20 +48,33 @@ async function Conteudo({
   const qual = ABAS.find((a) => a === aba) ?? "agenda";
   const hoje = emBrasilia(new Date().toISOString()).data;
   const mesEscolhido = typeof mes === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : hoje.slice(0, 7);
+  const abertos = Object.keys(estudio.config.funcionamento).map(Number);
   const financeiro =
-    qual === "financeiro" ? { mes: mesEscolhido, hoje, dados: await lerFinanceiroDoMes(estudio.id, `${mesEscolhido}-01`) } : undefined;
+    qual === "financeiro"
+      ? await Promise.all([
+          lerFinanceiroDoMes(estudio.id, `${mesEscolhido}-01`),
+          historicoDoEstudio(estudio.id, mesEscolhido),
+          faltasDosProfessores(estudio.id, mesEscolhido, hoje, abertos.length ? abertos : null),
+        ]).then(([dados, historico, faltas]) => ({ mes: mesEscolhido, hoje, dados, historico, faltas }))
+      : undefined;
+  const pagamentos = qual === "alunos" && estudio.config.tipo === "estudio" ? await pagamentosDosAlunos(estudio.id, hoje) : undefined;
+  const titulo = ABAS_DA_COORDENACAO.find((a) => a.valor === qual)!.rotulo;
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex items-center gap-2.5 pt-1.5">
-        {!empresa && <BotaoVoltar reserva="/agenda/conta" className="hover:bg-surface-2" />}
-        <div className="flex-1">
-          <p className="text-[13px] text-ink-3">Coordenação</p>
-          <h1 className="text-[24px] leading-tight font-extrabold">{estudio.nome}</h1>
-        </div>
-        {empresa && <BotaoSair />}
-      </header>
-      <GestaoDoEstudio estudio={estudio} aba={qual} financeiro={financeiro} agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined} complemento={await complementoDaAba(estudio, qual)} />
-    </div>
+    <>
+      <MenuDaCoordenacao estudioId={estudio.id} nome={estudio.nome} aba={qual} empresa={empresa} />
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-[18px] pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-12">
+        <h1 className="text-[24px] leading-tight font-extrabold">{titulo}</h1>
+        <GestaoDoEstudio
+          estudio={estudio}
+          aba={qual}
+          financeiro={financeiro}
+          pagamentos={pagamentos}
+          hoje={hoje}
+          agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined}
+          complemento={await complementoDaAba(estudio, qual)}
+        />
+      </main>
+    </>
   );
 }
 

@@ -24,6 +24,10 @@
   /* Estúdio (P-Bell Estúdio): turmas e alunos do estúdio aparecem em roxo. */
   --estudio: #6a3fb5;
   --estudio-soft: #ece4fa;
+  /* Painel da coordenação: menu roxo escuro (decisão 62). */
+  --estudio-fundo: #4b2a8a;
+  --on-estudio: #ffffff;
+  --on-estudio-2: #ddd0f6;
   --bad: #b1261b;
   --gold: #7a5400;
   --gold-soft: #f7ebc8;
@@ -61,6 +65,9 @@
     --info-soft: #14263f;
     --estudio: #b89af0;
     --estudio-soft: #261a3d;
+    --estudio-fundo: #2c1a4f;
+    --on-estudio: #f4effc;
+    --on-estudio-2: #c9b8ec;
     --bad: #f38b7f;
     --gold: #e7be55;
     --gold-soft: #33280a;
@@ -91,6 +98,9 @@
   --color-lime-ink: var(--lime-ink);
   --color-estudio: var(--estudio);
   --color-estudio-soft: var(--estudio-soft);
+  --color-estudio-fundo: var(--estudio-fundo);
+  --color-on-estudio: var(--on-estudio);
+  --color-on-estudio-2: var(--on-estudio-2);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-info: var(--info);
