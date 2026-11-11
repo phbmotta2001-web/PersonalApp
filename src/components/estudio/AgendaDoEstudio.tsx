@@ -102,7 +102,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
   return (
     <section className="flex flex-col gap-4" aria-label="Agenda do dia">
       <nav className="flex items-center gap-2" aria-label="Dia">
-        <Link href={link(somarDias(dia, -1))} scroll={false} className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Dia anterior">
+        <Link href={link(somarDias(dia, -7))} scroll={false} className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Semana anterior">
           ‹
         </Link>
         <ol className="flex flex-1 gap-1 overflow-x-auto">
@@ -127,7 +127,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
             );
           })}
         </ol>
-        <Link href={link(somarDias(dia, 1))} scroll={false} className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Próximo dia">
+        <Link href={link(somarDias(dia, 7))} scroll={false} className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface font-bold" aria-label="Próxima semana">
           ›
         </Link>
       </nav>

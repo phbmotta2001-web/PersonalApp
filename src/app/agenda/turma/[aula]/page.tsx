@@ -5,7 +5,8 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { AlunosAntesDaAula } from "@/components/estudio/AlunosAntesDaAula";
 import { ChamadaDaTurma } from "@/components/estudio/ChamadaDaTurma";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { lerAulaParaChamada } from "@/data/estudio";
+import { AlterarAulaDoEstudio } from "@/components/estudio/AlterarAulaDoEstudio";
+import { lerAulaParaChamada, lerEstudio } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { emBrasilia } from "@/lib/expediente";
 import { textoDaAula } from "@/lib/matricula";
@@ -32,6 +33,8 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/turma/[aula]">[
   await exigirPersonal(`/agenda/turma/${id}`);
   const aula = await lerAulaParaChamada(id);
   if (!aula) notFound();
+  const estudio = await lerEstudio(aula.estudioId);
+  const coordena = estudio?.papel === "coordenacao";
   const abre = Date.parse(aula.inicio) - 30 * 60_000;
   const aberta = new Date().getTime() >= abre;
   return (
@@ -48,6 +51,24 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/turma/[aula]">[
         </span>
         {aula.chamadaEm && !aula.turno && <span className="mt-1 text-[13px] font-bold">Chamada feita</span>}
       </section>
+      {coordena && estudio && (
+        <AlterarAulaDoEstudio
+          aula={{
+            id: aula.id,
+            estudioId: aula.estudioId,
+            data: `${emBrasilia(aula.inicio).data.slice(8, 10)}/${emBrasilia(aula.inicio).data.slice(5, 7)}`,
+            hora: emBrasilia(aula.inicio).hora,
+            diaSemana: aula.diaSemana,
+            modalidade: aula.modalidade,
+            vagas: aula.vagas,
+            turno: aula.turno,
+            professorId: aula.professorId,
+            cancelada: aula.cancelada,
+            chamadaFeita: aula.chamadaEm !== null,
+          }}
+          equipe={estudio.equipe.map((m) => ({ id: m.personalId, nome: m.nome }))}
+        />
+      )}
       {aula.turno ? (
         <p className="text-ink-2">{aula.cancelada ? "Este turno foi cancelado." : "Turno sem lista de alunos nem chamada. Conta no pagamento pelas horas."}</p>
       ) : aula.cancelada ? (

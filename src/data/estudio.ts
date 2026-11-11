@@ -258,6 +258,8 @@ export interface AulaParaChamada {
   chamadaEm: string | null;
   cancelada: boolean;
   souProfessor: boolean;
+  professorId: string | null;
+  diaSemana: number;
   turno: boolean;
   alunos: AlunoNaChamada[];
 }
@@ -268,7 +270,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   if (!id) return null;
   const { data: a } = await supabase
     .from("aulas_turma")
-    .select("id, inicio, fim, estudio_id, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo), estudios(nome)")
+    .select("id, inicio, fim, estudio_id, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo, dia_semana, inicio_min), estudios(nome)")
     .eq("id", aulaId)
     .maybeSingle();
   if (!a) return null;
@@ -287,7 +289,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     const x = p.estudio_alunos as unknown as { id: string; nome: string } | null;
     if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao" });
   }
-  const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string };
+  const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string; dia_semana: number; inicio_min: number };
   const e = a.estudios as unknown as { nome: string };
   return {
     turno: t?.tipo === "turno",
@@ -301,6 +303,8 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     chamadaEm: a.chamada_em,
     cancelada: a.situacao === "cancelada",
     souProfessor: a.professor_id === id,
+    professorId: a.professor_id,
+    diaSemana: t?.dia_semana ?? 0,
     alunos: [...alunos.values()].sort((x, y) => x.nome.localeCompare(y.nome)),
   };
 }
@@ -352,7 +356,13 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
 const TECNICO = /could not|function|schema|column|relation|permission|violates|syntax|null value|uuid/i;
 const doBanco = (mensagem: string | undefined, padrao: string) => (mensagem && !TECNICO.test(mensagem) ? mensagem : padrao);
 
-export async function criarEstudio(nome: string, tipo: TipoDeEstudio = "estudio", funcionamento?: Funcionamento): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
+export async function criarEstudio(
+  nome: string,
+  tipo: TipoDeEstudio = "estudio",
+  funcionamento?: Funcionamento,
+  /** Aulas lançadas em todo o funcionamento (decisão 63); null: não lançar. */
+  grade?: { duracao: number; modalidade: string } | null,
+): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("criar_estudio", { p_nome: typeof nome === "string" ? nome : "" });
   if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível criar o estúdio.") };
@@ -360,9 +370,44 @@ export async function criarEstudio(nome: string, tipo: TipoDeEstudio = "estudio"
     await supabase.rpc("salvar_config_estudio", { p_estudio: data, p: { tipo: "academia", pagamento_modelo: "hora" } });
   }
   if (funcionamento && problemasDoFuncionamento(funcionamento).length === 0) {
-    await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: data, p: funcionamentoParaBanco(funcionamento) });
+    const { error: erroFuncionamento } = await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: data, p: funcionamentoParaBanco(funcionamento) });
+    if (!erroFuncionamento && grade) await gerarGrade(data as string, grade.duracao, grade.modalidade);
   }
   return { ok: true, id: data as string };
+}
+
+/** Lança aulas de X minutos em todo o funcionamento, sem professor, só nos horários vazios. */
+export async function gerarGrade(estudioId: string, duracao: number, modalidade: string): Promise<{ ok: true; criadas: number } | { ok: false; erro: string }> {
+  if (!Number.isInteger(duracao) || duracao < 15 || duracao > 240) return { ok: false, erro: "Escolha a duração das aulas." };
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("gerar_grade_estudio", { p_estudio: estudioId, p_duracao: duracao, p_modalidade: (modalidade ?? "").trim() });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível lançar as aulas (falta atualizar o banco: migração 39).") } : { ok: true, criadas: data as number };
+}
+
+export type AlcanceDaAula = "dia" | "semana" | "horario";
+
+/**
+ * Altera ou remove uma aula da grade: só nesta data (exceção), toda semana neste dia e
+ * horário, ou todos os dias neste horário (vira o padrão do estúdio).
+ */
+export async function alterarAula(
+  aulaId: string,
+  alcance: AlcanceDaAula,
+  acao: "alterar" | "remover" | "reativar",
+  mudancas: { modalidade?: string | null; vagas?: number | null; professor?: { id: string | null } } = {},
+): Promise<{ ok: true; n: number } | { ok: false; erro: string }> {
+  if (mudancas.vagas != null && (!Number.isInteger(mudancas.vagas) || mudancas.vagas < 1 || mudancas.vagas > 100)) return { ok: false, erro: "Vagas de 1 a 100." };
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("alterar_aula_estudio", {
+    p_aula: aulaId,
+    p_alcance: alcance,
+    p_acao: acao,
+    p_modalidade: mudancas.modalidade?.trim() || null,
+    p_vagas: mudancas.vagas ?? null,
+    p_troca_professor: mudancas.professor !== undefined,
+    p_professor: mudancas.professor?.id ?? null,
+  });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível alterar a aula (falta atualizar o banco: migração 39).") } : { ok: true, n: data as number };
 }
 
 /** Link de convite para um professor entrar na equipe. */

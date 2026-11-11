@@ -6,6 +6,7 @@ import {
   convidarProfessor,
   encerrarAlunoEstudio,
   encerrarTurma,
+  gerarGrade,
   importarAlunos,
   removerDaEquipe,
   salvarTurma,
@@ -70,6 +71,70 @@ export function GestaoDoEstudio({
 
 // ─── Turmas ─────────────────────────────────────────────────────────────────
 
+/** Lança aulas em todo o horário de funcionamento, só onde ainda não há turma (decisão 63). */
+function GradeDeAulas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
+  const vazio = estudio.turmas.filter((t) => t.tipo === "turma").length === 0;
+  const [aberto, setAberto] = useState(vazio);
+  const [duracao, setDuracao] = useState(60);
+  const [modalidade, setModalidade] = useState("");
+  const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  if (Object.keys(estudio.config.funcionamento).length === 0) return null;
+  if (!aberto)
+    return (
+      <button type="button" onClick={() => setAberto(true)} className="self-start text-[15px] font-bold text-brand">
+        Preencher os horários vazios com aulas
+      </button>
+    );
+  return (
+    <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
+      <div>
+        <h3 className="font-bold">Lançar as aulas na grade</h3>
+        <p className="text-[13px] text-ink-3">Em todo o horário de funcionamento, sem professor. Horários que já têm turma ficam como estão.</p>
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
+          Aulas de
+          <select value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} className={ESTILO_CAIXA}>
+            {[30, 45, 50, 60, 75, 90, 120].map((m) => (
+              <option key={m} value={m}>
+                {textoDuracao(m)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
+          Modalidade
+          <input value={modalidade} maxLength={60} placeholder="Ex.: Pilates" onChange={(e) => setModalidade(e.target.value)} className={ESTILO_CAIXA} />
+        </label>
+      </div>
+      <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() =>
+            iniciar(async () => {
+              const r = await gerarGrade(estudio.id, duracao, modalidade);
+              if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+              setAviso({ tipo: "ok", texto: r.criadas ? `${r.criadas} aula${r.criadas === 1 ? "" : "s"} na grade.` : "Nenhum horário vazio." });
+              atualizar();
+            })
+          }
+          className={ESTILO_BOTAO_PRINCIPAL + " sm:w-auto"}
+        >
+          {ocupado ? "Lançando…" : "Lançar aulas"}
+        </button>
+        {!vazio && (
+          <button type="button" onClick={() => setAberto(false)} className="px-2 text-[15px] font-semibold text-ink-3">
+            Fechar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 const NOVA: Omit<DadosTurma, "vagas"> = { id: null, tipo: "turma", modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
 /** Turma: 30 min a 2 h. Turno: até 12 h. */
 const DURACOES_TURMA = [30, 45, 50, 60, 75, 90, 120];
@@ -102,6 +167,8 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
           </button>
         )}
       </div>
+
+      {!editando && <GradeDeAulas estudio={estudio} atualizar={atualizar} />}
 
       {editando && (
         <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
