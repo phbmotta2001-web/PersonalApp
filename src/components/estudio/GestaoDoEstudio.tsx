@@ -79,11 +79,21 @@ function GradeDeAulas({ estudio, atualizar }: { estudio: EstudioCompleto; atuali
   const [modalidade, setModalidade] = useState("");
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
-  if (Object.keys(estudio.config.funcionamento).length === 0) return null;
+  // Sem funcionamento não há onde lançar: avisa em vez de esconder.
+  if (Object.keys(estudio.config.funcionamento).length === 0)
+    return (
+      <p className="rounded-[14px] bg-brand-soft px-3.5 py-2.5 text-[14px] text-ink-2">
+        Para lançar as aulas na grade automaticamente, informe os dias e horários de funcionamento em{" "}
+        <a href={`/estudio/${estudio.id}?aba=ajustes`} className="font-bold text-brand">
+          Ajustes
+        </a>
+        .
+      </p>
+    );
   if (!aberto)
     return (
-      <button type="button" onClick={() => setAberto(true)} className="self-start text-[15px] font-bold text-brand">
-        Preencher os horários vazios com aulas
+      <button type="button" onClick={() => setAberto(true)} className="flex items-center gap-2 self-stretch rounded-[16px] border-[1.5px] border-dashed border-brand bg-brand-soft px-4 py-3 text-left text-[15px] font-bold text-brand sm:self-start">
+        + Preencher os horários vazios com aulas
       </button>
     );
   return (
