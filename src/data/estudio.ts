@@ -759,6 +759,9 @@ export interface FichaDoAlunoEstudio {
   restricoes: string | null;
   /** Declarou que não tem limitações. */
   semRestricoes: boolean;
+  /** Escritas pela equipe do estúdio (não mudam o perfil do aluno), decisão 74. */
+  limitacoesEstudio: string;
+  objetivosEstudio: string;
   /** Dias da semana em que tem turma. */
   dias: number[];
   /** Dia da semana → o que treina. */
@@ -776,6 +779,8 @@ export async function fichaDoAlunoEstudio(estudioAlunoId: string): Promise<{ ok:
     nivel: FichaDoAlunoEstudio["nivel"];
     restricoes: string | null;
     sem_restricoes: boolean;
+    limitacoes_estudio?: string;
+    objetivos_estudio?: string;
     dias: number[];
     treino: { dia: number; texto: string }[];
   };
@@ -787,10 +792,24 @@ export async function fichaDoAlunoEstudio(estudioAlunoId: string): Promise<{ ok:
       nivel: f.nivel,
       restricoes: f.restricoes,
       semRestricoes: f.sem_restricoes === true,
+      limitacoesEstudio: f.limitacoes_estudio ?? "",
+      objetivosEstudio: f.objetivos_estudio ?? "",
       dias: (f.dias ?? []).map(Number),
       treino: Object.fromEntries((f.treino ?? []).map((t) => [t.dia, t.texto])),
     },
   };
+}
+
+/** Anotações do estúdio na ficha (decisão 74): só no estúdio, o perfil do aluno não muda. */
+export async function salvarAnotacoesDoAluno(estudioAlunoId: string, campo: "limitacoes" | "objetivos", texto: string): Promise<Resposta> {
+  if ((texto ?? "").length > 500) return { ok: false, erro: "Até 500 letras." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_anotacoes_aluno_estudio", {
+    p_estudio_aluno: estudioAlunoId,
+    p_limitacoes: campo === "limitacoes" ? (texto ?? "") : null,
+    p_objetivos: campo === "objetivos" ? (texto ?? "") : null,
+  });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar (falta atualizar o banco: migração 43).") } : { ok: true };
 }
 
 /** O que o aluno treina num dia da semana (texto vazio apaga). */
