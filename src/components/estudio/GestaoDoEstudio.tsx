@@ -359,8 +359,8 @@ function Alunos({
 }
 
 /**
- * Turmas do aluno (decisão 70): escolhe o dia e o horário, vê quantos alunos a turma tem (ex.: 3/5)
- * e confirma. Embaixo, as turmas em que ele já está, cada uma com "Tirar".
+ * Turmas do aluno (decisões 70 e 71): marca vários dias, um horário para todos (dá para trocar
+ * o de um dia só), vê a lotação de cada turma (ex.: 3/5) e confirma. Embaixo, as turmas dele com "Tirar".
  */
 function TurmasDoAluno({
   alunoId,
@@ -374,80 +374,120 @@ function TurmasDoAluno({
   atualizar: () => void;
 }) {
   const diasComTurma = DIAS.filter((d) => turmas.some((t) => t.diaSemana === d.valor));
-  const [dia, setDia] = useState<number | null>(diasComTurma[0]?.valor ?? null);
-  const doDia = turmas.filter((t) => t.diaSemana === dia && !escolhidas.includes(t.id)).sort((a, b) => a.inicioMin - b.inicioMin);
-  const [turmaId, setTurmaId] = useState("");
-  const turma = doDia.find((t) => t.id === turmaId) ?? doDia[0];
+  const [dias, setDias] = useState<number[]>([]);
+  const [horario, setHorario] = useState<number | null>(null);
+  // Troca de horário num dia só: dia → turma escolhida.
+  const [trocas, setTrocas] = useState<Record<number, string>>({});
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
-  const cheia = turma ? turma.alunos.length >= turma.vagas : false;
+  const livres = (d: number) => turmas.filter((t) => t.diaSemana === d && !escolhidas.includes(t.id)).sort((a, b) => a.inicioMin - b.inicioMin);
+  const horarios = [...new Set(dias.flatMap((d) => livres(d).map((t) => t.inicioMin)))].sort((a, b) => a - b);
+  const h = horario != null && horarios.includes(horario) ? horario : (horarios[0] ?? null);
+  const linhas = [...dias]
+    .sort((a, b) => (a || 7) - (b || 7))
+    .map((d) => {
+      const opcoes = livres(d);
+      const turma = opcoes.find((t) => t.id === trocas[d]) ?? opcoes.find((t) => t.inicioMin === h) ?? null;
+      return { dia: d, opcoes, turma, cheia: !!turma && turma.alunos.length >= turma.vagas };
+    });
+  const confirmaveis = linhas.filter((l) => l.turma && !l.cheia).map((l) => l.turma!.id);
   const salvar = (lista: string[]) =>
     iniciar(async () => {
       setErro(null);
       const r = await salvarTurmasDoAluno(alunoId, lista);
       if (!r.ok) return setErro(r.erro);
-      setTurmaId("");
+      setDias([]);
+      setTrocas({});
       atualizar();
     });
   const minhas = escolhidas
     .map((id) => turmas.find((t) => t.id === id))
     .filter((t): t is TurmaDoEstudio => !!t)
-    .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin);
+    .sort((a, b) => (a.diaSemana || 7) - (b.diaSemana || 7) || a.inicioMin - b.inicioMin);
 
   if (turmas.length === 0) return <p className="text-[14px] text-ink-3">Crie as aulas na Agenda primeiro.</p>;
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[14px] font-bold text-ink-2">Colocar numa turma</p>
+      <p className="text-[14px] font-bold text-ink-2">Colocar em turmas · escolha os dias</p>
       <div className="flex flex-wrap gap-1.5">
-        {diasComTurma.map((d) => (
-          <button
-            key={d.valor}
-            type="button"
-            aria-pressed={dia === d.valor}
-            onClick={() => {
-              setDia(d.valor);
-              setTurmaId("");
-            }}
-            className={`min-h-[40px] min-w-[48px] rounded-full border px-3 text-[14.5px] font-semibold ${
-              dia === d.valor ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface text-ink-2"
-            }`}
-          >
-            {d.curto}
-          </button>
-        ))}
+        {diasComTurma.map((d) => {
+          const marcado = dias.includes(d.valor);
+          return (
+            <button
+              key={d.valor}
+              type="button"
+              aria-pressed={marcado}
+              onClick={() => setDias(marcado ? dias.filter((x) => x !== d.valor) : [...dias, d.valor])}
+              className={`min-h-[40px] min-w-[48px] rounded-full border px-3 text-[14.5px] font-semibold ${
+                marcado ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface text-ink-2"
+              }`}
+            >
+              {d.curto}
+            </button>
+          );
+        })}
       </div>
-      {doDia.length === 0 ? (
-        <p className="text-[14px] text-ink-3">Nenhuma outra turma neste dia.</p>
-      ) : (
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-[14px] font-bold text-ink-2">
-            Horário
-            <select value={turma?.id ?? ""} onChange={(e) => setTurmaId(e.target.value)} className={ESTILO_CAIXA}>
-              {doDia.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {minParaHora(t.inicioMin)} · {t.modalidade} ({t.alunos.length}/{t.vagas})
-                </option>
-              ))}
-            </select>
-          </label>
-          {turma && (
-            <span className="flex min-h-[52px] flex-col justify-center">
-              <span className={`text-[22px] leading-none font-extrabold ${cheia ? "text-bad" : ""}`}>
-                {turma.alunos.length}/{turma.vagas}
-              </span>
-              <span className="text-[12.5px] text-ink-3">{cheia ? "turma cheia" : "alunos"}</span>
-            </span>
+      {dias.length > 0 && (
+        <>
+          {horarios.length > 0 && (
+            <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2 sm:max-w-[220px]">
+              Horário
+              <select
+                value={h ?? ""}
+                onChange={(e) => {
+                  setHorario(Number(e.target.value));
+                  setTrocas({});
+                }}
+                className={ESTILO_CAIXA}
+              >
+                {horarios.map((m) => (
+                  <option key={m} value={m}>
+                    {minParaHora(m)}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
+          <ul className="flex flex-col gap-1.5">
+            {linhas.map((l) => (
+              <li key={l.dia} className="flex items-center gap-2">
+                <span className="w-10 shrink-0 font-bold">{DIAS.find((d) => d.valor === l.dia)?.curto}</span>
+                {l.opcoes.length === 0 ? (
+                  <span className="flex-1 text-[14px] text-ink-3">Já está em todas deste dia.</span>
+                ) : (
+                  <select
+                    value={l.turma?.id ?? ""}
+                    onChange={(e) => setTrocas({ ...trocas, [l.dia]: e.target.value })}
+                    className={ESTILO_CAIXA + " min-w-0 flex-1"}
+                    aria-label={`Horário de ${DIAS.find((d) => d.valor === l.dia)?.nome}`}
+                  >
+                    {!l.turma && <option value="">Sem turma às {h != null ? minParaHora(h) : ""}: escolha</option>}
+                    {l.opcoes.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {minParaHora(t.inicioMin)} · {t.modalidade} ({t.alunos.length}/{t.vagas})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {l.turma && (
+                  <span className={`w-12 shrink-0 text-right text-[17px] font-extrabold ${l.cheia ? "text-bad" : ""}`} title={l.cheia ? "Turma cheia" : undefined}>
+                    {l.turma.alunos.length}/{l.turma.vagas}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {linhas.some((l) => l.cheia) && <p className="text-[13.5px] text-bad">Turma cheia (em vermelho): escolha outro horário nesse dia ou ela fica de fora.</p>}
           <button
             type="button"
-            disabled={ocupado || !turma || cheia}
-            onClick={() => turma && salvar([...escolhidas, turma.id])}
-            className="min-h-[52px] rounded-[13px] bg-brand px-4 font-bold text-brand-ink disabled:opacity-50"
+            disabled={ocupado || confirmaveis.length === 0}
+            onClick={() => salvar([...escolhidas, ...confirmaveis])}
+            className="min-h-[52px] rounded-[13px] bg-brand px-4 font-bold text-brand-ink disabled:opacity-50 sm:self-start"
           >
-            {ocupado ? "Salvando…" : cheia ? "Sem vaga" : "Confirmar"}
+            {ocupado ? "Salvando…" : confirmaveis.length === 0 ? "Sem vaga" : `Confirmar em ${confirmaveis.length} ${confirmaveis.length === 1 ? "dia" : "dias"}`}
           </button>
-        </div>
+        </>
       )}
       {minhas.length > 0 && (
         <ul className="flex flex-col divide-y divide-line rounded-[12px] bg-surface px-3">
