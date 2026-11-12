@@ -673,7 +673,7 @@ export interface AulaNaAgendaDoEstudio {
   modalidade: string;
   vagas: number;
   alunos: number;
-  /** Quem vai: "Ana S." (os da turma menos quem avisou falta, mais quem vem repor). */
+  /** Quem vai, só o primeiro nome (os da turma menos quem avisou falta, mais quem vem repor). */
   nomes: string[];
   professorId: string | null;
   chamadaEm: string | null;
@@ -698,11 +698,8 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
     supabase.from("turma_alunos").select("turma_id, estudio_aluno_id, turmas!inner(estudio_id)").eq("turmas.estudio_id", estudioId),
     supabase.from("estudio_alunos").select("id, nome").eq("estudio_id", estudioId),
   ]);
-  // "Ana Souza" → "Ana S."
-  const curto = (nome: string) => {
-    const p = nome.trim().split(/s+/);
-    return p.length > 1 ? `${p[0]} ${p.at(-1)![0]}.` : p[0];
-  };
+  // Só o primeiro nome: "Ana Souza" → "Ana".
+  const curto = (nome: string) => nome.trim().split(/s+/)[0];
   const nomeDe = new Map((alunosDoEstudio ?? []).map((a) => [a.id, curto(a.nome)]));
   const daTurma = new Map<string, string[]>();
   for (const m of matriculas ?? []) daTurma.set(m.turma_id, [...(daTurma.get(m.turma_id) ?? []), m.estudio_aluno_id]);

@@ -3,7 +3,7 @@ import type { AulaNaAgendaDoEstudio, EstudioCompleto } from "@/data/estudio";
 import { coresDaEquipe } from "@/lib/cores-professor";
 import { DIAS, dataCurta, diaDaSemana, emBrasilia, minParaHora, somarDias } from "@/lib/expediente";
 
-const PX_POR_MIN = 1.25;
+const PX_POR_MIN = 1.6;
 
 const minutoDe = (iso: string) => {
   const [h, m] = emBrasilia(iso).hora.split(":").map(Number);
@@ -218,7 +218,12 @@ ${a.nomes.join(", ")}` : ""}`}
                         <span className={`block truncate text-[11.5px] font-semibold ${c ? "text-ink-2" : "text-bad"}`}>
                           {a.cancelada ? "Cancelada" : (nomeCurto.get(a.professorId ?? "") ?? "Sem professor")}
                         </span>
-                        {!a.cancelada && a.nomes.length > 0 && <span className="block text-[10.5px] leading-[1.2] text-ink-2">{a.nomes.join(", ")}</span>}
+                        {!a.cancelada &&
+                          a.nomes.map((n, k) => (
+                            <span key={k} className="block truncate text-[10.5px] leading-[12px] text-ink-2">
+                              {n}
+                            </span>
+                          ))}
                       </Link>
                     );
                   })}
