@@ -165,6 +165,7 @@ export function NovosHorarios({ estudio, hoje, fechar, salvo }: { estudio: Estud
         {total === 0
           ? "Nada para criar: confira os dias e horários."
           : `Vai criar ${total} ${turma ? (total === 1 ? "aula" : "aulas") : total === 1 ? "turno" : "turnos"}${extra ? " só nesta data" : " que se repetem toda semana"}.`}
+        {!extra && total > 0 && " Vale de agora em diante: os dias desta semana que já passaram ficam vazios e aparecem a partir da semana que vem."}
       </p>
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
       <div className="flex flex-wrap gap-2">

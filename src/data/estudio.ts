@@ -532,6 +532,23 @@ export async function salvarTurmaNosDias(estudioId: string, t: DadosTurma, dias:
 
 const NOMES_DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
+/** Remove de uma vez vários horários do padrão (decisão 67). */
+export async function encerrarTurmas(turmaIds: string[]): Promise<Resposta> {
+  if (!Array.isArray(turmaIds) || turmaIds.length === 0) return { ok: false, erro: "Nada para remover." };
+  if (turmaIds.length > 400) return { ok: false, erro: "Remova no máximo 400 horários de uma vez." };
+  const supabase = await criarClienteSupabase();
+  let feitos = 0;
+  for (const id of turmaIds) {
+    const { error } = await supabase.rpc("encerrar_turma", { p_turma: id });
+    if (error) {
+      const msg = doBanco(error.message, "Não foi possível remover.");
+      return { ok: false, erro: feitos ? `Removidos ${feitos}; parou com: ${msg}` : msg };
+    }
+    feitos++;
+  }
+  return { ok: true };
+}
+
 export async function encerrarTurma(turmaId: string): Promise<Resposta> {
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.rpc("encerrar_turma", { p_turma: turmaId });

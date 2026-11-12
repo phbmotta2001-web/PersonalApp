@@ -25,6 +25,7 @@ import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
 import { NovosHorarios } from "./NovosHorarios";
+import { RemoverHorarios } from "./RemoverHorarios";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
 export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
@@ -154,6 +155,7 @@ const textoDuracao = (m: number) => (m < 60 || m % 60 ? `${m} min` : `${m / 60} 
 function Turmas({ estudio, hoje, atualizar }: { estudio: EstudioCompleto; hoje: string; atualizar: () => void }) {
   const [editando, setEditando] = useState<DadosTurma | null>(null);
   const [criando, setCriando] = useState(false);
+  const [removendo, setRemovendo] = useState(false);
   const [lista, setLista] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
@@ -174,15 +176,23 @@ function Turmas({ estudio, hoje, atualizar }: { estudio: EstudioCompleto; hoje: 
     <section id="turmas" className="flex scroll-mt-4 flex-col gap-3 border-t border-line pt-5" aria-label="Turmas e turnos">
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-[18px] font-bold">Turmas e turnos ({estudio.turmas.length})</h2>
-        {!editando && !criando && (
-          <button type="button" onClick={() => setCriando(true)} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
-            + Turma ou turno
-          </button>
+        {!editando && !criando && !removendo && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {estudio.turmas.length > 0 && (
+              <button type="button" onClick={() => setRemovendo(true)} className="rounded-[12px] border border-line px-4 py-2 font-bold text-bad">
+                Remover horários
+              </button>
+            )}
+            <button type="button" onClick={() => setCriando(true)} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
+              + Turma ou turno
+            </button>
+          </div>
         )}
       </div>
 
       {criando && <NovosHorarios estudio={estudio} hoje={hoje} fechar={() => setCriando(false)} salvo={atualizar} />}
-      {!editando && !criando && <GradeDeAulas estudio={estudio} atualizar={atualizar} />}
+      {removendo && <RemoverHorarios estudio={estudio} fechar={() => setRemovendo(false)} salvo={atualizar} />}
+      {!editando && !criando && !removendo && <GradeDeAulas estudio={estudio} atualizar={atualizar} />}
 
       {editando && (
         <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
@@ -361,7 +371,7 @@ function EncerrarTurma({ turmaId, atualizar }: { turmaId: string; atualizar: () 
   if (!confirmando)
     return (
       <button type="button" onClick={() => setConfirmando(true)} className="text-ink-3">
-        Encerrar
+        Remover
       </button>
     );
   return (
@@ -377,7 +387,7 @@ function EncerrarTurma({ turmaId, atualizar }: { turmaId: string; atualizar: () 
         }
         className="text-bad"
       >
-        Confirmar encerrar
+        Confirmar remover
       </button>
       <button type="button" onClick={() => setConfirmando(false)} className="text-ink-3">
         Manter
