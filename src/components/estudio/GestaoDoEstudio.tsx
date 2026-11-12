@@ -10,7 +10,6 @@ import {
   importarAlunos,
   removerDaEquipe,
   salvarTurma,
-  salvarTurmaNosDias,
   salvarTurmasDoAluno,
   type AlunoDoEstudio,
   type DadosTurma,
@@ -25,7 +24,7 @@ import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
-import { EscolhaDeDias } from "./EscolhaDeDias";
+import { NovosHorarios } from "./NovosHorarios";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
 export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
@@ -62,7 +61,7 @@ export function GestaoDoEstudio({
       {aba === "agenda" && complemento}
       {aba === "agenda" && agenda}
       {/* Decisão 65: uma aba só — a grade e, embaixo, as turmas e turnos. */}
-      {aba === "agenda" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
+      {aba === "agenda" && <Turmas estudio={estudio} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
@@ -148,17 +147,15 @@ function GradeDeAulas({ estudio, atualizar }: { estudio: EstudioCompleto; atuali
   );
 }
 
-const NOVA: Omit<DadosTurma, "vagas"> = { id: null, tipo: "turma", modalidade: "", diaSemana: 1, inicioMin: 1080, duracaoMin: 60, professorId: null };
 /** Turma: 30 min a 2 h. Turno: até 12 h. */
 const DURACOES_TURMA = [30, 45, 50, 60, 75, 90, 120];
 const textoDuracao = (m: number) => (m < 60 || m % 60 ? `${m} min` : `${m / 60} h`);
 
-function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
+function Turmas({ estudio, hoje, atualizar }: { estudio: EstudioCompleto; hoje: string; atualizar: () => void }) {
   const [editando, setEditando] = useState<DadosTurma | null>(null);
-  const [dias, setDias] = useState<number[]>([]);
+  const [criando, setCriando] = useState(false);
   const [lista, setLista] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const abertos = Object.keys(estudio.config.funcionamento).map(Number);
   const [ocupado, iniciar] = useTransition();
   const professores = estudio.equipe;
   const nomeDe = (id: string | null) => professores.find((p) => p.personalId === id)?.nome ?? "Sem professor";
@@ -167,13 +164,8 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
     editando &&
     iniciar(async () => {
       setErro(null);
-      const r = editando.id ? await salvarTurma(estudio.id, editando) : await salvarTurmaNosDias(estudio.id, editando, dias);
-      if (!r.ok) {
-        setErro(r.erro);
-        // Parte dos dias foi salva: mostra na lista.
-        if (r.erro.startsWith("Salvo nos outros dias")) atualizar();
-        return;
-      }
+      const r = await salvarTurma(estudio.id, editando);
+      if (!r.ok) return setErro(r.erro);
       setEditando(null);
       atualizar();
     });
@@ -182,25 +174,19 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
     <section id="turmas" className="flex scroll-mt-4 flex-col gap-3 border-t border-line pt-5" aria-label="Turmas e turnos">
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-[18px] font-bold">Turmas e turnos ({estudio.turmas.length})</h2>
-        {!editando && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditando({ ...NOVA, vagas: estudio.config.maxAlunosTurma, professorId: professores[0]?.personalId ?? null });
-              setDias([abertos.includes(1) || abertos.length === 0 ? 1 : abertos[0]]);
-            }}
-            className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink"
-          >
+        {!editando && !criando && (
+          <button type="button" onClick={() => setCriando(true)} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
             + Turma ou turno
           </button>
         )}
       </div>
 
-      {!editando && <GradeDeAulas estudio={estudio} atualizar={atualizar} />}
+      {criando && <NovosHorarios estudio={estudio} hoje={hoje} fechar={() => setCriando(false)} salvo={atualizar} />}
+      {!editando && !criando && <GradeDeAulas estudio={estudio} atualizar={atualizar} />}
 
       {editando && (
         <div className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
-          <h3 className="font-bold">{editando.id ? (editando.tipo === "turno" ? "Alterar turno" : "Alterar turma") : "Novo horário"}</h3>
+          <h3 className="font-bold">{editando.tipo === "turno" ? "Alterar turno" : "Alterar turma"}</h3>
           <div className="flex flex-wrap gap-2">
             {(["turma", "turno"] as const).map((tp) => (
               <button
@@ -246,11 +232,6 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 ))}
               </select>
             </label>
-            {!editando.id ? (
-              <div className="sm:col-span-2">
-                <EscolhaDeDias valor={dias} mudar={setDias} abertos={abertos} />
-              </div>
-            ) : (
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               Dia
               <select value={editando.diaSemana} onChange={(e) => setEditando({ ...editando, diaSemana: Number(e.target.value) })} className={ESTILO_CAIXA}>
@@ -261,7 +242,6 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 ))}
               </select>
             </label>
-            )}
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               {editando.tipo === "turno" ? "Das" : "Horário"}
               <select

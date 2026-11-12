@@ -170,6 +170,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .select("id, tipo, modalidade, dia_semana, inicio_min, duracao_min, vagas, professor_id")
       .eq("estudio_id", estudioId)
       .eq("ativa", true)
+      .is("avulsa", null)
       .order("dia_semana")
       .order("inicio_min"),
     supabase
@@ -469,6 +470,49 @@ export async function salvarTurma(estudioId: string, t: DadosTurma): Promise<Res
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a turma.") } : { ok: true };
 }
 
+export interface NovosHorariosDoEstudio {
+  tipo: TipoDeHorario;
+  modalidade: string;
+  professorId: string | null;
+  vagas: number | null;
+  /** Duração de cada aula da turma (o turno ocupa o intervalo inteiro). */
+  duracao: number | null;
+  /** Padrão: os dias da semana. */
+  dias: number[] | null;
+  /** Aula extra: a data ("AAAA-MM-DD"). */
+  data: string | null;
+  intervalos: { de: number; ate: number }[];
+}
+
+/**
+ * Cria de uma vez (decisão 66): um ou mais intervalos "das … às …", em vários dias toda semana
+ * ou numa data só (aula extra). Na turma, o intervalo vira aulas seguidas da duração escolhida.
+ */
+export async function criarHorarios(estudioId: string, h: NovosHorariosDoEstudio): Promise<Resposta> {
+  const turno = h.tipo === "turno";
+  if (!h.modalidade?.trim()) return { ok: false, erro: turno ? "Informe a função (ex.: Musculação)." : "Informe a modalidade (ex.: Pilates)." };
+  if (!Array.isArray(h.intervalos) || h.intervalos.length === 0) return { ok: false, erro: "Informe pelo menos um horário." };
+  if (h.data != null && !/^\d{4}-\d{2}-\d{2}$/.test(h.data)) return { ok: false, erro: "Escolha a data da aula extra." };
+  if (h.data == null && !h.dias?.length) return { ok: false, erro: "Escolha pelo menos um dia." };
+  const supabase = await criarClienteSupabase();
+  if (!turno) {
+    const { data: est } = await supabase.from("estudios").select("max_alunos_turma").eq("id", estudioId).maybeSingle();
+    if (est && (h.vagas ?? 0) > est.max_alunos_turma) return { ok: false, erro: `O máximo do estúdio é ${est.max_alunos_turma} alunos por turma.` };
+  }
+  const { error } = await supabase.rpc("criar_horarios_estudio", {
+    p_estudio: estudioId,
+    p_tipo: h.tipo,
+    p_modalidade: h.modalidade.trim(),
+    p_professor: h.professorId,
+    p_vagas: turno ? null : h.vagas,
+    p_duracao: turno ? null : h.duracao,
+    p_dias: h.data != null ? null : h.dias,
+    p_data: h.data,
+    p_intervalos: h.intervalos.map((i) => ({ de: i.de, ate: i.ate })),
+  });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar (falta atualizar o banco: migração 40).") } : { ok: true };
+}
+
 /**
  * O mesmo horário em vários dias de uma vez (ex.: João, seg, qua e sex das 6h às 10h): cria
  * uma turma ou um turno por dia. Diz em quais dias não deu certo.
@@ -543,6 +587,8 @@ export interface AulaNaAgendaDoEstudio {
   chamadaEm: string | null;
   cancelada: boolean;
   tipo: TipoDeHorario;
+  /** Aula extra (uma data só, não repete). */
+  extra?: boolean;
 }
 
 /** Aulas de todas as turmas do estúdio entre dois instantes (ISO), para a agenda da coordenação. */
@@ -552,7 +598,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
   const [{ data: aulas }, { data: matriculas }] = await Promise.all([
     supabase
       .from("aulas_turma")
-      .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo)")
+      .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo, avulsa)")
       .eq("estudio_id", estudioId)
       .gte("inicio", de)
       .lt("inicio", ate)
@@ -572,8 +618,9 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
     }
   }
   return (aulas ?? []).map((a) => {
-    const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string } | null;
+    const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string; avulsa: string | null } | null;
     return {
+      extra: t?.avulsa != null,
       tipo: (t?.tipo === "turno" ? "turno" : "turma") as TipoDeHorario,
       id: a.id,
       inicio: a.inicio,

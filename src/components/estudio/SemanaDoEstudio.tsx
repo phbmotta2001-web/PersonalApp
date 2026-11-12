@@ -209,6 +209,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
                       >
                         <span className="flex items-center gap-1">
                           <span className="min-w-0 flex-1 truncate font-bold">{a.modalidade}</span>
+                          {a.extra && <span className="shrink-0 rounded-[4px] bg-ink px-1 text-[9.5px] font-extrabold tracking-wide text-app uppercase">extra</span>}
                           <span className={`shrink-0 font-extrabold tabular-nums ${cheia ? "text-gold" : ""}`}>
                             {a.alunos}/{a.vagas}
                           </span>
