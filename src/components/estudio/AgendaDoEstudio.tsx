@@ -249,6 +249,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
                         <span className="block truncate text-[12px] font-semibold opacity-85">
                           {a.tipo === "turno" ? "Turno" : `${a.alunos}/${a.vagas} alunos${a.chamadaEm ? " · ✓" : ""}`}
                         </span>
+                        {!a.cancelada && a.nomes.length > 0 && <span className="block text-[11px] leading-[1.2] font-medium opacity-85">{a.nomes.join(", ")}</span>}
                       </Link>
                     );
                   })}

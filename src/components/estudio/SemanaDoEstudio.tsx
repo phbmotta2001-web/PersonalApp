@@ -121,7 +121,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
         <div className="rounded-[16px] border border-line bg-surface p-3 lg:order-2 lg:sticky lg:top-4">
           <p className="mb-2 text-[12.5px] font-bold tracking-[0.05em] text-ink-3 uppercase">Professores</p>
           {legenda}
-          <p className="mt-3 text-[12.5px] text-ink-3">A faixa clara é o turno do professor. Toque num dia para ver por professor; para criar turnos e turmas em vários dias, use “+ Turma ou turno” embaixo da agenda.</p>
+          <p className="mt-3 text-[12.5px] text-ink-3">A faixa clara é o turno do professor. Toque num dia para ver por professor; para criar ou mudar aulas, use “Editar” embaixo da agenda.</p>
         </div>
 
         <div className="max-h-[calc(100dvh-120px)] overflow-auto rounded-[20px] border border-line bg-surface lg:order-1">
@@ -194,7 +194,8 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
                       <Link
                         key={a.id}
                         href={`/estudio/aula/${a.id}`}
-                        title={`${emBrasilia(a.inicio).hora}–${emBrasilia(a.fim).hora} · ${a.modalidade} · ${a.alunos}/${a.vagas} alunos · ${nomeCurto.get(a.professorId ?? "") ?? "sem professor"}`}
+                        title={`${emBrasilia(a.inicio).hora}–${emBrasilia(a.fim).hora} · ${a.modalidade} · ${a.alunos}/${a.vagas} alunos · ${nomeCurto.get(a.professorId ?? "") ?? "sem professor"}${a.nomes.length ? `
+${a.nomes.join(", ")}` : ""}`}
                         className={`absolute z-[5] overflow-hidden rounded-[8px] border-l-[3px] px-1.5 py-0.5 text-[12px] leading-tight hover:brightness-95 ${
                           a.cancelada ? "text-ink-3 line-through" : "text-ink"
                         }`}
@@ -217,6 +218,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
                         <span className={`block truncate text-[11.5px] font-semibold ${c ? "text-ink-2" : "text-bad"}`}>
                           {a.cancelada ? "Cancelada" : (nomeCurto.get(a.professorId ?? "") ?? "Sem professor")}
                         </span>
+                        {!a.cancelada && a.nomes.length > 0 && <span className="block text-[10.5px] leading-[1.2] text-ink-2">{a.nomes.join(", ")}</span>}
                       </Link>
                     );
                   })}

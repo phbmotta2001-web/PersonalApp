@@ -673,6 +673,8 @@ export interface AulaNaAgendaDoEstudio {
   modalidade: string;
   vagas: number;
   alunos: number;
+  /** Quem vai: "Ana S." (os da turma menos quem avisou falta, mais quem vem repor). */
+  nomes: string[];
   professorId: string | null;
   chamadaEm: string | null;
   cancelada: boolean;
@@ -685,7 +687,7 @@ export interface AulaNaAgendaDoEstudio {
 export async function aulasDoEstudio(estudioId: string, de: string, ate: string): Promise<AulaNaAgendaDoEstudio[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];
-  const [{ data: aulas }, { data: matriculas }] = await Promise.all([
+  const [{ data: aulas }, { data: matriculas }, { data: alunosDoEstudio }] = await Promise.all([
     supabase
       .from("aulas_turma")
       .select("id, inicio, fim, turma_id, professor_id, chamada_em, situacao, turmas(modalidade, vagas, tipo, avulsa)")
@@ -693,23 +695,38 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
       .gte("inicio", de)
       .lt("inicio", ate)
       .order("inicio"),
-    supabase.from("turma_alunos").select("turma_id, turmas!inner(estudio_id)").eq("turmas.estudio_id", estudioId),
+    supabase.from("turma_alunos").select("turma_id, estudio_aluno_id, turmas!inner(estudio_id)").eq("turmas.estudio_id", estudioId),
+    supabase.from("estudio_alunos").select("id, nome").eq("estudio_id", estudioId),
   ]);
-  const porTurma = new Map<string, number>();
-  for (const m of matriculas ?? []) porTurma.set(m.turma_id, (porTurma.get(m.turma_id) ?? 0) + 1);
+  // "Ana Souza" → "Ana S."
+  const curto = (nome: string) => {
+    const p = nome.trim().split(/s+/);
+    return p.length > 1 ? `${p[0]} ${p.at(-1)![0]}.` : p[0];
+  };
+  const nomeDe = new Map((alunosDoEstudio ?? []).map((a) => [a.id, curto(a.nome)]));
+  const daTurma = new Map<string, string[]>();
+  for (const m of matriculas ?? []) daTurma.set(m.turma_id, [...(daTurma.get(m.turma_id) ?? []), m.estudio_aluno_id]);
   // Quem vai de fato: os da turma, menos quem avisou falta, mais quem vem repor.
-  const ajuste = new Map<string, number>();
+  const faltam = new Map<string, Set<string>>();
+  const repoem = new Map<string, string[]>();
   const ids = (aulas ?? []).map((a) => a.id);
-  if (ids.length > 0 && ids.length <= 400) {
-    const { data: presencas } = await supabase.from("presencas").select("aula_turma_id, situacao, origem").in("aula_turma_id", ids);
+  for (let k = 0; k < ids.length; k += 300) {
+    const { data: presencas } = await supabase
+      .from("presencas")
+      .select("aula_turma_id, estudio_aluno_id, situacao, origem")
+      .in("aula_turma_id", ids.slice(k, k + 300));
     for (const p of presencas ?? []) {
-      const d = p.origem === "reposicao" ? (p.situacao === "falta_avisada" ? 0 : 1) : p.situacao === "falta_avisada" ? -1 : 0;
-      if (d) ajuste.set(p.aula_turma_id, (ajuste.get(p.aula_turma_id) ?? 0) + d);
+      if (p.situacao === "falta_avisada") {
+        if (p.origem !== "reposicao") faltam.set(p.aula_turma_id, (faltam.get(p.aula_turma_id) ?? new Set()).add(p.estudio_aluno_id));
+      } else if (p.origem === "reposicao") repoem.set(p.aula_turma_id, [...(repoem.get(p.aula_turma_id) ?? []), p.estudio_aluno_id]);
     }
   }
   return (aulas ?? []).map((a) => {
     const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string; avulsa: string | null } | null;
+    const vao = [...(daTurma.get(a.turma_id) ?? []).filter((x) => !faltam.get(a.id)?.has(x)), ...(repoem.get(a.id) ?? [])];
+    const nomes = vao.map((x) => nomeDe.get(x) ?? "Aluno");
     return {
+      nomes,
       extra: t?.avulsa != null,
       tipo: (t?.tipo === "turno" ? "turno" : "turma") as TipoDeHorario,
       id: a.id,
@@ -718,7 +735,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
       turmaId: a.turma_id,
       modalidade: t?.modalidade ?? "Turma",
       vagas: t?.vagas ?? 0,
-      alunos: Math.max(0, (porTurma.get(a.turma_id) ?? 0) + (ajuste.get(a.id) ?? 0)),
+      alunos: nomes.length,
       professorId: a.professor_id,
       chamadaEm: a.chamada_em,
       cancelada: a.situacao === "cancelada",
