@@ -42,12 +42,27 @@ function emFaixas<T extends { id: string; inicio: string; fim: string }>(itens: 
  * professor pinta os horários dele com a cor clara dele; cada aula mostra a modalidade,
  * quantos alunos vão e o professor. Ao lado, a legenda das cores.
  */
-export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: EstudioCompleto; aulas: AulaNaAgendaDoEstudio[]; segunda: string; hoje: string }) {
+export function SemanaDoEstudio({
+  estudio,
+  aulas,
+  segunda,
+  hoje,
+  base,
+}: {
+  estudio: EstudioCompleto;
+  aulas: AulaNaAgendaDoEstudio[];
+  segunda: string;
+  hoje: string;
+  /** Painel do professor (decisão 78): a página dele ("/agenda/estudio/…"); a aula abre a chamada. */
+  base?: string;
+}) {
   const cores = coresDaEquipe(estudio.equipe);
   const nomeCurto = new Map(estudio.equipe.map((m) => [m.personalId, m.nome.split(" ")[0]]));
   const segundaDeHoje = somarDias(hoje, -diaDaSemana(hoje)); // domingo desta semana
-  const linkSemana = (d: string) => `/estudio/${estudio.id}?aba=agenda${d === segundaDeHoje ? "" : `&semana=${d}`}`;
-  const linkDia = (d: string) => `/estudio/${estudio.id}?aba=agenda&dia=${d}`;
+  const linkSemana = (d: string) =>
+    base ? `${base}${d === segundaDeHoje ? "" : `?semana=${d}`}` : `/estudio/${estudio.id}?aba=agenda${d === segundaDeHoje ? "" : `&semana=${d}`}`;
+  const linkDia = (d: string) => (base ? linkSemana(segunda) : `/estudio/${estudio.id}?aba=agenda&dia=${d}`);
+  const linkAula = (id: string) => (base ? `/agenda/turma/${id}` : `/estudio/aula/${id}`);
   const definido = Object.keys(estudio.config.funcionamento).length > 0;
 
   const dias = DIAS.map((d, i) => {
@@ -121,7 +136,11 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
         <div className="rounded-[16px] border border-line bg-surface p-3 lg:order-2 lg:sticky lg:top-4">
           <p className="mb-2 text-[12.5px] font-bold tracking-[0.05em] text-ink-3 uppercase">Professores</p>
           {legenda}
-          <p className="mt-3 text-[12.5px] text-ink-3">A faixa clara é o turno do professor. Toque num dia para ver por professor; para criar ou mudar aulas, use “Editar” embaixo da agenda.</p>
+          <p className="mt-3 text-[12.5px] text-ink-3">
+            {base
+              ? "Toque numa aula para ver os alunos e fazer a chamada."
+              : "Toque num dia para ver por professor; para criar ou mudar aulas, use “Editar” embaixo da agenda."}
+          </p>
         </div>
 
         <div className="max-h-[calc(100dvh-120px)] overflow-auto rounded-[20px] border border-line bg-surface lg:order-1">
@@ -167,7 +186,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
                     return (
                       <Link
                         key={t.id}
-                        href={`/estudio/aula/${t.id}`}
+                        href={linkAula(t.id)}
                         title={`Turno ${t.modalidade}: ${nomeCurto.get(t.professorId ?? "") ?? "sem professor"}, ${emBrasilia(t.inicio).hora}–${emBrasilia(t.fim).hora}`}
                         className="absolute"
                         style={{
@@ -193,7 +212,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
                     return (
                       <Link
                         key={a.id}
-                        href={`/estudio/aula/${a.id}`}
+                        href={linkAula(a.id)}
                         title={`${emBrasilia(a.inicio).hora}–${emBrasilia(a.fim).hora} · ${a.modalidade} · ${a.alunos}/${a.vagas} alunos · ${nomeCurto.get(a.professorId ?? "") ?? "sem professor"}${a.nomes.length ? `
 ${a.nomes.join(", ")}` : ""}`}
                         className={`absolute z-[5] overflow-hidden rounded-[8px] border-l-[3px] px-1.5 py-0.5 text-[12px] leading-tight hover:brightness-95 ${

@@ -4,40 +4,51 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { aulasDeTurmaParaMim, lerEstudio } from "@/data/estudio";
+import { aulasDeTurmaParaMim, aulasDoEstudio, lerEstudio } from "@/data/estudio";
+import { SemanaDoEstudio } from "@/components/estudio/SemanaDoEstudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { ausenciasDoEstudio, reposicoesAbertas } from "@/data/reposicao";
 import { usuarioAtual } from "@/lib/supabase/servidor";
-import { agoraEmBrasilia, emBrasilia, instante, somarDias } from "@/lib/expediente";
-import { textoDaAula } from "@/lib/matricula";
+import { agoraEmBrasilia, diaDaSemana, instante, somarDias } from "@/lib/expediente";
 
 export const metadata: Metadata = {
   title: "Estúdio",
 };
 
 // Página do estúdio para o professor (aberta pelo ícone do estúdio no Início).
-export default function PaginaEstudioDoProfessor({ params }: PageProps<"/agenda/estudio/[estudio]">) {
+export default function PaginaEstudioDoProfessor({ params, searchParams }: PageProps<"/agenda/estudio/[estudio]">) {
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-2xl">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-6xl">
       <Cabecalho titulo="Estúdio">
         <BotaoVoltar reserva="/agenda" className="hover:bg-surface-2" />
       </Cabecalho>
       <Suspense fallback={<Carregando />}>
-        <Conteudo params={params} />
+        <Conteudo params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudio]">["params"] }) {
+async function Conteudo({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/agenda/estudio/[estudio]">["params"];
+  searchParams: PageProps<"/agenda/estudio/[estudio]">["searchParams"];
+}) {
   const { estudio: id } = await params;
+  const { semana: pedida } = await searchParams;
   const personal = await exigirPersonal(`/agenda/estudio/${id}`);
   const hoje = agoraEmBrasilia().data;
-  const [estudio, aulas, reposicoes, ausencias, { id: eu }] = await Promise.all([
+  // Decisão 78: a semana do estúdio como no painel da coordenação (domingo a sábado).
+  const base = typeof pedida === "string" && /^d{4}-d{2}-d{2}$/.test(pedida) ? pedida : hoje;
+  const domingo = somarDias(base, -diaDaSemana(base));
+  const [estudio, aulas, semana, reposicoes, ausencias, { id: eu }] = await Promise.all([
     lerEstudio(id),
     aulasDeTurmaParaMim(new Date().toISOString(), instante(somarDias(hoje, 7), 0).toISOString()),
+    aulasDoEstudio(id, instante(domingo, 0).toISOString(), instante(somarDias(domingo, 7), 0).toISOString()),
     reposicoesAbertas(id),
     ausenciasDoEstudio(id),
     usuarioAtual(),
@@ -63,29 +74,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/estudio/[estudi
         </Link>
       )}
 
-      <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Suas próximas aulas">
-        <h2 className="pb-1 text-[16px] font-semibold">Suas próximas aulas no estúdio</h2>
-        {minhas.length === 0 ? (
-          <p className="pb-1 text-[14px] text-ink-3">Nenhuma aula sua nos próximos 7 dias.</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-line">
-            {minhas.map((a) => (
-              <li key={a.id}>
-                <Link href={`/agenda/turma/${a.id}`} className="flex items-center gap-3 py-2.5">
-                  <span className="w-[52px] shrink-0 font-extrabold tabular-nums">{emBrasilia(a.inicio).hora}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{a.modalidade}</span>
-                    <span className="block text-[13px] text-ink-3">{textoDaAula(a.inicio, null).split(" às ")[0]}</span>
-                  </span>
-                  <span className="rounded-full bg-estudio-soft px-2 py-0.5 text-[12.5px] font-bold text-estudio">
-                    {a.turno ? "turno" : `${a.alunos}/${a.vagas}`}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <SemanaDoEstudio key={domingo} estudio={estudio} aulas={semana} segunda={domingo} hoje={hoje} base={`/agenda/estudio/${id}`} />
 
       {eu && (
         <AusenciasDoEstudio
