@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AgendaDoEstudio } from "@/components/estudio/AgendaDoEstudio";
+import { SemanaDoEstudio } from "@/components/estudio/SemanaDoEstudio";
 import { ABAS_DA_COORDENACAO, MenuDaCoordenacao } from "@/components/estudio/MenuDaCoordenacao";
 import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio";
 import { Carregando } from "@/components/Formulario";
@@ -15,7 +16,7 @@ import { ValorDaReposicao } from "@/components/estudio/ValorDaReposicao";
 import { lerAntecedenciaParaMarcar } from "@/data/aluno-estudio";
 import { ausenciasDoEstudio, lerConfigReposicao, reposicoesAbertas } from "@/data/reposicao";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { emBrasilia, instante, somarDias } from "@/lib/expediente";
+import { diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
 
 const ABAS: Aba[] = ["agenda", "turmas", "equipe", "alunos", "financeiro", "ajustes"];
 
@@ -41,7 +42,7 @@ async function Conteudo({
   searchParams: PageProps<"/estudio/[estudio]">["searchParams"];
 }) {
   const { estudio: id } = await params;
-  const { aba, mes, dia } = await searchParams;
+  const { aba, mes, dia, semana } = await searchParams;
   await exigirPersonal(`/estudio/${id}`);
   const [estudio, empresa] = await Promise.all([lerEstudio(id), souContaEmpresa()]);
   if (!estudio || estudio.papel !== "coordenacao") notFound();
@@ -71,7 +72,7 @@ async function Conteudo({
           financeiro={financeiro}
           pagamentos={pagamentos}
           hoje={hoje}
-          agenda={qual === "agenda" ? await agendaDoDia(estudio, hoje, dia) : undefined}
+          agenda={qual === "agenda" ? await agendaDaAba(estudio, hoje, dia, semana) : undefined}
           complemento={await complementoDaAba(estudio, qual)}
         />
       </main>
@@ -105,9 +106,25 @@ async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof l
   );
 }
 
-/** A agenda de um dia (padrão: hoje), com uma coluna por profissional. */
-async function agendaDoDia(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, hoje: string, dia: string | string[] | undefined) {
-  const data = typeof dia === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dia) && !Number.isNaN(Date.parse(dia)) ? dia : hoje;
+const dataValida = (d: string | string[] | undefined): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d));
+
+/**
+ * Agenda da coordenação (decisão 64): por padrão a semana inteira, com a cor de cada professor;
+ * tocando num dia, a agenda do dia com uma coluna por profissional.
+ */
+async function agendaDaAba(
+  estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>,
+  hoje: string,
+  dia: string | string[] | undefined,
+  semana: string | string[] | undefined,
+) {
+  if (!dataValida(dia)) {
+    const base = dataValida(semana) ? semana : hoje;
+    const segunda = somarDias(base, -((diaDaSemana(base) + 6) % 7));
+    const aulas = await aulasDoEstudio(estudio.id, instante(segunda, 0).toISOString(), instante(somarDias(segunda, 7), 0).toISOString());
+    return <SemanaDoEstudio key={segunda} estudio={estudio} aulas={aulas} segunda={segunda} hoje={hoje} />;
+  }
+  const data = dia;
   const aulas = await aulasDoEstudio(estudio.id, instante(data, 0).toISOString(), instante(somarDias(data, 1), 0).toISOString());
   return <AgendaDoEstudio key={data} estudio={estudio} aulas={aulas} dia={data} hoje={hoje} />;
 }

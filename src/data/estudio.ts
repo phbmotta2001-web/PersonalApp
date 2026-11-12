@@ -542,6 +542,16 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
   ]);
   const porTurma = new Map<string, number>();
   for (const m of matriculas ?? []) porTurma.set(m.turma_id, (porTurma.get(m.turma_id) ?? 0) + 1);
+  // Quem vai de fato: os da turma, menos quem avisou falta, mais quem vem repor.
+  const ajuste = new Map<string, number>();
+  const ids = (aulas ?? []).map((a) => a.id);
+  if (ids.length > 0 && ids.length <= 400) {
+    const { data: presencas } = await supabase.from("presencas").select("aula_turma_id, situacao, origem").in("aula_turma_id", ids);
+    for (const p of presencas ?? []) {
+      const d = p.origem === "reposicao" ? (p.situacao === "falta_avisada" ? 0 : 1) : p.situacao === "falta_avisada" ? -1 : 0;
+      if (d) ajuste.set(p.aula_turma_id, (ajuste.get(p.aula_turma_id) ?? 0) + d);
+    }
+  }
   return (aulas ?? []).map((a) => {
     const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string } | null;
     return {
@@ -552,7 +562,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
       turmaId: a.turma_id,
       modalidade: t?.modalidade ?? "Turma",
       vagas: t?.vagas ?? 0,
-      alunos: porTurma.get(a.turma_id) ?? 0,
+      alunos: Math.max(0, (porTurma.get(a.turma_id) ?? 0) + (ajuste.get(a.id) ?? 0)),
       professorId: a.professor_id,
       chamadaEm: a.chamada_em,
       cancelada: a.situacao === "cancelada",

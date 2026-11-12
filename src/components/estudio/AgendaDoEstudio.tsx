@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarTurma, type AulaNaAgendaDoEstudio, type EstudioCompleto, type TipoDeHorario } from "@/data/estudio";
+import { coresDaEquipe } from "@/lib/cores-professor";
 import { DIAS, dataCurta, diaDaSemana, emBrasilia, minParaHora, opcoesDeHora, somarDias } from "@/lib/expediente";
 import { Chip } from "../Chip";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
@@ -60,7 +61,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
   const [novo, setNovo] = useState<Novo | null>(null);
   const semana = diaDaSemana(dia);
   const segunda = somarDias(dia, -((semana + 6) % 7));
-  const link = (d: string) => `/estudio/${estudio.id}?aba=agenda${d === hoje ? "" : `&dia=${d}`}`;
+  const link = (d: string) => `/estudio/${estudio.id}?aba=agenda&dia=${d}`;
   const aberto = estudio.config.funcionamento[semana];
   const definido = Object.keys(estudio.config.funcionamento).length > 0;
 
@@ -90,14 +91,14 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
   const ocupadas = turmas.reduce((s, a) => s + Math.min(a.alunos, a.vagas), 0);
   const semProfessor = ativas.filter((a) => !a.professorId).length;
 
+  // Cada professor com a cor clara dele (a mesma da semana); turno mais claro que aula.
+  const cores = coresDaEquipe(estudio.equipe);
   const tom = (a: AulaNaAgendaDoEstudio) =>
-    a.cancelada
-      ? "border-line bg-surface-2 text-ink-3 line-through"
-      : !a.professorId
-        ? "border-bad bg-bad/10 text-bad"
-        : a.tipo === "turno"
-          ? "border-info bg-info-soft text-info"
-          : "border-estudio bg-estudio-soft text-estudio";
+    a.cancelada ? "border-line bg-surface-2 text-ink-3 line-through" : !a.professorId || !cores.has(a.professorId) ? "border-bad bg-bad/10 text-bad" : "text-ink";
+  const estilo = (a: AulaNaAgendaDoEstudio): React.CSSProperties => {
+    const c = !a.cancelada && a.professorId ? cores.get(a.professorId) : undefined;
+    return c ? { background: a.tipo === "turno" ? c.turno : c.aula, borderLeftColor: c.forte } : {};
+  };
 
   return (
     <section className="flex flex-col gap-4" aria-label="Agenda do dia">
@@ -140,11 +141,9 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
         <span className="text-[14px] text-ink-3">
           {aberto ? `Aberto das ${minParaHora(aberto.inicio)} às ${minParaHora(aberto.fim)}` : definido ? "Fechado neste dia" : "Horário de funcionamento não definido"}
         </span>
-        {dia !== hoje && (
-          <Link href={link(hoje)} scroll={false} className="text-[14px] font-semibold text-brand">
-            Voltar para hoje
-          </Link>
-        )}
+        <Link href={`/estudio/${estudio.id}?aba=agenda&semana=${segunda}`} scroll={false} className="text-[14px] font-semibold text-brand">
+          Ver a semana
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
@@ -182,7 +181,12 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
                 key={c.id}
                 className={`sticky top-0 z-20 truncate border-b border-l border-line bg-surface px-2 py-2.5 text-center text-[14px] font-bold ${c.id === SEM_PROFESSOR ? "text-bad" : "text-ink"}`}
               >
-                {c.nome}
+                <span className="inline-flex max-w-full items-center gap-1.5">
+                  {c.professorId && cores.get(c.professorId) && (
+                    <span className="size-3 shrink-0 rounded-[4px]" style={{ background: cores.get(c.professorId)!.forte }} />
+                  )}
+                  <span className="truncate">{c.nome}</span>
+                </span>
               </div>
             ))}
 
@@ -235,6 +239,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
                           height: (fim - ini) * PX_POR_MIN - 2,
                           left: `calc(${(faixa / total) * 100}% + 3px)`,
                           width: `calc(${100 / total}% - 6px)`,
+                          ...estilo(a),
                         }}
                       >
                         <span className="block truncate">{a.modalidade}</span>
@@ -255,8 +260,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
       )}
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-3">
-        <Legenda cor="bg-estudio">Turma</Legenda>
-        <Legenda cor="bg-info">Turno</Legenda>
+        <span>Cor mais clara: turno · mais forte: aula</span>
         <Legenda cor="bg-bad">Sem professor</Legenda>
         <span>Toque num horário livre para dar um turno ou uma turma ao profissional. Repete toda semana.</span>
       </p>
