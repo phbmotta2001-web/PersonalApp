@@ -18,7 +18,7 @@ import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
 import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora } from "@/lib/expediente";
-import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO } from "../Formulario";
+import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
 import { EditarHorarios } from "./EditarHorarios";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
@@ -343,7 +343,7 @@ function Alunos({
               const fora = r.linhas - r.criados;
               setAviso({
                 tipo: "ok",
-                texto: `${r.criados} aluno${r.criados === 1 ? "" : "s"} cadastrado${r.criados === 1 ? "" : "s"}.${fora > 0 ? ` ${fora} já estavam na lista ou sem nome válido.` : ""} Agora escolha as turmas de cada um abaixo.`,
+                texto: `${r.criados} aluno${r.criados === 1 ? "" : "s"} cadastrado${r.criados === 1 ? "" : "s"}.${fora > 0 ? ` ${fora} já estavam na lista ou sem nome válido.` : ""} Toque no nome de cada um, na lista acima, para escolher dia e horário.`,
               });
               setTexto("");
               atualizar();
@@ -358,6 +358,10 @@ function Alunos({
   );
 }
 
+/**
+ * Turmas do aluno (decisão 70): escolhe o dia e o horário, vê quantos alunos a turma tem (ex.: 3/5)
+ * e confirma. Embaixo, as turmas em que ele já está, cada uma com "Tirar".
+ */
 function TurmasDoAluno({
   alunoId,
   turmas,
@@ -369,62 +373,115 @@ function TurmasDoAluno({
   escolhidas: string[];
   atualizar: () => void;
 }) {
-  const [marcadas, setMarcadas] = useState(escolhidas);
+  const diasComTurma = DIAS.filter((d) => turmas.some((t) => t.diaSemana === d.valor));
+  const [dia, setDia] = useState<number | null>(diasComTurma[0]?.valor ?? null);
+  const doDia = turmas.filter((t) => t.diaSemana === dia && !escolhidas.includes(t.id)).sort((a, b) => a.inicioMin - b.inicioMin);
+  const [turmaId, setTurmaId] = useState("");
+  const turma = doDia.find((t) => t.id === turmaId) ?? doDia[0];
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
+  const cheia = turma ? turma.alunos.length >= turma.vagas : false;
+  const salvar = (lista: string[]) =>
+    iniciar(async () => {
+      setErro(null);
+      const r = await salvarTurmasDoAluno(alunoId, lista);
+      if (!r.ok) return setErro(r.erro);
+      setTurmaId("");
+      atualizar();
+    });
+  const minhas = escolhidas
+    .map((id) => turmas.find((t) => t.id === id))
+    .filter((t): t is TurmaDoEstudio => !!t)
+    .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin);
+
+  if (turmas.length === 0) return <p className="text-[14px] text-ink-3">Crie as aulas na Agenda primeiro.</p>;
+
   return (
-    <div className="flex flex-col gap-2">
-      {turmas.length === 0 ? (
-        <p className="text-[14px] text-ink-3">Crie as turmas primeiro.</p>
+    <div className="flex flex-col gap-3">
+      <p className="text-[14px] font-bold text-ink-2">Colocar numa turma</p>
+      <div className="flex flex-wrap gap-1.5">
+        {diasComTurma.map((d) => (
+          <button
+            key={d.valor}
+            type="button"
+            aria-pressed={dia === d.valor}
+            onClick={() => {
+              setDia(d.valor);
+              setTurmaId("");
+            }}
+            className={`min-h-[40px] min-w-[48px] rounded-full border px-3 text-[14.5px] font-semibold ${
+              dia === d.valor ? "border-brand bg-brand text-brand-ink" : "border-line bg-surface text-ink-2"
+            }`}
+          >
+            {d.curto}
+          </button>
+        ))}
+      </div>
+      {doDia.length === 0 ? (
+        <p className="text-[14px] text-ink-3">Nenhuma outra turma neste dia.</p>
       ) : (
-        <div className="grid gap-1.5 sm:grid-cols-2">
-          {turmas.map((t) => (
-            <label key={t.id} className="flex items-center gap-2 text-[14.5px]">
-              <input
-                type="checkbox"
-                checked={marcadas.includes(t.id)}
-                onChange={(e) => setMarcadas(e.target.checked ? [...marcadas, t.id] : marcadas.filter((x) => x !== t.id))}
-                className="size-4 accent-[var(--brand)]"
-              />
-              {rotuloDaTurma(t)}
-              <span className="text-[12.5px] text-ink-3">
-                ({t.alunos.length}/{t.vagas})
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex min-w-[180px] flex-1 flex-col gap-1 text-[14px] font-bold text-ink-2">
+            Horário
+            <select value={turma?.id ?? ""} onChange={(e) => setTurmaId(e.target.value)} className={ESTILO_CAIXA}>
+              {doDia.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {minParaHora(t.inicioMin)} · {t.modalidade} ({t.alunos.length}/{t.vagas})
+                </option>
+              ))}
+            </select>
+          </label>
+          {turma && (
+            <span className="flex min-h-[52px] flex-col justify-center">
+              <span className={`text-[22px] leading-none font-extrabold ${cheia ? "text-bad" : ""}`}>
+                {turma.alunos.length}/{turma.vagas}
               </span>
-            </label>
-          ))}
+              <span className="text-[12.5px] text-ink-3">{cheia ? "turma cheia" : "alunos"}</span>
+            </span>
+          )}
+          <button
+            type="button"
+            disabled={ocupado || !turma || cheia}
+            onClick={() => turma && salvar([...escolhidas, turma.id])}
+            className="min-h-[52px] rounded-[13px] bg-brand px-4 font-bold text-brand-ink disabled:opacity-50"
+          >
+            {ocupado ? "Salvando…" : cheia ? "Sem vaga" : "Confirmar"}
+          </button>
         </div>
       )}
+      {minhas.length > 0 && (
+        <ul className="flex flex-col divide-y divide-line rounded-[12px] bg-surface px-3">
+          {minhas.map((t) => (
+            <li key={t.id} className="flex items-center gap-2 py-2 text-[14.5px]">
+              <span className="flex-1">
+                <b>{DIAS.find((d) => d.valor === t.diaSemana)?.curto} {minParaHora(t.inicioMin)}</b> · {t.modalidade}{" "}
+                <span className="text-[12.5px] text-ink-3">
+                  ({t.alunos.length}/{t.vagas})
+                </span>
+              </span>
+              <button type="button" disabled={ocupado} onClick={() => salvar(escolhidas.filter((x) => x !== t.id))} className="font-bold text-ink-3">
+                Tirar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
       <Aviso>{erro}</Aviso>
-      <div className="flex flex-wrap gap-3 text-[14px] font-bold">
-        <button
-          type="button"
-          disabled={ocupado}
-          onClick={() =>
-            iniciar(async () => {
-              const r = await salvarTurmasDoAluno(alunoId, marcadas);
-              if (!r.ok) return setErro(r.erro);
-              atualizar();
-            })
-          }
-          className="rounded-[10px] bg-brand px-3 py-1.5 text-brand-ink"
-        >
-          {ocupado ? "Salvando…" : "Salvar turmas"}
-        </button>
-        <button
-          type="button"
-          disabled={ocupado}
-          onClick={() =>
-            iniciar(async () => {
-              const r = await encerrarAlunoEstudio(alunoId);
-              if (!r.ok) return setErro(r.erro);
-              atualizar();
-            })
-          }
-          className="text-ink-3"
-        >
-          Tirar do estúdio
-        </button>
-      </div>
+      <button
+        type="button"
+        disabled={ocupado}
+        onClick={() => {
+          if (!confirm("Tirar este aluno do estúdio?")) return;
+          iniciar(async () => {
+            const r = await encerrarAlunoEstudio(alunoId);
+            if (!r.ok) return setErro(r.erro);
+            atualizar();
+          });
+        }}
+        className="self-start text-[14px] font-bold text-ink-3"
+      >
+        Tirar do estúdio
+      </button>
     </div>
   );
 }
