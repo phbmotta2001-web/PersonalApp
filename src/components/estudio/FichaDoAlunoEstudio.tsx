@@ -131,7 +131,7 @@ function Caixa({
 }
 
 function TreinoDaSemana({ alunoId, ficha }: { alunoId: string; ficha: Ficha }) {
-  // Os dias em que ele tem turma e os que já têm treino escrito, de segunda a domingo.
+  // Os dias em que ele tem turma e os que já têm treino escrito, de domingo a sábado.
   const dias = DIAS.filter((d) => ficha.dias.includes(d.valor) || ficha.treino[d.valor]);
   const [textos, setTextos] = useState<Record<number, string>>(ficha.treino);
   const [salvos, setSalvos] = useState<Record<number, string>>(ficha.treino);

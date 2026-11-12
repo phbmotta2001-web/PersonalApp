@@ -45,7 +45,7 @@ function emFaixas<T extends { id: string; inicio: string; fim: string }>(itens: 
 export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: EstudioCompleto; aulas: AulaNaAgendaDoEstudio[]; segunda: string; hoje: string }) {
   const cores = coresDaEquipe(estudio.equipe);
   const nomeCurto = new Map(estudio.equipe.map((m) => [m.personalId, m.nome.split(" ")[0]]));
-  const segundaDeHoje = somarDias(hoje, -((diaDaSemana(hoje) + 6) % 7));
+  const segundaDeHoje = somarDias(hoje, -diaDaSemana(hoje)); // domingo desta semana
   const linkSemana = (d: string) => `/estudio/${estudio.id}?aba=agenda${d === segundaDeHoje ? "" : `&semana=${d}`}`;
   const linkDia = (d: string) => `/estudio/${estudio.id}?aba=agenda&dia=${d}`;
   const definido = Object.keys(estudio.config.funcionamento).length > 0;

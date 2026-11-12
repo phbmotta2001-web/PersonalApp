@@ -547,7 +547,7 @@ export async function criarHorarios(estudioId: string, h: NovosHorariosDoEstudio
  * uma turma ou um turno por dia. Diz em quais dias não deu certo.
  */
 export async function salvarTurmaNosDias(estudioId: string, t: DadosTurma, dias: number[]): Promise<Resposta> {
-  const lista = [...new Set(Array.isArray(dias) ? dias : [])].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  const lista = [...new Set(Array.isArray(dias) ? dias : [])].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort((a, b) => a - b);
   if (lista.length === 0) return { ok: false, erro: "Escolha pelo menos um dia." };
   const falhas: string[] = [];
   for (const d of lista) {

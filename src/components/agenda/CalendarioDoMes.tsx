@@ -31,7 +31,7 @@ export function paraCalendario(aulas: AulaDaAgenda[], agora: Date, filtro = ""):
     .sort((a, b) => Date.parse(a.inicio) - Date.parse(b.inicio));
 }
 
-/** Grade do mês (segunda a domingo) com uma bolinha colorida por aula. */
+/** Grade do mês (domingo a sábado) com uma bolinha colorida por aula. */
 export function CalendarioDoMes({
   mes,
   dia,
@@ -53,7 +53,7 @@ export function CalendarioDoMes({
   const primeiroDia = `${mes}-01`;
   const diasNoMes = Math.round((Date.parse(`${somarMes(mes, 1)}-01`) - Date.parse(primeiroDia)) / 86_400_000);
   // Os dias antes do dia 1 ficam vazios.
-  const recuo = (diaDaSemana(primeiroDia) + 6) % 7;
+  const recuo = diaDaSemana(primeiroDia); // a semana começa no domingo
   const casas: (string | null)[] = [
     ...Array.from({ length: recuo }, () => null),
     ...Array.from({ length: diasNoMes }, (_, i) => somarDias(primeiroDia, i)),

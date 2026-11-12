@@ -14,15 +14,15 @@ export const DURACOES = [30, 45, 60, 90] as const;
 export type Duracao = (typeof DURACOES)[number];
 export const DURACAO_PADRAO: Duracao = 60;
 
-/** Dias na ordem da semana brasileira. `valor` segue o JavaScript: 0 = domingo. */
+/** Dias na ordem da semana, de domingo a sábado (decisão 76). `valor` segue o JavaScript: 0 = domingo. */
 export const DIAS = [
+  { valor: 0, curto: "Dom", nome: "Domingo" },
   { valor: 1, curto: "Seg", nome: "Segunda" },
   { valor: 2, curto: "Ter", nome: "Terça" },
   { valor: 3, curto: "Qua", nome: "Quarta" },
   { valor: 4, curto: "Qui", nome: "Quinta" },
   { valor: 5, curto: "Sex", nome: "Sexta" },
   { valor: 6, curto: "Sáb", nome: "Sábado" },
-  { valor: 0, curto: "Dom", nome: "Domingo" },
 ] as const;
 
 export const nomeDoDia = (dia: number) => DIAS.find((d) => d.valor === dia)?.nome ?? "";

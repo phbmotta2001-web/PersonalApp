@@ -60,7 +60,7 @@ interface Novo {
 export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: EstudioCompleto; aulas: AulaNaAgendaDoEstudio[]; dia: string; hoje: string }) {
   const [novo, setNovo] = useState<Novo | null>(null);
   const semana = diaDaSemana(dia);
-  const segunda = somarDias(dia, -((semana + 6) % 7));
+  const segunda = somarDias(dia, -semana); // início da semana: domingo
   const link = (d: string) => `/estudio/${estudio.id}?aba=agenda&dia=${d}`;
   const aberto = estudio.config.funcionamento[semana];
   const definido = Object.keys(estudio.config.funcionamento).length > 0;
@@ -135,7 +135,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
 
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <h2 className="text-[19px] font-extrabold">
-          {DIAS[(semana + 6) % 7].nome}, {dataCurta(dia)}
+          {DIAS[semana].nome}, {dataCurta(dia)}
           {dia === hoje && <span className="text-brand"> · hoje</span>}
         </h2>
         <span className="text-[14px] text-ink-3">

@@ -69,7 +69,7 @@ async function Conteudo({
           <h2 className="text-[17px] font-bold">Seu treino</h2>
           <ul className="flex flex-col gap-1.5">
             {[...treino]
-              .sort((a, b) => (a.dia || 7) - (b.dia || 7))
+              .sort((a, b) => a.dia - b.dia)
               .map((t) => (
                 <li key={t.dia} className="flex gap-3 text-[15px]">
                   <span className="w-20 shrink-0 font-bold">{DIAS.find((d) => d.valor === t.dia)?.nome}</span>

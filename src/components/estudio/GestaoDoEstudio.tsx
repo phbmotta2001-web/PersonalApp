@@ -386,7 +386,7 @@ function TurmasDoAluno({
   const horarios = [...new Set(dias.flatMap((d) => livres(d).map((t) => t.inicioMin)))].sort((a, b) => a - b);
   const h = horario != null && horarios.includes(horario) ? horario : (horarios[0] ?? null);
   const linhas = [...dias]
-    .sort((a, b) => (a || 7) - (b || 7))
+    .sort((a, b) => a - b)
     .map((d) => {
       const opcoes = livres(d);
       const turma = opcoes.find((t) => t.id === trocas[d]) ?? opcoes.find((t) => t.inicioMin === h) ?? null;
@@ -405,7 +405,7 @@ function TurmasDoAluno({
   const minhas = escolhidas
     .map((id) => turmas.find((t) => t.id === id))
     .filter((t): t is TurmaDoEstudio => !!t)
-    .sort((a, b) => (a.diaSemana || 7) - (b.diaSemana || 7) || a.inicioMin - b.inicioMin);
+    .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin);
 
   if (turmas.length === 0) return <p className="text-[14px] text-ink-3">Crie as aulas na Agenda primeiro.</p>;
 

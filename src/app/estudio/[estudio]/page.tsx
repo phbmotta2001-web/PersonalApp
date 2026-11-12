@@ -120,7 +120,7 @@ async function agendaDaAba(
 ) {
   if (!dataValida(dia)) {
     const base = dataValida(semana) ? semana : hoje;
-    const segunda = somarDias(base, -((diaDaSemana(base) + 6) % 7));
+    const segunda = somarDias(base, -diaDaSemana(base)); // início da semana: domingo
     const aulas = await aulasDoEstudio(estudio.id, instante(segunda, 0).toISOString(), instante(somarDias(segunda, 7), 0).toISOString());
     return <SemanaDoEstudio key={segunda} estudio={estudio} aulas={aulas} segunda={segunda} hoje={hoje} />;
   }

@@ -102,7 +102,7 @@ export function AgendaDoAlunoNoEstudio({
       {dias.map((d) => {
         const doDia = aulas.filter((a) => emBrasilia(a.inicio).data === d);
         const fechado = definido && !estudio.funcionamento[diaDaSemana(d)];
-        const nome = DIAS[(diaDaSemana(d) + 6) % 7];
+        const nome = DIAS[diaDaSemana(d)];
         return (
           <section key={d} className="flex flex-col gap-1.5" aria-label={`${nome.nome}, ${dataCurta(d)}`}>
             <h2 className={`text-[14px] font-extrabold tracking-[0.04em] uppercase ${d === hoje ? "text-brand" : "text-ink-3"}`}>
