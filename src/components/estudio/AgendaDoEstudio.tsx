@@ -266,10 +266,6 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
         <span>Toque num horário livre para dar um turno ou uma turma ao profissional. Repete toda semana.</span>
       </p>
 
-      <Link href={`/estudio/${estudio.id}?aba=agenda#turmas`} className="self-start text-[15px] font-bold text-brand">
-        Preencher os horários vazios com aulas
-      </Link>
-
       {novo && <NovoHorario estudio={estudio} dia={semana} novo={novo} aberto={aberto} fechar={() => setNovo(null)} />}
     </section>
   );
