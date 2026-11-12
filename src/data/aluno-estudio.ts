@@ -158,3 +158,12 @@ export async function lerAntecedenciaParaMarcar(estudioId: string): Promise<numb
   const { data, error } = await supabase.from("estudios").select("antecedencia_marcar_h").eq("id", estudioId).maybeSingle();
   return error || !data ? null : data.antecedencia_marcar_h;
 }
+
+/** O treino de cada dia escrito pelo professor (decisão 73). Vazio se a migração 42 não rodou. */
+export async function meuTreinoNoEstudio(estudioId: string): Promise<{ dia: number; texto: string }[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const { data, error } = await supabase.rpc("meu_treino_no_estudio", { p_estudio: estudioId });
+  if (error) return [];
+  return ((data ?? []) as { dia_semana: number; texto: string }[]).map((t) => ({ dia: Number(t.dia_semana), texto: t.texto }));
+}

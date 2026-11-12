@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { FormCadastro } from "@/components/conta/FormCadastro";
 import { AceitarConviteDoAluno } from "@/components/aluno/AceitarConviteDoAluno";
-import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
+import { Carregando, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
+import { faltaNoPerfil, perfilCompleto } from "@/lib/aluno";
+import { juntarComE } from "@/lib/formato";
 import { verConviteDoAluno } from "@/data/aluno-estudio";
 import { lerContaAtual } from "@/data/alunos";
 import { sair, tipoDaConta } from "@/data/conta";
@@ -53,7 +55,18 @@ async function Conteudo({ params }: { params: PageProps<"/estudio/aluno/[codigo]
         Veja a agenda do estúdio com as vagas de cada turma, avise quando for faltar e marque suas reposições. É gratuito para alunos.
       </p>
 
-      {contaDeAluno ? (
+      {contaDeAluno && !perfilCompleto(contaDeAluno) ? (
+        // Decisão 73: limitações e objetivos vêm do perfil (os mesmos que o personal vê).
+        <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
+          <p className="font-bold">Falta pouco: complete seu perfil</p>
+          <p className="text-[14px] text-ink-2">
+            Informe {juntarComE(faltaNoPerfil(contaDeAluno))}. Assim o estúdio conhece seus objetivos e suas limitações e treina você com segurança.
+          </p>
+          <Link href={`/perfil?voltar=${encodeURIComponent(aqui)}`} className={ESTILO_BOTAO_PRINCIPAL}>
+            Completar meu perfil
+          </Link>
+        </section>
+      ) : contaDeAluno ? (
         <AceitarConviteDoAluno codigo={codigo} estudio={convite.estudio ?? "estúdio"} />
       ) : tipo === "personal" ? (
         <form action={sair} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4 text-[15px] text-ink-2">

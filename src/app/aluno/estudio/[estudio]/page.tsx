@@ -6,9 +6,9 @@ import { AgendaDoAlunoNoEstudio } from "@/components/aluno/AgendaDoAlunoNoEstudi
 import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
 import { exigirAluno } from "@/data/exigir-aluno";
-import { agoraEmBrasilia, dataCurta, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, dataCurta, DIAS, somarDias } from "@/lib/expediente";
 
 export const metadata: Metadata = {
   title: "Estúdio",
@@ -47,7 +47,7 @@ async function Conteudo({
   const n = typeof semana === "string" && /^\d$/.test(semana) ? Math.min(Number(semana), SEMANAS) : 0;
   const inicio = somarDias(hoje, n * 7);
   const fim = somarDias(inicio, 6);
-  const [aulas, reposicoes] = await Promise.all([agendaDoAlunoNoEstudio(id, inicio, fim), minhasReposicoesNoEstudio(id)]);
+  const [aulas, reposicoes, treino] = await Promise.all([agendaDoAlunoNoEstudio(id, inicio, fim), minhasReposicoesNoEstudio(id), meuTreinoNoEstudio(id)]);
   const link = (x: number) => `/aluno/estudio/${id}${x ? `?semana=${x}` : ""}`;
 
   return (
@@ -62,6 +62,23 @@ async function Conteudo({
                 .join(", ")}. Toque numa turma com vaga para repor.`}
         </span>
       </section>
+
+      {/* Decisão 73: o que treina em cada dia, escrito pelo professor. */}
+      {treino.length > 0 && (
+        <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Seu treino">
+          <h2 className="text-[17px] font-bold">Seu treino</h2>
+          <ul className="flex flex-col gap-1.5">
+            {[...treino]
+              .sort((a, b) => (a.dia || 7) - (b.dia || 7))
+              .map((t) => (
+                <li key={t.dia} className="flex gap-3 text-[15px]">
+                  <span className="w-20 shrink-0 font-bold">{DIAS.find((d) => d.valor === t.dia)?.nome}</span>
+                  <span className="whitespace-pre-line text-ink-2">{t.texto}</span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
 
       <nav className="flex items-center gap-2" aria-label="Semana">
         {n > 0 ? (

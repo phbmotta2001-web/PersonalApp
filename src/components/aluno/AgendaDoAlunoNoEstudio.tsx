@@ -40,6 +40,8 @@ export function AgendaDoAlunoNoEstudio({
   const router = useRouter();
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string; aula: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
+  // Aula tocada: mostra "Entrar na turma" embaixo dela.
+  const [escolhida, setEscolhida] = useState<string | null>(null);
   const dias = Array.from({ length: 7 }, (_, i) => somarDias(inicio, i));
   const definido = Object.keys(estudio.funcionamento).length > 0;
   const creditoPara = (modalidade: string) => reposicoes.find((r) => mesma(r.modalidade, modalidade));
@@ -88,7 +90,7 @@ export function AgendaDoAlunoNoEstudio({
       });
     if (Date.parse(a.inicio) - agora < estudio.marcarH * 3_600_000)
       return setAviso({ tipo: "erro", aula: a.id, texto: `Marque com pelo menos ${estudio.marcarH} h de antecedência.` });
-    if (!confirm(`Usar uma reposição de ${a.modalidade} nesta aula (${dataCurta(emBrasilia(a.inicio).data)} às ${emBrasilia(a.inicio).hora})?`)) return;
+    setEscolhida(null);
     agir(a.id, async () => {
       const r = await marcarReposicaoNoEstudio(a.id);
       return r.ok ? { ok: true, texto: "Reposição marcada. O professor já foi avisado." } : r;
@@ -162,13 +164,27 @@ export function AgendaDoAlunoNoEstudio({
                         <button
                           type="button"
                           disabled={ocupado}
-                          onClick={() => repor(a)}
-                          className={`flex flex-col rounded-[14px] border px-3 py-2 text-left ${tom}`}
+                          aria-expanded={escolhida === a.id}
+                          onClick={() => setEscolhida(escolhida === a.id ? null : a.id)}
+                          className={`flex flex-col rounded-[14px] border px-3 py-2 text-left ${tom} ${escolhida === a.id ? "border-brand" : ""}`}
                         >
                           {conteudo}
                         </button>
                       ) : (
                         <div className={`flex flex-col rounded-[14px] border border-l-[3px] px-3 py-2 ${tom}`}>{conteudo}</div>
+                      )}
+                      {podeRepor && escolhida === a.id && (
+                        <div className="flex flex-col gap-1 px-1">
+                          <button
+                            type="button"
+                            disabled={ocupado}
+                            onClick={() => repor(a)}
+                            className="min-h-[44px] rounded-[12px] bg-brand px-3 text-[14.5px] font-bold text-brand-ink"
+                          >
+                            {ocupado ? "Entrando…" : "Entrar na turma"}
+                          </button>
+                          <span className="text-[12.5px] text-ink-3">Usa uma reposição de {a.modalidade}.</span>
+                        </div>
                       )}
                       {minha && !passou && !a.cancelada && (
                         <div className="flex gap-3 px-1 text-[13.5px] font-semibold">

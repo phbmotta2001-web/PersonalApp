@@ -3,6 +3,7 @@ import { Alunos, type DetalheDoAluno, type FiltroAluno } from "@/components/agen
 import { Icone } from "@/components/Icone";
 import { listarMeusAlunos } from "@/data/convites";
 import { alunosComAtraso } from "@/data/cobrancas";
+import { AlunoDoEstudioNaLista } from "@/components/estudio/AlunoDoEstudioNaLista";
 import { alunosDasMinhasTurmas } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { matriculasAtivasPorAluno, matriculasSuspensas } from "@/data/matriculas";
@@ -89,15 +90,7 @@ export async function ListaDeAlunos() {
           </h2>
           <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5">
             {g.alunos.map((a) => (
-              <li key={a.id} className="flex items-center gap-3 py-2.5">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-estudio text-[14px] font-extrabold text-white">
-                  {a.nome.trim()[0]?.toUpperCase()}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[16px] font-bold">{a.nome}</span>
-                  <span className="block truncate text-[14px] text-estudio">Turma {a.turmas.join(", ")}</span>
-                </span>
-              </li>
+              <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} />
             ))}
           </ul>
         </section>

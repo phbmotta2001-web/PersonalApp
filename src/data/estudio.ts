@@ -748,3 +748,56 @@ export async function salvarFuncionamento(estudioId: string, f: Funcionamento): 
   const { error } = await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: estudioId, p: funcionamentoParaBanco(f) });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o horário.") } : { ok: true };
 }
+
+// ─── Ficha do aluno (decisão 73, migração 42) ─────────────────────────────
+
+export interface FichaDoAlunoEstudio {
+  /** Entrou pelo link do estúdio (tem conta no app). */
+  comApp: boolean;
+  objetivo: string | null;
+  nivel: "iniciante" | "intermediario" | "avancado" | null;
+  restricoes: string | null;
+  /** Declarou que não tem limitações. */
+  semRestricoes: boolean;
+  /** Dias da semana em que tem turma. */
+  dias: number[];
+  /** Dia da semana → o que treina. */
+  treino: Record<number, string>;
+}
+
+/** Limitações, objetivo e treino de cada dia (coordenação e professores do estúdio). */
+export async function fichaDoAlunoEstudio(estudioAlunoId: string): Promise<{ ok: true; ficha: FichaDoAlunoEstudio } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("ficha_aluno_estudio", { p_estudio_aluno: estudioAlunoId });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível abrir a ficha (falta atualizar o banco: migração 42).") };
+  const f = data as {
+    com_app: boolean;
+    objetivo: string | null;
+    nivel: FichaDoAlunoEstudio["nivel"];
+    restricoes: string | null;
+    sem_restricoes: boolean;
+    dias: number[];
+    treino: { dia: number; texto: string }[];
+  };
+  return {
+    ok: true,
+    ficha: {
+      comApp: f.com_app,
+      objetivo: f.objetivo,
+      nivel: f.nivel,
+      restricoes: f.restricoes,
+      semRestricoes: f.sem_restricoes === true,
+      dias: (f.dias ?? []).map(Number),
+      treino: Object.fromEntries((f.treino ?? []).map((t) => [t.dia, t.texto])),
+    },
+  };
+}
+
+/** O que o aluno treina num dia da semana (texto vazio apaga). */
+export async function salvarTreinoDoAluno(estudioAlunoId: string, dia: number, texto: string): Promise<Resposta> {
+  if (!Number.isInteger(dia) || dia < 0 || dia > 6) return { ok: false, erro: "Escolha o dia." };
+  if ((texto ?? "").length > 300) return { ok: false, erro: "Até 300 letras por dia." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_treino_aluno_estudio", { p_estudio_aluno: estudioAlunoId, p_dia: dia, p_texto: texto ?? "" });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o treino.") } : { ok: true };
+}

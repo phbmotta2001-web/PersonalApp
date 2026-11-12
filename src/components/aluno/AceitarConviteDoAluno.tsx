@@ -13,7 +13,8 @@ export function AceitarConviteDoAluno({ codigo, estudio }: { codigo: string; est
   return (
     <div className="flex flex-col gap-3">
       <p className="rounded-[14px] bg-surface-2 px-3.5 py-3 text-[14px] text-ink-2">
-        O estúdio vê seu nome e suas aulas, faltas e reposições. Os outros alunos nunca veem seu nome.
+        O estúdio e os professores dele veem seu nome, suas aulas, faltas e reposições e, do seu perfil, seu objetivo, seu nível e suas
+        limitações. Os outros alunos nunca veem seu nome.
       </p>
       <Aviso>{erro}</Aviso>
       <button
