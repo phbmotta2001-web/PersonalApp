@@ -8,7 +8,6 @@ import type { Aba } from "./GestaoDoEstudio";
 // roxa em cima com o nome do estúdio e a barra de abas embaixo.
 export const ABAS_DA_COORDENACAO: { valor: Aba; rotulo: string; curto: string; icone: NomeIcone }[] = [
   { valor: "agenda", rotulo: "Agenda", curto: "Agenda", icone: "calendario" },
-  { valor: "turmas", rotulo: "Turmas", curto: "Turmas", icone: "relogio" },
   { valor: "equipe", rotulo: "Professores", curto: "Equipe", icone: "pessoas" },
   { valor: "alunos", rotulo: "Alunos", curto: "Alunos", icone: "usuario" },
   { valor: "financeiro", rotulo: "Financeiro", curto: "Financeiro", icone: "dinheiro" },
@@ -72,7 +71,7 @@ export function MenuDaCoordenacao({ estudioId, nome, aba, empresa }: { estudioId
         aria-label="Coordenação"
         className="fixed inset-x-0 bottom-0 z-20 bg-estudio-fundo pb-[env(safe-area-inset-bottom)] text-on-estudio-2 lg:hidden"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-6">
+        <ul className="mx-auto grid max-w-lg grid-cols-5">
           {ABAS_DA_COORDENACAO.map((a) => {
             const ativa = a.valor === aba;
             return (

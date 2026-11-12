@@ -46,7 +46,7 @@ async function Conteudo({
   await exigirPersonal(`/estudio/${id}`);
   const [estudio, empresa] = await Promise.all([lerEstudio(id), souContaEmpresa()]);
   if (!estudio || estudio.papel !== "coordenacao") notFound();
-  const qual = ABAS.find((a) => a === aba) ?? "agenda";
+  const qual = ABAS.find((a) => a === aba && a !== "turmas") ?? "agenda";
   const hoje = emBrasilia(new Date().toISOString()).data;
   const mesEscolhido = typeof mes === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes) ? mes : hoje.slice(0, 7);
   const abertos = Object.keys(estudio.config.funcionamento).map(Number);

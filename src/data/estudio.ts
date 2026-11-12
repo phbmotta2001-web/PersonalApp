@@ -469,6 +469,25 @@ export async function salvarTurma(estudioId: string, t: DadosTurma): Promise<Res
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a turma.") } : { ok: true };
 }
 
+/**
+ * O mesmo horário em vários dias de uma vez (ex.: João, seg, qua e sex das 6h às 10h): cria
+ * uma turma ou um turno por dia. Diz em quais dias não deu certo.
+ */
+export async function salvarTurmaNosDias(estudioId: string, t: DadosTurma, dias: number[]): Promise<Resposta> {
+  const lista = [...new Set(Array.isArray(dias) ? dias : [])].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
+  if (lista.length === 0) return { ok: false, erro: "Escolha pelo menos um dia." };
+  const falhas: string[] = [];
+  for (const d of lista) {
+    const r = await salvarTurma(estudioId, { ...t, id: null, diaSemana: d });
+    if (!r.ok) falhas.push(`${NOMES_DIAS[d]}: ${r.erro}`);
+  }
+  if (falhas.length === lista.length) return { ok: false, erro: falhas.length === 1 ? falhas[0].split(": ").slice(1).join(": ") : falhas.join(" ") };
+  if (falhas.length) return { ok: false, erro: `Salvo nos outros dias. Não deu em ${falhas.join(" ")}` };
+  return { ok: true };
+}
+
+const NOMES_DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
 export async function encerrarTurma(turmaId: string): Promise<Resposta> {
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.rpc("encerrar_turma", { p_turma: turmaId });

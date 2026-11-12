@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { salvarTurma, type AulaNaAgendaDoEstudio, type EstudioCompleto, type TipoDeHorario } from "@/data/estudio";
+import { salvarTurmaNosDias, type AulaNaAgendaDoEstudio, type EstudioCompleto, type TipoDeHorario } from "@/data/estudio";
 import { coresDaEquipe } from "@/lib/cores-professor";
 import { DIAS, dataCurta, diaDaSemana, emBrasilia, minParaHora, opcoesDeHora, somarDias } from "@/lib/expediente";
 import { Chip } from "../Chip";
+import { EscolhaDeDias } from "./EscolhaDeDias";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 
 const PX_POR_MIN = 1.6;
@@ -265,7 +266,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
         <span>Toque num horário livre para dar um turno ou uma turma ao profissional. Repete toda semana.</span>
       </p>
 
-      <Link href={`/estudio/${estudio.id}?aba=turmas`} className="self-start text-[15px] font-bold text-brand">
+      <Link href={`/estudio/${estudio.id}?aba=agenda#turmas`} className="self-start text-[15px] font-bold text-brand">
         Preencher os horários vazios com aulas
       </Link>
 
@@ -290,6 +291,7 @@ function NovoHorario({
   const router = useRouter();
   const [tipo, setTipo] = useState<TipoDeHorario>("turno");
   const [modalidade, setModalidade] = useState("");
+  const [dias, setDias] = useState([dia]);
   const [inicio, setInicio] = useState(novo.inicioMin);
   const [duracao, setDuracao] = useState(240);
   const [vagas, setVagas] = useState(Math.min(10, estudio.config.maxAlunosTurma));
@@ -319,7 +321,9 @@ function NovoHorario({
         onSubmit={(e) => {
           e.preventDefault();
           iniciar(async () => {
-            const r = await salvarTurma(estudio.id, {
+            const r = await salvarTurmaNosDias(
+              estudio.id,
+              {
               id: null,
               tipo,
               modalidade,
@@ -328,7 +332,9 @@ function NovoHorario({
               duracaoMin: duracaoValida,
               vagas,
               professorId: novo.professorId,
-            });
+              },
+              dias,
+            );
             if (!r.ok) return setErro(r.erro);
             fechar();
             router.refresh();
@@ -339,7 +345,7 @@ function NovoHorario({
       >
         <div>
           <p className="text-[13px] text-ink-3">
-            {nome} · toda {DIAS.find((d) => d.valor === dia)?.nome.toLowerCase()}
+            {nome} · repete toda semana
           </p>
           <h2 className="text-[20px] font-extrabold">Novo horário</h2>
         </div>
@@ -351,6 +357,7 @@ function NovoHorario({
             Turma (com alunos)
           </Chip>
         </div>
+        <EscolhaDeDias valor={dias} mudar={setDias} abertos={Object.keys(estudio.config.funcionamento).map(Number)} />
         <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
           {turno ? "Função" : "Modalidade"}
           <input

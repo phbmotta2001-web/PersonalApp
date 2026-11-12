@@ -121,7 +121,7 @@ export function SemanaDoEstudio({ estudio, aulas, segunda, hoje }: { estudio: Es
         <div className="rounded-[16px] border border-line bg-surface p-3 lg:order-2 lg:sticky lg:top-4">
           <p className="mb-2 text-[12.5px] font-bold tracking-[0.05em] text-ink-3 uppercase">Professores</p>
           {legenda}
-          <p className="mt-3 text-[12.5px] text-ink-3">A faixa clara é o turno do professor. Toque num dia para ver por professor e marcar turnos.</p>
+          <p className="mt-3 text-[12.5px] text-ink-3">A faixa clara é o turno do professor. Toque num dia para ver por professor; para criar turnos e turmas em vários dias, use “+ Turma ou turno” embaixo da agenda.</p>
         </div>
 
         <div className="max-h-[calc(100dvh-120px)] overflow-auto rounded-[20px] border border-line bg-surface lg:order-1">

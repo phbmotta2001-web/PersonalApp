@@ -10,6 +10,7 @@ import {
   importarAlunos,
   removerDaEquipe,
   salvarTurma,
+  salvarTurmaNosDias,
   salvarTurmasDoAluno,
   type AlunoDoEstudio,
   type DadosTurma,
@@ -24,6 +25,7 @@ import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora, opcoesDeHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
+import { EscolhaDeDias } from "./EscolhaDeDias";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
 export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
@@ -59,7 +61,8 @@ export function GestaoDoEstudio({
     <div className="flex flex-col gap-5">
       {aba === "agenda" && complemento}
       {aba === "agenda" && agenda}
-      {aba === "turmas" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
+      {/* Decisão 65: uma aba só — a grade e, embaixo, as turmas e turnos. */}
+      {aba === "agenda" && <Turmas estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
@@ -152,7 +155,10 @@ const textoDuracao = (m: number) => (m < 60 || m % 60 ? `${m} min` : `${m / 60} 
 
 function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
   const [editando, setEditando] = useState<DadosTurma | null>(null);
+  const [dias, setDias] = useState<number[]>([]);
+  const [lista, setLista] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const abertos = Object.keys(estudio.config.funcionamento).map(Number);
   const [ocupado, iniciar] = useTransition();
   const professores = estudio.equipe;
   const nomeDe = (id: string | null) => professores.find((p) => p.personalId === id)?.nome ?? "Sem professor";
@@ -161,18 +167,30 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
     editando &&
     iniciar(async () => {
       setErro(null);
-      const r = await salvarTurma(estudio.id, editando);
-      if (!r.ok) return setErro(r.erro);
+      const r = editando.id ? await salvarTurma(estudio.id, editando) : await salvarTurmaNosDias(estudio.id, editando, dias);
+      if (!r.ok) {
+        setErro(r.erro);
+        // Parte dos dias foi salva: mostra na lista.
+        if (r.erro.startsWith("Salvo nos outros dias")) atualizar();
+        return;
+      }
       setEditando(null);
       atualizar();
     });
 
   return (
-    <section className="flex flex-col gap-3" aria-label="Turmas">
+    <section id="turmas" className="flex scroll-mt-4 flex-col gap-3 border-t border-line pt-5" aria-label="Turmas e turnos">
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-[18px] font-bold">Turmas e turnos ({estudio.turmas.length})</h2>
         {!editando && (
-          <button type="button" onClick={() => setEditando({ ...NOVA, vagas: estudio.config.maxAlunosTurma, professorId: professores[0]?.personalId ?? null })} className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink">
+          <button
+            type="button"
+            onClick={() => {
+              setEditando({ ...NOVA, vagas: estudio.config.maxAlunosTurma, professorId: professores[0]?.personalId ?? null });
+              setDias([abertos.includes(1) || abertos.length === 0 ? 1 : abertos[0]]);
+            }}
+            className="rounded-[12px] bg-brand px-4 py-2 font-bold text-brand-ink"
+          >
             + Turma ou turno
           </button>
         )}
@@ -228,6 +246,11 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 ))}
               </select>
             </label>
+            {!editando.id ? (
+              <div className="sm:col-span-2">
+                <EscolhaDeDias valor={dias} mudar={setDias} abertos={abertos} />
+              </div>
+            ) : (
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               Dia
               <select value={editando.diaSemana} onChange={(e) => setEditando({ ...editando, diaSemana: Number(e.target.value) })} className={ESTILO_CAIXA}>
@@ -238,6 +261,7 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 ))}
               </select>
             </label>
+            )}
             <label className="flex flex-col gap-1 text-[14px] font-bold text-ink-2">
               {editando.tipo === "turno" ? "Das" : "Horário"}
               <select
@@ -312,7 +336,11 @@ function Turmas({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
       )}
 
       {estudio.turmas.length === 0 && !editando ? (
-        <p className="text-ink-3">Nenhuma turma ainda. Comece por &quot;+ Turma&quot;.</p>
+        <p className="text-ink-3">Nenhuma turma ainda. Comece por &quot;+ Turma ou turno&quot;.</p>
+      ) : !lista ? (
+        <button type="button" onClick={() => setLista(true)} className="self-start text-[15px] font-bold text-brand">
+          Ver a lista de turmas e turnos
+        </button>
       ) : (
         <ul className="grid gap-2.5 sm:grid-cols-2">
           {estudio.turmas.map((t) => (
