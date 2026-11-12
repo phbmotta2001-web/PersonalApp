@@ -38,6 +38,7 @@ export function CalendarioDoMes({
   hoje,
   aulas,
   linkDoDia,
+  estudios = {},
 }: {
   /** "AAAA-MM" */
   mes: string;
@@ -46,6 +47,8 @@ export function CalendarioDoMes({
   hoje: string;
   aulas: AulaDoCalendario[];
   linkDoDia: (d: string) => string;
+  /** Dia ("AAAA-MM-DD") → estúdios em que trabalha nele (um pontinho cada, na cor do estúdio). */
+  estudios?: Record<string, { nome: string; cor: string }[]>;
 }) {
   const primeiroDia = `${mes}-01`;
   const diasNoMes = Math.round((Date.parse(`${somarMes(mes, 1)}-01`) - Date.parse(primeiroDia)) / 86_400_000);
@@ -76,7 +79,7 @@ export function CalendarioDoMes({
               key={d}
               href={linkDoDia(d)}
               scroll={false}
-              aria-label={`${nomeDoDia(diaDaSemana(d))} ${Number(d.slice(8))}: ${lista.length} aula${lista.length === 1 ? "" : "s"}`}
+              aria-label={`${nomeDoDia(diaDaSemana(d))} ${Number(d.slice(8))}: ${lista.length} aula${lista.length === 1 ? "" : "s"}${(estudios[d] ?? []).map((e) => `, ${e.nome}`).join("")}`}
               aria-current={escolhido ? "date" : undefined}
               className={`flex min-h-[54px] flex-col items-center gap-1 rounded-[12px] pt-1.5 pb-1 ${
                 escolhido ? "bg-ink text-app" : ehHoje ? "bg-brand-soft" : "hover:bg-surface-2"
@@ -97,6 +100,9 @@ export function CalendarioDoMes({
                   />
                 ))}
                 {lista.length > 4 && <span className="text-[11px] leading-[7px] font-bold">+</span>}
+                {(estudios[d] ?? []).map((e) => (
+                  <span key={e.nome} className="size-[7px] rounded-full" style={{ background: e.cor }} />
+                ))}
               </span>
             </Link>
           );

@@ -43,6 +43,8 @@ export const metadata: Metadata = {
 
 // No calendário expandido dá para ver até 2 meses à frente (as aulas fixas existem por 8 semanas).
 const MESES_A_FRENTE = 2;
+// Cor de cada estúdio no calendário: o primeiro no roxo do estúdio, os outros em tons distintos.
+const CORES_DE_ESTUDIO = ["var(--estudio)", "#0f9b8e", "#d97a1f", "#2f6fdf", "#c2417a"];
 const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 export default function PaginaAgenda({ searchParams }: PageProps<"/agenda/calendario">) {
@@ -85,12 +87,28 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
     lerRegraDeFeriados(),
     aulasDeTurmaParaMim(instante(inicioSemana, 0).toISOString(), instante(somarDias(inicioSemana, 7), 0).toISOString()),
   ]);
-  const doMes = expandida
-    ? paraCalendario(
-        await listarAulas(instante(`${mes}-01`, 0).toISOString(), instante(`${somarMes(mes, 1)}-01`, 0).toISOString()),
-        new Date(),
-      )
-    : [];
+  const [aulasDoMes, turmasDoMes] = expandida
+    ? await Promise.all([
+        listarAulas(instante(`${mes}-01`, 0).toISOString(), instante(`${somarMes(mes, 1)}-01`, 0).toISOString()),
+        aulasDeTurmaParaMim(instante(`${mes}-01`, 0).toISOString(), instante(`${somarMes(mes, 1)}-01`, 0).toISOString()),
+      ])
+    : [[], []];
+  const doMes = paraCalendario(aulasDoMes, new Date());
+  // Estúdios (decisão 75): um pontinho por dia de trabalho em cada estúdio, na cor dele.
+  const nomesDosEstudios = new Map<string, string>();
+  for (const t of [...turmasDoMes, ...turmasDaSemana]) nomesDosEstudios.set(t.estudioId, t.estudioNome);
+  const coresDosEstudios = new Map(
+    [...nomesDosEstudios.entries()]
+      .sort((a, b) => a[1].localeCompare(b[1], "pt-BR"))
+      .map(([id, nome], i) => [id, { nome, cor: CORES_DE_ESTUDIO[i % CORES_DE_ESTUDIO.length] }]),
+  );
+  const estudiosNoDia: Record<string, { nome: string; cor: string }[]> = {};
+  for (const t of turmasDoMes.filter((x) => !x.cancelada)) {
+    const d = emBrasilia(t.inicio).data;
+    const e = coresDosEstudios.get(t.estudioId)!;
+    if (!(estudiosNoDia[d] ??= []).some((x) => x.nome === e.nome)) estudiosNoDia[d].push(e);
+  }
+  const estudiosDoMes = [...coresDosEstudios.values()].filter((e) => Object.values(estudiosNoDia).some((l) => l.includes(e)));
   const nomeDoMes = new Date(`${mes}-15T12:00:00Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
   const feriado = feriadoDoDia(dia);
   const aniversariosDoDia = aniversarios.filter((a) => a.dia === Number(dia.slice(8, 10)));
@@ -214,6 +232,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
               hoje={hoje}
               aulas={doMes}
               linkDoDia={(d) => `/agenda/calendario?ver=mes&mes=${mes}&dia=${d}`}
+              estudios={estudiosNoDia}
             />
             <p className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-2" aria-label="Legenda">
               {CATEGORIAS_HISTORICO.map((c) => (
@@ -226,6 +245,12 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                 <span className="size-2.5 rounded-full border border-brand" aria-hidden="true" />
                 Marcada
               </span>
+              {estudiosDoMes.map((e) => (
+                <span key={e.nome} className="flex items-center gap-1.5">
+                  <span className="size-2.5 rounded-full" style={{ background: e.cor }} aria-hidden="true" />
+                  {e.nome}
+                </span>
+              ))}
             </p>
           </div>
         ) : (
