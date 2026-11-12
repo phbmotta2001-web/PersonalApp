@@ -17,6 +17,7 @@ import { textoDoVencimento } from "@/lib/cobranca";
 import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
 import { linkWhatsapp } from "@/lib/convite";
+import { juntarComE } from "@/lib/formato";
 import { DIAS, minParaHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
@@ -201,6 +202,14 @@ function Alunos({
   const [erroPagamento, setErroPagamento] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   const turmaPorId = new Map(estudio.turmas.map((t) => [t.id, t]));
+  // Decisão 77: os professores das turmas do aluno, pelo primeiro nome ("Paulo e Cláudia").
+  const professoresDe = (turmas: string[]) =>
+    juntarComE(
+      [...new Set(turmas.map((id) => turmaPorId.get(id)?.professorId).filter((p): p is string => !!p))]
+        .map((p) => estudio.equipe.find((m) => m.personalId === p)?.nome.split(" ")[0])
+        .filter((n): n is string => !!n)
+        .sort((x, y) => x.localeCompare(y, "pt-BR")),
+    );
   const situacao = (id: string) => pagamentos?.[id]?.situacao ?? "em_dia";
   const contar = (s: PagamentoDoAluno["situacao"]) => estudio.alunos.filter((a) => situacao(a.id) === s).length;
   // Quem deve vem primeiro, depois quem vence logo; os demais em ordem alfabética.
@@ -265,7 +274,10 @@ function Alunos({
               <li key={a.id} className={`flex flex-col gap-2 rounded-[18px] border border-l-[5px] border-line bg-surface px-4 py-3 ${pagamentos ? s.borda : ""}`}>
                 <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">{a.nome}</span>
+                    <span className="block font-semibold">
+                      {a.nome}
+                      {professoresDe(a.turmas) && <span className="font-normal text-ink-2"> · {professoresDe(a.turmas)}</span>}
+                    </span>
                     <span className="block text-[13px] text-ink-3">
                       {a.turmas.length ? a.turmas.map((id) => (turmaPorId.get(id) ? rotuloDaTurma(turmaPorId.get(id)!) : "")).join(" · ") : "Sem turma"}
                     </span>
