@@ -6,7 +6,6 @@ import { useState, useTransition } from "react";
 import { salvarTurmaNosDias, type AulaNaAgendaDoEstudio, type EstudioCompleto, type TipoDeHorario } from "@/data/estudio";
 import { coresDaEquipe } from "@/lib/cores-professor";
 import { DIAS, dataCurta, diaDaSemana, emBrasilia, minParaHora, opcoesDeHora, somarDias } from "@/lib/expediente";
-import { Chip } from "../Chip";
 import { EscolhaDeDias } from "./EscolhaDeDias";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 
@@ -149,7 +148,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <Numero rotulo="Turmas" valor={String(turmas.length)} />
-        <Numero rotulo="Turnos" valor={String(ativas.length - turmas.length)} />
+        <Numero rotulo="Aulas no dia" valor={String(ativas.length)} />
         <Numero rotulo="Ocupação das turmas" valor={vagas ? `${Math.round((ocupadas / vagas) * 100)}%` : "—"} />
         <Numero rotulo="Sem professor" valor={String(semProfessor)} alerta={semProfessor > 0} />
       </div>
@@ -261,9 +260,8 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
       )}
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-3">
-        <span>Cor mais clara: turno · mais forte: aula</span>
         <Legenda cor="bg-bad">Sem professor</Legenda>
-        <span>Toque num horário livre para dar um turno ou uma turma ao profissional. Repete toda semana.</span>
+        <span>Toque num horário livre para criar uma aula com o professor. Repete toda semana.</span>
       </p>
 
       {novo && <NovoHorario estudio={estudio} dia={semana} novo={novo} aberto={aberto} fechar={() => setNovo(null)} />}
@@ -285,30 +283,19 @@ function NovoHorario({
   fechar: () => void;
 }) {
   const router = useRouter();
-  const [tipo, setTipo] = useState<TipoDeHorario>("turno");
+  const tipo: TipoDeHorario = "turma";
   const [modalidade, setModalidade] = useState("");
   const [dias, setDias] = useState([dia]);
   const [inicio, setInicio] = useState(novo.inicioMin);
-  const [duracao, setDuracao] = useState(240);
+  const [duracao, setDuracao] = useState(60);
   const [vagas, setVagas] = useState(Math.min(10, estudio.config.maxAlunosTurma));
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, iniciar] = useTransition();
   const fecha = aberto?.fim ?? 1440;
-  const turno = tipo === "turno";
   const duracoes = DURACOES_TURMA.filter((m) => inicio + m <= fecha);
-  // Turno: "das … às …", de 1 h a 12 h, sem passar do fechamento.
-  const finsDoTurno = opcoesDeHora(Math.min(inicio + 60, fecha), Math.min(inicio + 720, fecha));
-  const duracaoValida = turno
-    ? Math.min(Math.max(duracao, finsDoTurno[0] - inicio), finsDoTurno.at(-1)! - inicio)
-    : duracoes.includes(duracao)
-      ? duracao
-      : (duracoes.at(-1) ?? 30);
+  const duracaoValida = duracoes.includes(duracao) ? duracao : (duracoes.at(-1) ?? 30);
   const nome = estudio.equipe.find((m) => m.personalId === novo.professorId)?.nome ?? "Sem professor";
 
-  const mudarTipo = (t: TipoDeHorario) => {
-    setTipo(t);
-    setDuracao(t === "turno" ? 240 : 60);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={fechar}>
@@ -345,29 +332,21 @@ function NovoHorario({
           </p>
           <h2 className="text-[20px] font-extrabold">Novo horário</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Chip ativo={turno} onClick={() => mudarTipo("turno")}>
-            Turno de trabalho
-          </Chip>
-          <Chip ativo={!turno} onClick={() => mudarTipo("turma")}>
-            Turma (com alunos)
-          </Chip>
-        </div>
         <EscolhaDeDias valor={dias} mudar={setDias} abertos={Object.keys(estudio.config.funcionamento).map(Number)} />
         <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-          {turno ? "Função" : "Modalidade"}
+          Modalidade
           <input
             autoFocus
             maxLength={60}
             value={modalidade}
             onChange={(e) => setModalidade(e.target.value)}
-            placeholder={turno ? "Ex.: Musculação" : "Ex.: Funcional"}
+            placeholder="Ex.: Funcional"
             className={ESTILO_CAIXA}
           />
         </label>
         <div className="grid grid-cols-2 gap-2.5">
           <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-            {turno ? "Das" : "Início"}
+            Início
             <select value={inicio} onChange={(e) => setInicio(Number(e.target.value))} className={ESTILO_CAIXA}>
               {opcoesDeHora(aberto?.inicio ?? 0, fecha - 30).map((m) => (
                 <option key={m} value={m}>
@@ -376,19 +355,7 @@ function NovoHorario({
               ))}
             </select>
           </label>
-          {turno ? (
-            <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-              Às
-              <select value={inicio + duracaoValida} onChange={(e) => setDuracao(Number(e.target.value) - inicio)} className={ESTILO_CAIXA}>
-                {finsDoTurno.map((m) => (
-                  <option key={m} value={m}>
-                    {minParaHora(m)} ({textoDuracao(m - inicio)})
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
+          <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
               Duração
               <select value={duracaoValida} onChange={(e) => setDuracao(Number(e.target.value))} className={ESTILO_CAIXA}>
                 {duracoes.map((m) => (
@@ -398,9 +365,7 @@ function NovoHorario({
                 ))}
               </select>
             </label>
-          )}
         </div>
-        {!turno && (
           <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
             Vagas
             <input
@@ -413,7 +378,6 @@ function NovoHorario({
               className={ESTILO_CAIXA}
             />
           </label>
-        )}
         <Aviso>{erro}</Aviso>
         <div className="flex gap-2.5">
           <button type="button" onClick={fechar} className={ESTILO_BOTAO_SECUNDARIO + " flex-1"}>

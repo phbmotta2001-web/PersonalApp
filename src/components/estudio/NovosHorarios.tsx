@@ -18,7 +18,8 @@ const ROTULO = "flex flex-col gap-1 text-[14px] font-bold text-ink-2";
  */
 export function NovosHorarios({ estudio, hoje, fechar, salvo }: { estudio: EstudioCompleto; hoje: string; fechar: () => void; salvo: () => void }) {
   const abertos = Object.keys(estudio.config.funcionamento).map(Number);
-  const [tipo, setTipo] = useState<"turma" | "turno">("turma");
+  // Decisão 69: sem turno; o professor de cada horário se dá em "Professor".
+  const tipo = "turma" as const;
   const [extra, setExtra] = useState(false);
   const [modalidade, setModalidade] = useState("");
   const [professor, setProfessor] = useState("");
@@ -39,14 +40,6 @@ export function NovosHorarios({ estudio, hoje, fechar, salvo }: { estudio: Estud
   return (
     <div className="flex flex-col gap-3.5 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
       <h3 className="text-[17px] font-bold">Novos horários</h3>
-      <div className="flex flex-wrap gap-2">
-        <Chip ativo={turma} onClick={() => setTipo("turma")}>
-          Turma (com alunos)
-        </Chip>
-        <Chip ativo={!turma} onClick={() => setTipo("turno")}>
-          Turno de trabalho
-        </Chip>
-      </div>
       <div className="flex flex-wrap gap-2">
         <Chip ativo={!extra} onClick={() => setExtra(false)}>
           Padrão (toda semana)

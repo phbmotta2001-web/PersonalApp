@@ -3,7 +3,6 @@
 import { useState } from "react";
 import type { TurmaDoEstudio } from "@/data/estudio";
 import { minParaHora, opcoesDeHora } from "@/lib/expediente";
-import { Chip } from "../Chip";
 import { ESTILO_CAIXA } from "../Formulario";
 import { EscolhaDeDias } from "./EscolhaDeDias";
 
@@ -42,19 +41,8 @@ export function FiltroDeHorarios({ turmas, valor, mudar }: { turmas: TurmaDoEstu
   );
   return (
     <>
-      <div className="flex flex-wrap gap-2">
-        <Chip ativo={f.tipo === "todos"} onClick={() => mudar({ ...f, tipo: "todos", modalidade: "" })}>
-          Turmas e turnos
-        </Chip>
-        <Chip ativo={f.tipo === "turma"} onClick={() => mudar({ ...f, tipo: "turma", modalidade: "" })}>
-          Só turmas
-        </Chip>
-        <Chip ativo={f.tipo === "turno"} onClick={() => mudar({ ...f, tipo: "turno", modalidade: "" })}>
-          Só turnos
-        </Chip>
-      </div>
       <label className={ROTULO + " sm:max-w-xs"}>
-        {f.tipo === "turno" ? "Função" : "Modalidade"}
+        Modalidade
         <select value={f.modalidade} onChange={(e) => mudar({ ...f, modalidade: e.target.value })} className={ESTILO_CAIXA}>
           <option value="">Todas</option>
           {modalidades.map((m) => (

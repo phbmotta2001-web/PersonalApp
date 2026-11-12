@@ -561,22 +561,37 @@ export async function salvarTurmaNosDias(estudioId: string, t: DadosTurma, dias:
 
 const NOMES_DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-/** Passa vários horários do padrão para um professor (ou deixa sem), decisão 68. */
+/** Função ainda não criada no banco (migração 41 não rodou). */
+const semFuncao = (e: { code?: string; message: string }) => e.code === "PGRST202" || /could not find the function/i.test(e.message);
+
+/** Roda em paralelo, 8 por vez; para no primeiro erro. */
+async function emParalelo<T>(itens: T[], fazer: (x: T) => Promise<string | null>): Promise<string | null> {
+  let erro: string | null = null;
+  for (let k = 0; k < itens.length && !erro; k += 8) {
+    const r = await Promise.all(itens.slice(k, k + 8).map(fazer));
+    erro = r.find((x) => x) ?? null;
+  }
+  return erro;
+}
+
+/** Passa vários horários do padrão para um professor (ou deixa sem), de uma vez (decisões 68 e 69). */
 export async function atribuirProfessor(estudioId: string, turmaIds: string[], professorId: string | null): Promise<Resposta> {
   if (!Array.isArray(turmaIds) || turmaIds.length === 0) return { ok: false, erro: "Nenhum horário escolhido." };
-  if (turmaIds.length > 400) return { ok: false, erro: "No máximo 400 horários de uma vez." };
+  if (turmaIds.length > 1000) return { ok: false, erro: "No máximo 1000 horários de uma vez." };
   const supabase = await criarClienteSupabase();
-  const { data: turmas, error: erroLeitura } = await supabase
+  const { error } = await supabase.rpc("atribuir_professor_turmas", { p_estudio: estudioId, p_turmas: turmaIds, p_professor: professorId });
+  if (!error) return { ok: true };
+  if (!semFuncao(error)) return { ok: false, erro: doBanco(error.message, "Não foi possível salvar.") };
+  // Sem a migração 41: um por vez, em paralelo.
+  const { data: turmas } = await supabase
     .from("turmas")
     .select("id, tipo, modalidade, dia_semana, inicio_min, duracao_min, vagas")
     .eq("estudio_id", estudioId)
     .eq("ativa", true)
     .is("avulsa", null)
     .in("id", turmaIds);
-  if (erroLeitura) return { ok: false, erro: "Não foi possível ler os horários." };
-  let feitos = 0;
-  for (const t of turmas ?? []) {
-    const { error } = await supabase.rpc("salvar_horario", {
+  const erro = await emParalelo(turmas ?? [], async (t) => {
+    const { error: e } = await supabase.rpc("salvar_horario", {
       p_estudio: estudioId,
       p_turma: t.id,
       p_tipo: t.tipo,
@@ -587,30 +602,24 @@ export async function atribuirProfessor(estudioId: string, turmaIds: string[], p
       p_vagas: t.vagas,
       p_professor: professorId,
     });
-    if (error) {
-      const msg = doBanco(error.message, "Não foi possível salvar.");
-      return { ok: false, erro: feitos ? `Feitos ${feitos}; parou com: ${msg}` : msg };
-    }
-    feitos++;
-  }
-  return { ok: true };
+    return e ? doBanco(e.message, "Não foi possível salvar.") : null;
+  });
+  return erro ? { ok: false, erro } : { ok: true };
 }
 
-/** Remove de uma vez vários horários do padrão (decisão 67). */
+/** Remove de uma vez vários horários (decisões 67 e 69). */
 export async function encerrarTurmas(turmaIds: string[]): Promise<Resposta> {
   if (!Array.isArray(turmaIds) || turmaIds.length === 0) return { ok: false, erro: "Nada para remover." };
-  if (turmaIds.length > 400) return { ok: false, erro: "Remova no máximo 400 horários de uma vez." };
+  if (turmaIds.length > 1000) return { ok: false, erro: "Remova no máximo 1000 horários de uma vez." };
   const supabase = await criarClienteSupabase();
-  let feitos = 0;
-  for (const id of turmaIds) {
-    const { error } = await supabase.rpc("encerrar_turma", { p_turma: id });
-    if (error) {
-      const msg = doBanco(error.message, "Não foi possível remover.");
-      return { ok: false, erro: feitos ? `Removidos ${feitos}; parou com: ${msg}` : msg };
-    }
-    feitos++;
-  }
-  return { ok: true };
+  const { error } = await supabase.rpc("encerrar_turmas", { p_turmas: turmaIds });
+  if (!error) return { ok: true };
+  if (!semFuncao(error)) return { ok: false, erro: doBanco(error.message, "Não foi possível remover.") };
+  const erro = await emParalelo(turmaIds, async (id) => {
+    const { error: e } = await supabase.rpc("encerrar_turma", { p_turma: id });
+    return e ? doBanco(e.message, "Não foi possível remover.") : null;
+  });
+  return erro ? { ok: false, erro } : { ok: true };
 }
 
 export async function encerrarTurma(turmaId: string): Promise<Resposta> {
