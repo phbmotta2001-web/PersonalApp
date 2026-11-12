@@ -44,9 +44,12 @@ export function AlunosAntesDaAula({ aulaId, alunos }: { aulaId: string; alunos: 
                   router.refresh();
                 })
               }
-              className={`shrink-0 text-[14px] font-semibold ${a.situacao === "falta_avisada" ? "text-brand" : "text-ink-3"}`}
+              className={`shrink-0 rounded-[10px] border px-2.5 py-1 text-[13.5px] font-semibold ${
+                a.situacao === "falta_avisada" ? "border-brand text-brand" : "border-line text-ink-2"
+              }`}
             >
-              {a.situacao === "falta_avisada" ? "Desfazer" : "Avisou falta"}
+              {/* Botão (não é aviso): o professor registra a falta que o aluno avisou fora do app. */}
+              {a.situacao === "falta_avisada" ? "Desfazer falta" : "Marcar falta"}
             </button>
           </li>
         ))}
