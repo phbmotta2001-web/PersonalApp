@@ -167,6 +167,21 @@ export interface EstudioCompleto {
   /** Aulas extras de hoje em diante (uma data só). */
   extras: ExtraDoEstudio[];
   alunos: AlunoDoEstudio[];
+  /** Decisão 92: quem está em aula experimental (ainda sem "Cadastrar aluno" ou "Desistência"). */
+  experimentais: ExperimentalDoEstudio[];
+  /** Todas as experimentais já agendadas, para a taxa de conversão. */
+  historicoExperimentais: { data: string; professorId: string | null; resultado: "matriculou" | "desistiu" | null }[];
+}
+
+export interface ExperimentalDoEstudio {
+  id: string;
+  nome: string;
+  whatsapp: string | null;
+  comApp: boolean;
+  /** Dia da aula experimental ("AAAA-MM-DD") e o instante (ISO), se a aula ainda existe. */
+  data: string;
+  inicio: string | null;
+  professorId: string | null;
 }
 
 export interface ExtraDoEstudio {
@@ -183,7 +198,7 @@ export interface ExtraDoEstudio {
 export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | null> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return null;
-  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }, { data: planos }] = await Promise.all([
+  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }, { data: planos }, { data: experimentais }] = await Promise.all([
     supabase
       .from("estudios")
       .select(
@@ -223,6 +238,11 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .order("avulsa")
       .order("inicio_min"),
     supabase.from("estudio_planos").select("meses, pagamento").eq("estudio_id", estudioId).order("meses"),
+    supabase
+      .from("estudio_experimentais")
+      .select("data, professor_id, resultado, estudio_aluno_id, aulas_turma(inicio, professor_id), estudio_alunos(nome, whatsapp, aluno_id, situacao)")
+      .eq("estudio_id", estudioId)
+      .order("data"),
   ]);
   const valoresDe = (v: { valor_hora_centavos: number | null; valor_aula_centavos: number | null; valor_por_aluno_centavos: number | null; percentual: number | string | null } | undefined): ValoresDePagamento => ({
     valorHora: v?.valor_hora_centavos ?? null,
@@ -294,6 +314,27 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       planoInicio: a.plano_inicio ?? null,
       taxaPendente: a.taxa_pendente === true,
     })),
+    experimentais: (experimentais ?? []).flatMap((x) => {
+      const al = x.estudio_alunos as unknown as { nome: string; whatsapp: string | null; aluno_id: string | null; situacao: string } | null;
+      const aula = x.aulas_turma as unknown as { inicio: string; professor_id: string | null } | null;
+      if (!al || al.situacao !== "experimental") return [];
+      return [
+        {
+          id: x.estudio_aluno_id,
+          nome: al.nome,
+          whatsapp: al.whatsapp,
+          comApp: !!al.aluno_id,
+          data: x.data,
+          inicio: aula?.inicio ?? null,
+          professorId: aula?.professor_id ?? x.professor_id,
+        },
+      ];
+    }),
+    historicoExperimentais: (experimentais ?? []).map((x) => ({
+      data: x.data,
+      professorId: (x.aulas_turma as unknown as { professor_id: string | null } | null)?.professor_id ?? x.professor_id,
+      resultado: (x.resultado as "matriculou" | "desistiu" | null) ?? null,
+    })),
   };
 }
 
@@ -303,6 +344,8 @@ export interface AlunoNaChamada {
   situacao: "presente" | "falta" | "falta_avisada" | null;
   /** Veio repor (não é da turma). */
   reposicao?: boolean;
+  /** Aula experimental (decisão 92). */
+  experimental?: boolean;
 }
 
 export interface AulaParaChamada {
@@ -345,7 +388,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   // Quem já tem marca na aula (ex.: reposição) entra na lista mesmo sem estar na turma.
   for (const p of presencas ?? []) {
     const x = p.estudio_alunos as unknown as { id: string; nome: string } | null;
-    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao" });
+    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao", experimental: p.origem === "experimental" });
   }
   const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string; dia_semana: number; inicio_min: number };
   const e = a.estudios as unknown as { nome: string };
@@ -724,6 +767,35 @@ export async function salvarFeriadosDoEstudio(
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar os feriados.") } : { ok: true };
 }
 
+/** Decisão 92: agenda a aula experimental numa aula de turma. Devolve o link de cadastro do aluno. */
+export async function agendarAulaExperimental(
+  aulaId: string,
+  nome: string,
+  whatsapp: string,
+): Promise<{ ok: true; alunoId: string; link: string } | { ok: false; erro: string }> {
+  if (nome.trim().length < 2) return { ok: false, erro: "Escreva o nome do aluno." };
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("agendar_aula_experimental", { p_aula: aulaId, p_nome: nome.trim(), p_whatsapp: whatsapp.trim() || null });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível agendar a aula experimental.") };
+  const r = data as { aluno: string; codigo: string };
+  return { ok: true, alunoId: r.aluno, link: `${await origemDoSite()}/estudio/aluno/${r.codigo}` };
+}
+
+/** "Cadastrar aluno": o experimental vira aluno nas turmas escolhidas. */
+export async function matricularExperimental(alunoId: string, turmas: string[]): Promise<Resposta> {
+  if (!turmas.length) return { ok: false, erro: "Escolha pelo menos uma turma." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("matricular_experimental", { p_aluno: alunoId, p_turmas: turmas });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível cadastrar o aluno.") } : { ok: true };
+}
+
+/** "Desistência": o aluno da experimental não entrou. */
+export async function desistenciaExperimental(alunoId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("desistencia_experimental", { p_aluno: alunoId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível marcar a desistência.") } : { ok: true };
+}
+
 export interface DiaFechado {
   data: string;
   motivo: string | null;
@@ -795,7 +867,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
     supabase.from("estudio_alunos").select("id, nome").eq("estudio_id", estudioId),
   ]);
   // Só o primeiro nome: "Ana Souza" → "Ana".
-  const curto = (nome: string) => nome.trim().split(/s+/)[0];
+  const curto = (nome: string) => nome.trim().split(/\s+/)[0];
   const nomeDe = new Map((alunosDoEstudio ?? []).map((a) => [a.id, curto(a.nome)]));
   const daTurma = new Map<string, string[]>();
   for (const m of matriculas ?? []) daTurma.set(m.turma_id, [...(daTurma.get(m.turma_id) ?? []), m.estudio_aluno_id]);
@@ -810,8 +882,8 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
       .in("aula_turma_id", ids.slice(k, k + 300));
     for (const p of presencas ?? []) {
       if (p.situacao === "falta_avisada") {
-        if (p.origem !== "reposicao") faltam.set(p.aula_turma_id, (faltam.get(p.aula_turma_id) ?? new Set()).add(p.estudio_aluno_id));
-      } else if (p.origem === "reposicao") repoem.set(p.aula_turma_id, [...(repoem.get(p.aula_turma_id) ?? []), p.estudio_aluno_id]);
+        if (p.origem === "fixa") faltam.set(p.aula_turma_id, (faltam.get(p.aula_turma_id) ?? new Set()).add(p.estudio_aluno_id));
+      } else if (p.origem !== "fixa") repoem.set(p.aula_turma_id, [...(repoem.get(p.aula_turma_id) ?? []), p.estudio_aluno_id]);
     }
   }
   return (aulas ?? []).map((a) => {

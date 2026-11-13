@@ -6,6 +6,7 @@ import {
   convidarProfessor,
   encerrarAlunoEstudio,
   importarAlunos,
+  matricularExperimental,
   removerDaEquipe,
   salvarTurmasDoAluno,
   type AlunoDoEstudio,
@@ -21,6 +22,7 @@ import { juntarComE } from "@/lib/formato";
 import { DIAS, minParaHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
+import { AlunosEmExperimental, ConversaoDasExperimentais } from "./ExperimentaisDoEstudio";
 import { EditarHorarios } from "./EditarHorarios";
 import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
@@ -290,6 +292,15 @@ function Alunos({
         </div>
       )}
 
+      <AlunosEmExperimental
+        estudio={estudio}
+        hoje={hoje}
+        atualizar={atualizar}
+        escolherTurmas={(id) => (
+          <TurmasDoAluno alunoId={id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={[]} atualizar={atualizar} gravar={matricularExperimental} />
+        )}
+      />
+
       <div className="flex items-center gap-2">
         <h2 className="flex-1 text-[18px] font-bold">
           {filtro ? `${SITUACAO_PAGAMENTO[filtro].rotulo} (${lista.length})` : `Alunos (${estudio.alunos.length})`}
@@ -370,6 +381,8 @@ function Alunos({
         </ul>
       )}
 
+      <ConversaoDasExperimentais estudio={estudio} />
+
       <div className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
         <h2 className="font-bold">Cadastrar alunos</h2>
         <p className="text-[14px] text-ink-3">
@@ -420,11 +433,14 @@ function TurmasDoAluno({
   turmas,
   escolhidas,
   atualizar,
+  gravar = salvarTurmasDoAluno,
 }: {
   alunoId: string;
   turmas: TurmaDoEstudio[];
   escolhidas: string[];
   atualizar: () => void;
+  /** Outra forma de gravar (o "Cadastrar aluno" da aula experimental). */
+  gravar?: (alunoId: string, turmas: string[]) => Promise<{ ok: true } | { ok: false; erro: string }>;
 }) {
   const diasComTurma = DIAS.filter((d) => turmas.some((t) => t.diaSemana === d.valor));
   const [dias, setDias] = useState<number[]>([]);
@@ -447,7 +463,7 @@ function TurmasDoAluno({
   const salvar = (lista: string[]) =>
     iniciar(async () => {
       setErro(null);
-      const r = await salvarTurmasDoAluno(alunoId, lista);
+      const r = await gravar(alunoId, lista);
       if (!r.ok) return setErro(r.erro);
       setDias([]);
       setTrocas({});

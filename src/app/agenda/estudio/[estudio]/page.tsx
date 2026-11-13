@@ -9,6 +9,7 @@ import { SemanaDoEstudio } from "@/components/estudio/SemanaDoEstudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
+import { AgendarExperimental } from "@/components/estudio/AgendarExperimental";
 import { ausenciasDoEstudio, reposicoesAbertas } from "@/data/reposicao";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 import { agoraEmBrasilia, diaDaSemana, instante, somarDias } from "@/lib/expediente";
@@ -43,7 +44,7 @@ async function Conteudo({
   const personal = await exigirPersonal(`/agenda/estudio/${id}`);
   const hoje = agoraEmBrasilia().data;
   // Decisão 78: a semana do estúdio como no painel da coordenação (domingo a sábado).
-  const base = typeof pedida === "string" && /^d{4}-d{2}-d{2}$/.test(pedida) ? pedida : hoje;
+  const base = typeof pedida === "string" && /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? pedida : hoje;
   const domingo = somarDias(base, -diaDaSemana(base));
   const [estudio, aulas, semana, reposicoes, ausencias, { id: eu }] = await Promise.all([
     lerEstudio(id),
@@ -67,6 +68,13 @@ async function Conteudo({
       </section>
 
       <ReposicoesAbertas reposicoes={reposicoes} />
+
+      <AgendarExperimental
+        estudioId={id}
+        estudioNome={estudio.nome}
+        equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
+        hoje={hoje}
+      />
 
       {estudio.papel === "coordenacao" && (
         <Link href={`/estudio/${id}`} className="rounded-[16px] border border-line bg-surface px-4 py-3 font-bold text-estudio">

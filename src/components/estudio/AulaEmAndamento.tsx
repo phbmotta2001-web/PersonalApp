@@ -55,9 +55,10 @@ export function AulaEmAndamento({ aula }: { aula: AulaParaChamada }) {
             return (
               <li key={a.id} className="flex items-center gap-2 py-2.5">
                 <span className="min-w-0 flex-1">
-                  <span className={`block truncate text-[16px] font-semibold ${m === "falta" ? "text-ink-3 line-through" : ""}`}>{a.nome}</span>
+                  <span className={`block truncate text-[16px] font-semibold ${m === "falta" ? "text-ink-3 line-through" : a.experimental ? "text-info" : ""}`}>{a.nome}</span>
                   {a.situacao === "falta_avisada" && m === undefined && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
                   {a.reposicao && <span className="block text-[13px] font-semibold text-estudio">Reposição</span>}
+                  {a.experimental && <span className="block text-[13px] font-semibold text-info">Aula experimental</span>}
                 </span>
                 <button
                   type="button"
