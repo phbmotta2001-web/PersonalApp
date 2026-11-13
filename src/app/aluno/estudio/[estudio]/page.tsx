@@ -6,7 +6,7 @@ import { AgendaDoAlunoNoEstudio } from "@/components/aluno/AgendaDoAlunoNoEstudi
 import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhaFilaDeEspera, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { agoraEmBrasilia, dataCurta, DIAS, somarDias } from "@/lib/expediente";
 
@@ -47,7 +47,12 @@ async function Conteudo({
   const n = typeof semana === "string" && /^\d$/.test(semana) ? Math.min(Number(semana), SEMANAS) : 0;
   const inicio = somarDias(hoje, n * 7);
   const fim = somarDias(inicio, 6);
-  const [aulas, reposicoes, treino] = await Promise.all([agendaDoAlunoNoEstudio(id, inicio, fim), minhasReposicoesNoEstudio(id), meuTreinoNoEstudio(id)]);
+  const [aulas, reposicoes, treino, fila] = await Promise.all([
+    agendaDoAlunoNoEstudio(id, inicio, fim),
+    minhasReposicoesNoEstudio(id),
+    meuTreinoNoEstudio(id),
+    minhaFilaDeEspera(),
+  ]);
   const link = (x: number) => `/aluno/estudio/${id}${x ? `?semana=${x}` : ""}`;
 
   return (
@@ -59,7 +64,7 @@ async function Conteudo({
             ? `Sem reposições no momento. Avise a falta com ${estudio.faltaH} h de antecedência para ganhar uma.`
             : `Você tem ${reposicoes.length} ${reposicoes.length === 1 ? "reposição" : "reposições"}: ${reposicoes
                 .map((r) => `${r.modalidade} (até ${dataCurta(r.validoAte)})`)
-                .join(", ")}. Toque numa turma com vaga para repor.`}
+                .join(", ")}. Toque numa turma para repor, mudar seus dias ou entrar na lista de espera.`}
         </span>
       </section>
 
@@ -100,7 +105,15 @@ async function Conteudo({
         )}
       </nav>
 
-      <AgendaDoAlunoNoEstudio estudio={estudio} aulas={aulas} reposicoes={reposicoes} inicio={inicio} hoje={hoje} agora={new Date().getTime()} />
+      <AgendaDoAlunoNoEstudio
+        estudio={estudio}
+        aulas={aulas}
+        reposicoes={reposicoes}
+        fila={fila.filter((f) => f.estudioId === id)}
+        inicio={inicio}
+        hoje={hoje}
+        agora={new Date().getTime()}
+      />
 
       <p className="text-[13px] text-ink-3">
         Reposição: só na mesma modalidade, com pelo menos {estudio.marcarH} h de antecedência, e vale {estudio.validadeDias} dias. O professor é

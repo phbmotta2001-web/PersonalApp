@@ -7,7 +7,8 @@ import { Avatar, corPorId } from "@/components/Avatar";
 import { InstalarApp } from "@/components/InstalarApp";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
-import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhaFilaDeEspera, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { FilaDeEspera } from "@/components/aluno/FilaDeEspera";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -41,7 +42,12 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno] = await Promise.all([listarMeusPersonais(), matriculasSuspensas(), meusEstudiosComoAluno()]);
+  const [personais, suspensas, estudiosDoAluno, fila] = await Promise.all([
+    listarMeusPersonais(),
+    matriculasSuspensas(),
+    meusEstudiosComoAluno(),
+    minhaFilaDeEspera(),
+  ]);
   const estudios = await Promise.all(
     estudiosDoAluno.map(async (e) => {
       const [aulasDoEstudio, reposicoes] = await Promise.all([
@@ -125,6 +131,8 @@ async function Conteudo() {
           </Link>
         </section>
       )}
+
+      {fila.length > 0 && <FilaDeEspera lista={fila} />}
 
       {estudios.map(({ e, proxima: p, reposicoes }) => (
         <Link key={e.id} href={`/aluno/estudio/${e.id}`} className="flex flex-col gap-1 rounded-[24px] bg-estudio p-5 text-white">

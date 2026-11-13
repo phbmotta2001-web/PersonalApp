@@ -31,6 +31,23 @@ export interface AulaNaAgendaDoAluno {
   minha: "fixa" | "reposicao" | null;
   aviseiFalta: boolean;
   cancelada: boolean;
+  /** Decisão 94: a turma, as vagas livres nela (toda semana; vazio: aula extra) e quantos esperam na fila. */
+  turmaId: string;
+  livres: number | null;
+  naFila: number;
+}
+
+export interface FilaDoAluno {
+  estudioId: string;
+  estudio: string;
+  turmaId: string;
+  /** "Pilates · Seg 07:00" */
+  turma: string;
+  /** A turma dele que larga quando entrar (troca de dia). */
+  trocar: string | null;
+  situacao: "esperando" | "oferecida";
+  posicao: number;
+  expiraEm: string | null;
 }
 
 export interface ReposicaoDoAluno {
@@ -76,7 +93,54 @@ export async function agendaDoAlunoNoEstudio(estudioId: string, de: string, ate:
     minha: a.minha === "fixa" || a.minha === "reposicao" ? a.minha : null,
     aviseiFalta: a.avisei_falta === true,
     cancelada: a.cancelada === true,
+    turmaId: (a.turma_id as string) ?? "",
+    livres: a.livres == null ? null : Number(a.livres),
+    naFila: Number(a.na_fila ?? 0),
   }));
+}
+
+/** Decisão 94: as filas de espera em que o aluno logado está. */
+export async function minhaFilaDeEspera(): Promise<FilaDoAluno[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const { data, error } = await supabase.rpc("minha_fila_estudio");
+  if (error) return [];
+  return ((data ?? []) as Record<string, unknown>[]).map((f) => ({
+    estudioId: f.estudio_id as string,
+    estudio: f.estudio as string,
+    turmaId: f.turma_id as string,
+    turma: f.turma as string,
+    trocar: (f.trocar as string | null) ?? null,
+    situacao: f.situacao === "oferecida" ? "oferecida" : "esperando",
+    posicao: Number(f.posicao ?? 1),
+    expiraEm: (f.expira_em as string | null) ?? null,
+  }));
+}
+
+/** Entra numa turma toda semana (com `trocar`, larga essa turma dele). */
+export async function entrarNaTurma(turmaId: string, trocar: string | null = null): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("entrar_na_turma_estudio", { p_turma: turmaId, p_trocar: trocar });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível entrar na turma.") } : { ok: true };
+}
+
+export async function sairDaTurma(turmaId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("sair_da_turma_estudio", { p_turma: turmaId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível sair da turma.") } : { ok: true };
+}
+
+/** Entra na fila de uma turma cheia. Devolve a posição. */
+export async function entrarNaFila(turmaId: string, trocar: string | null = null): Promise<{ ok: true; posicao: number } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("entrar_na_fila_estudio", { p_turma: turmaId, p_trocar: trocar });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível entrar na fila.") } : { ok: true, posicao: Number(data ?? 1) };
+}
+
+export async function sairDaFila(turmaId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("sair_da_fila_estudio", { p_turma: turmaId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível sair da fila.") } : { ok: true };
 }
 
 export async function minhasReposicoesNoEstudio(estudioId: string): Promise<ReposicaoDoAluno[]> {

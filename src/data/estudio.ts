@@ -901,6 +901,8 @@ export interface AulaNaAgendaDoEstudio {
   tipo: TipoDeHorario;
   /** Aula extra (uma data só, não repete). */
   extra?: boolean;
+  /** Decisão 94: quem espera vaga nesta turma, em ordem (primeiro nome). */
+  fila: string[];
 }
 
 /** Aulas de todas as turmas do estúdio entre dois instantes (ISO), para a agenda da coordenação. */
@@ -918,6 +920,12 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
     supabase.from("turma_alunos").select("turma_id, estudio_aluno_id, turmas!inner(estudio_id)").eq("turmas.estudio_id", estudioId),
     supabase.from("estudio_alunos").select("id, nome").eq("estudio_id", estudioId),
   ]);
+  const { data: filas } = await supabase
+    .from("estudio_fila")
+    .select("turma_id, estudio_aluno_id")
+    .eq("estudio_id", estudioId)
+    .in("situacao", ["esperando", "oferecida"])
+    .order("criado_em");
   // Só o primeiro nome: "Ana Souza" → "Ana".
   const curto = (nome: string) => nome.trim().split(/\s+/)[0];
   const nomeDe = new Map((alunosDoEstudio ?? []).map((a) => [a.id, curto(a.nome)]));
@@ -944,6 +952,7 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
     const nomes = vao.map((x) => nomeDe.get(x) ?? "Aluno");
     return {
       nomes,
+      fila: (filas ?? []).filter((f) => f.turma_id === a.turma_id).map((f) => nomeDe.get(f.estudio_aluno_id) ?? "Aluno"),
       extra: t?.avulsa != null,
       tipo: (t?.tipo === "turno" ? "turno" : "turma") as TipoDeHorario,
       id: a.id,

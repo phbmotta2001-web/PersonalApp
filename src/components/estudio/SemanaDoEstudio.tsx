@@ -109,6 +109,12 @@ export function SemanaDoEstudio({
         <span className="size-4 shrink-0 rounded-[5px] border-[1.5px] border-bad bg-bad/15" />
         <span className="font-semibold text-bad">Sem professor</span>
       </li>
+      <li className="flex items-center gap-2 text-[14px]">
+        <span className="grid size-4 shrink-0 place-items-center">
+          <span className="size-2 rounded-full bg-info" />
+        </span>
+        <span className="font-semibold text-info">Lista de espera</span>
+      </li>
     </ul>
   );
 
@@ -214,7 +220,8 @@ export function SemanaDoEstudio({
                         key={a.id}
                         href={linkAula(a.id)}
                         title={`${emBrasilia(a.inicio).hora}–${emBrasilia(a.fim).hora} · ${a.modalidade} · ${a.alunos}/${a.vagas} alunos · ${nomeCurto.get(a.professorId ?? "") ?? "sem professor"}${a.nomes.length ? `
-${a.nomes.join(", ")}` : ""}`}
+${a.nomes.join(", ")}` : ""}${a.fila.length ? `
+Lista de espera: ${a.fila.join(", ")}` : ""}`}
                         className={`absolute z-[5] overflow-hidden rounded-[8px] border-l-[3px] px-1.5 py-0.5 text-[12px] leading-tight hover:brightness-95 ${
                           a.cancelada ? "text-ink-3 line-through" : "text-ink"
                         }`}
@@ -237,6 +244,14 @@ ${a.nomes.join(", ")}` : ""}`}
                         <span className={`block truncate text-[11.5px] font-semibold ${c ? "text-ink-2" : "text-bad"}`}>
                           {a.cancelada ? "Cancelada" : (nomeCurto.get(a.professorId ?? "") ?? "Sem professor")}
                         </span>
+                        {!a.cancelada && a.fila.length > 0 && (
+                          <span className="flex items-center gap-0.5 py-0.5" title={`Lista de espera: ${a.fila.join(", ")}`}>
+                            {a.fila.slice(0, 5).map((_, k) => (
+                              <span key={k} className="size-1.5 shrink-0 rounded-full bg-info" />
+                            ))}
+                            {a.fila.length > 5 && <span className="text-[10px] font-bold text-info">+{a.fila.length - 5}</span>}
+                          </span>
+                        )}
                         {!a.cancelada &&
                           a.nomes.map((n, k) => (
                             <span key={k} className="block truncate text-[10.5px] leading-[12px] text-ink-2">

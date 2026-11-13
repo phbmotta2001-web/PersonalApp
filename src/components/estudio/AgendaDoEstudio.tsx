@@ -249,6 +249,14 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
                         <span className="block truncate text-[12px] font-semibold opacity-85">
                           {a.tipo === "turno" ? "Turno" : `${a.alunos}/${a.vagas} alunos${a.chamadaEm ? " · ✓" : ""}`}
                         </span>
+                        {!a.cancelada && a.fila.length > 0 && (
+                          <span className="flex items-center gap-1 py-0.5" title={`Lista de espera: ${a.fila.join(", ")}`}>
+                            {a.fila.slice(0, 5).map((_, k) => (
+                              <span key={k} className="size-1.5 shrink-0 rounded-full bg-info" />
+                            ))}
+                            {a.fila.length > 5 && <span className="text-[10px] font-bold text-info">+{a.fila.length - 5}</span>}
+                          </span>
+                        )}
                         {!a.cancelada &&
                           a.nomes.map((n, k) => (
                             <span key={k} className="block truncate text-[11px] leading-[13px] font-medium opacity-85">
@@ -267,6 +275,7 @@ export function AgendaDoEstudio({ estudio, aulas, dia, hoje }: { estudio: Estudi
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-3">
         <Legenda cor="bg-bad">Sem professor</Legenda>
+        <Legenda cor="bg-info">Lista de espera</Legenda>
         <span>Toque num horário livre para criar uma aula com o professor. Repete toda semana.</span>
       </p>
 

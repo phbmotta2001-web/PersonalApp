@@ -5,12 +5,18 @@ import { useState, useTransition } from "react";
 import {
   avisarFaltaNoEstudio,
   desfazerFaltaNoEstudio,
+  entrarNaFila,
+  entrarNaTurma,
   marcarReposicaoNoEstudio,
+  sairDaFila,
+  sairDaTurma,
   type AulaNaAgendaDoAluno,
   type EstudioDoAluno,
+  type FilaDoAluno,
   type ReposicaoDoAluno,
 } from "@/data/aluno-estudio";
 import { DIAS, dataCurta, diaDaSemana, emBrasilia, somarDias } from "@/lib/expediente";
+import { ESTILO_CAIXA } from "../Formulario";
 import { Aviso } from "../Formulario";
 
 const mesma = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -27,10 +33,13 @@ export function AgendaDoAlunoNoEstudio({
   inicio,
   hoje,
   agora,
+  fila = [],
 }: {
   estudio: EstudioDoAluno;
   aulas: AulaNaAgendaDoAluno[];
   reposicoes: ReposicaoDoAluno[];
+  /** Decisão 94: as filas de espera do aluno neste estúdio. */
+  fila?: FilaDoAluno[];
   /** Primeiro dia mostrado ("AAAA-MM-DD"). */
   inicio: string;
   hoje: string;
@@ -45,6 +54,47 @@ export function AgendaDoAlunoNoEstudio({
   const dias = Array.from({ length: 7 }, (_, i) => somarDias(inicio, i));
   const definido = Object.keys(estudio.funcionamento).length > 0;
   const creditoPara = (modalidade: string) => reposicoes.find((r) => mesma(r.modalidade, modalidade));
+  // Decisão 94: as turmas do aluno (para trocar uma por outra) e a escolha "aumentar" ou "trocar".
+  const rotulo = (a: AulaNaAgendaDoAluno) => `${DIAS[diaDaSemana(emBrasilia(a.inicio).data)].curto} ${emBrasilia(a.inicio).hora} · ${a.modalidade}`;
+  const minhasTurmas = [...new Map(aulas.filter((a) => a.minha === "fixa").map((a) => [a.turmaId, rotulo(a)])).entries()];
+  const [trocar, setTrocar] = useState("");
+  const naFila = (turmaId: string) => fila.find((x) => x.turmaId === turmaId);
+
+  const entrar = (a: AulaNaAgendaDoAluno, daFila = false) => {
+    const troca = daFila ? null : trocar || null;
+    const nomeTroca = minhasTurmas.find(([id]) => id === troca)?.[1];
+    if (
+      !daFila &&
+      !confirm(
+        `${nomeTroca ? `Trocar a turma de ${nomeTroca} pela de ${rotulo(a)}` : `Entrar na turma de ${rotulo(a)} toda semana`}? A mensalidade acompanha a partir da próxima.`,
+      )
+    )
+      return;
+    setEscolhida(null);
+    agir(a.id, async () => {
+      const r = await entrarNaTurma(a.turmaId, troca);
+      return r.ok ? { ok: true, texto: "Pronto: você está na turma. A coordenação e o professor foram avisados." } : r;
+    });
+  };
+  const esperar = (a: AulaNaAgendaDoAluno) =>
+    agir(a.id, async () => {
+      const r = await entrarNaFila(a.turmaId, trocar || null);
+      return r.ok ? { ok: true, texto: `Você é o ${r.posicao}º da fila. Quando abrir vaga, você é avisado e tem 24 h para entrar.` } : r;
+    });
+  const desistirDaFila = (a: AulaNaAgendaDoAluno) => {
+    if (!confirm("Sair da lista de espera desta turma?")) return;
+    agir(a.id, async () => {
+      const r = await sairDaFila(a.turmaId);
+      return r.ok ? { ok: true, texto: "Você saiu da fila." } : r;
+    });
+  };
+  const largar = (a: AulaNaAgendaDoAluno) => {
+    if (!confirm(`Sair da turma de ${rotulo(a)} toda semana? A mensalidade acompanha a partir da próxima.`)) return;
+    agir(a.id, async () => {
+      const r = await sairDaTurma(a.turmaId);
+      return r.ok ? { ok: true, texto: "Você saiu da turma. A coordenação e o professor foram avisados." } : r;
+    });
+  };
 
   const agir = (aula: string, fazer: () => Promise<{ ok: true; texto: string } | { ok: false; erro: string }>) =>
     iniciar(async () => {
@@ -98,6 +148,10 @@ export function AgendaDoAlunoNoEstudio({
   };
 
   return (
+    <>
+    <p className="flex items-center gap-1.5 text-[13px] text-ink-3">
+      <span className="size-2 shrink-0 rounded-full bg-info" aria-hidden="true" /> Pontinho azul: pessoas na lista de espera da turma.
+    </p>
     <div className="grid gap-4 lg:grid-cols-7 lg:gap-2">
       {dias.map((d) => {
         const doDia = aulas.filter((a) => emBrasilia(a.inicio).data === d);
@@ -118,12 +172,14 @@ export function AgendaDoAlunoNoEstudio({
                   const passou = Date.parse(a.inicio) <= agora;
                   const lotada = a.ocupadas >= a.vagas;
                   const minha = a.minha !== null;
-                  const podeRepor = !minha && !passou && !lotada && !a.cancelada;
+                  const podeRepor = !minha && !passou && !lotada && !a.cancelada && !!creditoPara(a.modalidade);
+                  const tocavel = !minha && !passou && !a.cancelada;
+                  const filaMinha = naFila(a.turmaId);
                   const tom = a.cancelada || passou
                     ? "border-line bg-surface-2 text-ink-3"
                     : minha && !a.aviseiFalta
                       ? "border-estudio bg-estudio-soft text-estudio"
-                      : podeRepor
+                      : tocavel
                         ? "border-line bg-surface hover:border-brand"
                         : "border-line bg-surface text-ink-3";
                   const conteudo = (
@@ -138,6 +194,14 @@ export function AgendaDoAlunoNoEstudio({
                           {a.ocupadas}/{a.vagas}
                         </span>
                       </span>
+                      {a.naFila > 0 && (
+                        <span className="flex items-center gap-1" aria-label={`${a.naFila} na lista de espera`} title="Lista de espera">
+                          {Array.from({ length: Math.min(a.naFila, 5) }, (_, k) => (
+                            <span key={k} className="size-2 rounded-full bg-info" />
+                          ))}
+                          {a.naFila > 5 && <span className="text-[11.5px] font-bold text-info">+{a.naFila - 5}</span>}
+                        </span>
+                      )}
                       <span className="block truncate text-[15px] font-bold">{a.modalidade}</span>
                       <span className="block truncate text-[13px] opacity-85">
                         {a.cancelada
@@ -160,7 +224,7 @@ export function AgendaDoAlunoNoEstudio({
                   );
                   return (
                     <li key={a.id} className="flex flex-col gap-1">
-                      {podeRepor ? (
+                      {tocavel ? (
                         <button
                           type="button"
                           disabled={ocupado}
@@ -173,21 +237,89 @@ export function AgendaDoAlunoNoEstudio({
                       ) : (
                         <div className={`flex flex-col rounded-[14px] border border-l-[3px] px-3 py-2 ${tom}`}>{conteudo}</div>
                       )}
-                      {podeRepor && escolhida === a.id && (
-                        <div className="flex flex-col gap-1 px-1">
-                          <button
-                            type="button"
-                            disabled={ocupado}
-                            onClick={() => repor(a)}
-                            className="min-h-[44px] rounded-[12px] bg-brand px-3 text-[14.5px] font-bold text-brand-ink"
-                          >
-                            {ocupado ? "Entrando…" : "Entrar na turma"}
-                          </button>
-                          <span className="text-[12.5px] text-ink-3">Usa uma reposição de {a.modalidade}.</span>
+                      {tocavel && escolhida === a.id && (
+                        <div className="flex flex-col gap-2 px-1">
+                          {podeRepor && (
+                            <>
+                              <button
+                                type="button"
+                                disabled={ocupado}
+                                onClick={() => repor(a)}
+                                className="min-h-[44px] rounded-[12px] bg-brand px-3 text-[14.5px] font-bold text-brand-ink"
+                              >
+                                {ocupado ? "Entrando…" : "Repor nesta aula"}
+                              </button>
+                              <span className="text-[12.5px] text-ink-3">Usa uma reposição de {a.modalidade}, só neste dia.</span>
+                            </>
+                          )}
+                          {a.livres != null &&
+                            (filaMinha ? (
+                              <div className="flex flex-col gap-1.5 rounded-[12px] bg-info-soft p-2.5 text-[13.5px]">
+                                {filaMinha.situacao === "oferecida" ? (
+                                  <>
+                                    <span className="font-bold text-info">
+                                      Abriu vaga para você!
+                                      {filaMinha.expiraEm && ` Entre até ${dataCurta(emBrasilia(filaMinha.expiraEm).data)} às ${emBrasilia(filaMinha.expiraEm).hora}.`}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      disabled={ocupado}
+                                      onClick={() => entrar(a, true)}
+                                      className="min-h-[44px] rounded-[12px] bg-brand px-3 text-[14.5px] font-bold text-brand-ink"
+                                    >
+                                      Entrar na turma
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="font-bold text-info">Você é o {filaMinha.posicao}º da lista de espera.</span>
+                                )}
+                                <button type="button" disabled={ocupado} onClick={() => desistirDaFila(a)} className="self-start font-bold text-bad">
+                                  Sair da fila
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col gap-1.5">
+                                <span className="text-[12.5px] font-bold text-ink-2">Toda semana</span>
+                                {minhasTurmas.length > 0 && (
+                                  <select value={trocar} onChange={(e) => setTrocar(e.target.value)} className={ESTILO_CAIXA} aria-label="Aumentar ou trocar">
+                                    <option value="">Aumentar: mais esta turma</option>
+                                    {minhasTurmas.map(([id, nome]) => (
+                                      <option key={id} value={id}>
+                                        Trocar pela de {nome}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                                {a.livres > 0 ? (
+                                  <button
+                                    type="button"
+                                    disabled={ocupado}
+                                    onClick={() => entrar(a)}
+                                    className="min-h-[44px] rounded-[12px] border border-brand bg-surface px-3 text-[14.5px] font-bold text-brand"
+                                  >
+                                    {trocar ? "Trocar de turma" : "Entrar nesta turma"}
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={ocupado}
+                                    onClick={() => esperar(a)}
+                                    className="min-h-[44px] rounded-[12px] border border-info bg-surface px-3 text-[14.5px] font-bold text-info"
+                                  >
+                                    Turma cheia: entrar na lista de espera
+                                  </button>
+                                )}
+                              </div>
+                            ))}
                         </div>
                       )}
                       {minha && !passou && !a.cancelada && (
                         <div className="flex gap-3 px-1 text-[13.5px] font-semibold">
+                          {a.minha === "fixa" && minhasTurmas.length > 1 && (
+                            <button type="button" disabled={ocupado} onClick={() => largar(a)} className="order-last ml-auto text-ink-3">
+                              Sair desta turma
+                            </button>
+                          )}
                           {!a.aviseiFalta ? (
                             <button type="button" disabled={ocupado} onClick={() => faltar(a)} className="text-bad">
                               {a.minha === "reposicao" ? "Desmarcar reposição" : "Vou faltar"}
@@ -221,5 +353,6 @@ export function AgendaDoAlunoNoEstudio({
         );
       })}
     </div>
+    </>
   );
 }
