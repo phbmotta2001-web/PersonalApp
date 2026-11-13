@@ -52,6 +52,8 @@ export interface Ausencia {
 
 export interface ReposicaoAberta {
   aulaId: string;
+  /** A falta/férias de onde veio (agrupa o pedido de substituição). */
+  ausenciaId: string;
   inicio: string;
   fim: string;
   modalidade: string;
@@ -170,6 +172,7 @@ export async function reposicoesAbertas(estudioId: string): Promise<ReposicaoAbe
   if (error) return [];
   return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
     aulaId: r.aula_id as string,
+    ausenciaId: (r.ausencia_id as string | undefined) ?? "",
     inicio: r.inicio as string,
     fim: r.fim as string,
     modalidade: r.modalidade as string,
@@ -177,6 +180,40 @@ export async function reposicoesAbertas(estudioId: string): Promise<ReposicaoAbe
     valor: Number(r.valor_centavos ?? 0),
     ausente: r.ausente as string,
   }));
+}
+
+/** Resumo de uma falta/férias já marcada (para pedir reposição depois). */
+export async function resumoDaAusencia(ausenciaId: string): Promise<{ ok: true; resumo: ResumoAusencia } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("resumo_da_ausencia", { p_ausencia: ausenciaId });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível abrir. Tente de novo.") };
+  return { ok: true, resumo: paraResumo(data as Record<string, unknown>) };
+}
+
+/**
+ * Decisão 79: confirma de uma vez os horários marcados. Os que outro professor pegou antes são
+ * pulados. Quem faltou e a coordenação são avisados.
+ */
+export async function assumirReposicoes(aulaIds: string[]): Promise<{ ok: true; assumidas: number; jaPegas: number } | { ok: false; erro: string }> {
+  if (!aulaIds.length) return { ok: false, erro: "Marque pelo menos um horário." };
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("assumir_reposicoes", { p_aulas: aulaIds });
+  if (error) {
+    // Migração 44 ainda não rodada: assume uma a uma.
+    if (error.code !== "PGRST202") return { ok: false, erro: doBanco(error.message, "Não foi possível confirmar.") };
+    let assumidas = 0;
+    for (const id of aulaIds) if ((await assumirReposicao(id)).ok) assumidas++;
+    return { ok: true, assumidas, jaPegas: aulaIds.length - assumidas };
+  }
+  const r = (data ?? {}) as { assumidas?: number; ja_pegas?: number };
+  return { ok: true, assumidas: Number(r.assumidas ?? 0), jaPegas: Number(r.ja_pegas ?? 0) };
+}
+
+/** Recusa o pedido: some para quem recusou e quem pediu é avisado. */
+export async function recusarReposicao(ausenciaId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("recusar_reposicao", { p_ausencia: ausenciaId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível recusar.") } : { ok: true };
 }
 
 export async function assumirReposicao(aulaId: string): Promise<Resposta> {

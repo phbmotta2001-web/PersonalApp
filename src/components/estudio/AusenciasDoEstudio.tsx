@@ -6,6 +6,7 @@ import {
   cancelarAusencia,
   marcarAusencia,
   pedirReposicao,
+  resumoDaAusencia,
   type Ausencia,
   type ResumoAusencia,
   type TipoAusencia,
@@ -31,8 +32,9 @@ const periodo = (a: { tipo: TipoAusencia; de: string; ate: string }) =>
 
 /**
  * Férias e faltas: a coordenação marca as de qualquer professor (equipe) e o professor, as
- * próprias (fixo). Ao marcar, mostra as aulas que ficaram sem professor e três saídas:
- * avisar todos os professores, chamar um professor específico ou só fechar.
+ * próprias (fixo). Ao marcar, a coordenação é avisada na hora (decisão 79) e aparecem as aulas
+ * que ficaram sem professor, com dois botões (avisar os demais professores ou um professor
+ * específico) e o × para fechar. Dá para pedir a reposição depois, pela lista.
  */
 export function AusenciasDoEstudio({
   estudioId,
@@ -51,6 +53,7 @@ export function AusenciasDoEstudio({
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [pedindo, setPedindo] = useState<ResumoAusencia | null>(null);
   const [ocupado, iniciar] = useTransition();
   const nomeDe = (id: string) => equipe.find((p) => p.personalId === id)?.nome ?? fixo?.nome ?? "Professor";
   const lista = fixo ? ausencias.filter((a) => a.personalId === fixo.personalId) : ausencias;
@@ -82,6 +85,21 @@ export function AusenciasDoEstudio({
                 disabled={ocupado}
                 onClick={() =>
                   iniciar(async () => {
+                    setErro(null);
+                    const r = await resumoDaAusencia(a.id);
+                    if (!r.ok) return setErro(r.erro);
+                    setPedindo(r.resumo);
+                  })
+                }
+                className="shrink-0 text-[14px] font-semibold text-brand"
+              >
+                Pedir reposição
+              </button>
+              <button
+                type="button"
+                disabled={ocupado}
+                onClick={() =>
+                  iniciar(async () => {
                     if (!confirm("Desmarcar? As aulas que ninguém assumiu voltam para o professor.")) return;
                     const r = await cancelarAusencia(a.id);
                     if (!r.ok) return setErro(r.erro);
@@ -97,6 +115,24 @@ export function AusenciasDoEstudio({
         </ul>
       )}
       <Aviso>{erro}</Aviso>
+      {pedindo && (
+        <Janela
+          fechar={() => {
+            setPedindo(null);
+            router.refresh();
+          }}
+        >
+          <Resultado
+            resumo={pedindo}
+            estudioNome={estudioNome}
+            equipe={equipe}
+            fechar={() => {
+              setPedindo(null);
+              router.refresh();
+            }}
+          />
+        </Janela>
+      )}
       {aberto && (
         <Janela
           fechar={() => {
@@ -213,7 +249,9 @@ function MarcarAusencia({
           </label>
         )}
       </div>
-      <p className="text-[13px] text-ink-3">As aulas e turnos do período ficam sem professor até alguém da equipe assumir.</p>
+      <p className="text-[13px] text-ink-3">
+        As aulas do período ficam sem professor até alguém da equipe confirmar.{fixo ? " A coordenação é avisada na hora." : ""}
+      </p>
       <Aviso>{erro}</Aviso>
       <div className="flex gap-2.5">
         <button type="button" onClick={fechar} className={ESTILO_BOTAO_SECUNDARIO + " flex-1"}>
@@ -243,9 +281,9 @@ function Resultado({ resumo, estudioNome, equipe, fechar }: { resumo: ResumoAuse
     [
       `${para ? `Olá, ${para.split(" ")[0]}! ` : ""}Reposição no ${estudioNome}: ${primeiro} ${resumo.tipo === "falta" ? "vai faltar" : "estará de férias"}.`,
       `${aulas.length} ${aulas.length === 1 ? "aula" : "aulas"}:`,
-      ...aulas.map((a) => `• ${quando(a.inicio)} · ${a.tipo === "turno" ? "Turno" : "Turma"} ${a.modalidade} · ${centavosParaReais(a.valor)}`),
+      ...aulas.map((a) => `• ${quando(a.inicio)} · ${a.modalidade} · ${centavosParaReais(a.valor)}`),
       `Total: ${centavosParaReais(total)}.`,
-      `Para assumir, abra o P-Bell: ${link}`,
+      `Para confirmar os horários, abra o P-Bell: ${link}`,
     ].join("\n");
 
   const pedir = (professor: string | null) =>
@@ -259,19 +297,24 @@ function Resultado({ resumo, estudioNome, equipe, fechar }: { resumo: ResumoAuse
 
   return (
     <div className="flex flex-col gap-3.5">
-      <div>
-        <p className="text-[13px] text-ink-3">{resumo.nome}</p>
-        <h2 className="text-[20px] font-extrabold">{periodo(resumo)}</h2>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] text-ink-3">{resumo.nome}</p>
+          <h2 className="text-[20px] font-extrabold">{periodo(resumo)}</h2>
+        </div>
+        <button type="button" onClick={fechar} aria-label="Fechar" className="grid size-10 shrink-0 place-items-center rounded-full border border-line bg-surface text-[20px] leading-none">
+          ×
+        </button>
       </div>
       {aulas.length === 0 ? (
-        <p className="text-ink-2">Nenhuma aula ou turno neste período. Nada para repor.</p>
+        <p className="text-ink-2">Nenhuma aula neste período. Nada para repor.</p>
       ) : (
         <>
           <ul className="flex flex-col gap-1.5 rounded-[16px] border border-line bg-surface p-3 text-[14px]">
             {aulas.map((a) => (
               <li key={a.id} className="flex gap-2">
                 <span className="min-w-0 flex-1 truncate">
-                  {quando(a.inicio)} · {a.tipo === "turno" ? "Turno" : "Turma"} {a.modalidade}
+                  {quando(a.inicio)} · {a.modalidade}
                 </span>
                 <span className="font-semibold">{centavosParaReais(a.valor)}</span>
               </li>
@@ -287,10 +330,10 @@ function Resultado({ resumo, estudioNome, equipe, fechar }: { resumo: ResumoAuse
           {modo === "escolher" && (
             <div className="flex flex-col gap-2">
               <button type="button" disabled={ocupado} onClick={() => pedir(null)} className={ESTILO_BOTAO_PRINCIPAL}>
-                Avisar todos os professores
+                Avisar os demais professores
               </button>
               <button type="button" disabled={ocupado} onClick={() => setModo("um")} className={ESTILO_BOTAO_SECUNDARIO}>
-                Chamar um professor específico
+                Avisar um professor específico
               </button>
             </div>
           )}
@@ -306,7 +349,7 @@ function Resultado({ resumo, estudioNome, equipe, fechar }: { resumo: ResumoAuse
                 ))}
               </select>
               <button type="button" disabled={ocupado || !escolhido} onClick={() => pedir(escolhido)} className={ESTILO_BOTAO_PRINCIPAL}>
-                Chamar
+                Avisar
               </button>
             </div>
           )}
@@ -331,9 +374,6 @@ function Resultado({ resumo, estudioNome, equipe, fechar }: { resumo: ResumoAuse
         </>
       )}
       <Aviso>{erro}</Aviso>
-      <button type="button" onClick={fechar} className={modo === "escolher" && aulas.length > 0 ? ESTILO_BOTAO_SECUNDARIO : ESTILO_BOTAO_PRINCIPAL}>
-        {modo === "escolher" && aulas.length > 0 ? "Só fechar" : "Fechar"}
-      </button>
     </div>
   );
 }
