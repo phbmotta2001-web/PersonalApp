@@ -19,9 +19,10 @@ import {
   type MesDeAlunos,
   type MesDoEstudio,
 } from "@/data/estudio-financeiro";
-import { COR_COBRANCA, ROTULO_COBRANCA, situacaoDaCobranca } from "@/lib/cobranca";
+import { COR_COBRANCA, ROTULO_COBRANCA, situacaoDaCobranca, textoDoVencimento } from "@/lib/cobranca";
+import { linkWhatsapp } from "@/lib/convite";
 import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/matricula";
-import { TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/pix";
+import { pixCopiaECola, TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/pix";
 import { VEZES_POR_SEMANA } from "@/lib/precos";
 import { Chip } from "../Chip";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
@@ -629,6 +630,7 @@ function contasDoMes(estudio: EstudioCompleto, mes: string, hoje: string, dados:
           .filter((x) => mensalidadeDe(estudio, x) > 0 && !ativas.some((c) => c.alunoId === x.id))
           .map((x) => ({
             id: `prevista-${x.id}`,
+            alunoId: x.id,
             aluno: x.nome,
             vencimento: x.diaVencimento == null ? "" : `${mes}-${String(Math.min(x.diaVencimento, ultimoDia)).padStart(2, "0")}`,
             valor: mensalidadeDe(estudio, x),
@@ -641,11 +643,30 @@ function contasDoMes(estudio: EstudioCompleto, mes: string, hoje: string, dados:
   return { arrecadado, total, falta, devendo };
 }
 
+/** Mensagem para cobrar a mensalidade pelo WhatsApp, com o Pix do estúdio. */
+function mensagemDeCobranca(estudio: EstudioCompleto, nome: string, valor: number, vencimento: string, hoje: string) {
+  const atrasada = vencimento < hoje;
+  const linhas = [`Oi, ${nome.split(" ")[0]}! ${atrasada ? "Passando para lembrar" : "Lembrete"} do ${estudio.nome}: a mensalidade de ${centavosParaReais(valor)} ${textoDoVencimento(vencimento, hoje)}.`];
+  const pix = estudio.config.pix;
+  if (pix?.chave) {
+    try {
+      linhas.push("", "Pix copia e cola:", pixCopiaECola({ ...pix, tipo: pix.tipo as TipoChavePix }, valor, "MENSALIDADE"));
+    } catch {
+      linhas.push("", `Pix: ${pix.chave}`);
+    }
+  }
+  linhas.push("", "Obrigado!");
+  return linhas.join("\n");
+}
+
 function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto; mes: string; hoje: string; dados: FinanceiroDoMes }) {
   const [todos, setTodos] = useState(false);
   const { arrecadado, total, falta, devendo } = contasDoMes(estudio, mes, hoje, dados);
   const pct = total ? Math.min(100, Math.round((arrecadado / total) * 100)) : 0;
   const mostrar = todos ? devendo : devendo.slice(0, 8);
+  // Botão de cobrar para quem vence em até 7 dias (ou já venceu).
+  const [ah, mh, dh] = hoje.split("-").map(Number);
+  const limite = new Date(Date.UTC(ah, mh - 1, dh + 7)).toISOString().slice(0, 10);
 
   return (
     <section className="flex flex-col gap-3 rounded-[24px] bg-estudio p-5 text-white" aria-label="Projeção do mês">
@@ -665,10 +686,22 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
           <ul className="flex flex-col divide-y divide-line">
             {mostrar.map((c) => {
               const atrasada = c.vencimento !== "" && c.vencimento < hoje;
+              const aluno = estudio.alunos.find((x) => x.id === c.alunoId);
+              const cobrar = c.vencimento !== "" && c.vencimento <= limite && aluno;
               return (
-                <li key={c.id} className="flex flex-wrap items-baseline gap-x-2 py-2 text-[15px]">
+                <li key={c.id} className="flex flex-wrap items-center gap-x-2 py-2 text-[15px]">
                   <span className="min-w-0 flex-1 font-semibold">{c.aluno}</span>
                   <span className="font-extrabold tabular-nums">{centavosParaReais(c.valor)}</span>
+                  {cobrar && (
+                    <a
+                      href={linkWhatsapp(aluno.whatsapp ?? "", mensagemDeCobranca(estudio, aluno.nome, c.valor, c.vencimento, hoje))}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-estudio px-3 py-1 text-[13px] font-bold text-white"
+                    >
+                      Cobrar no WhatsApp
+                    </a>
+                  )}
                   <span className={`basis-full text-[13px] ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
                     {!c.vencimento ? "sem dia de vencimento" : atrasada ? `venceu em ${dataBr(c.vencimento)}` : c.vencimento === hoje ? "vence hoje" : `vence em ${dataBr(c.vencimento)}`}
                     {c.alunoAvisou && " · avisou que pagou"}
