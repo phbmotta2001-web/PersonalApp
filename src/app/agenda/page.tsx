@@ -13,7 +13,8 @@ import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/a
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
-import { aulasDeTurmaParaMim, lerAulaParaChamada, meusEstudios, type AulaDeTurma } from "@/data/estudio";
+import { aulasDeTurmaParaMim, experimentaisConcluidas, lerAulaParaChamada, meusEstudios, type AulaDeTurma } from "@/data/estudio";
+import { ExperimentaisConcluidas } from "@/components/estudio/ExperimentaisConcluidas";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { soNoEstudio } from "@/data/so-estudio";
 import { listarAulas, matriculasAtivasPorAluno, matriculasSuspensas } from "@/data/matriculas";
@@ -44,9 +45,10 @@ async function Conteudo() {
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
   if (await soNoEstudio()) {
-    const [estudiosDoProfissional, turmasDeHoje] = await Promise.all([
+    const [estudiosDoProfissional, turmasDeHoje, concluidas] = await Promise.all([
       meusEstudios(),
       aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
+      experimentaisConcluidas(),
     ]);
     const emAndamento = await aulaEmAndamento(turmasDeHoje, agora);
     return (
@@ -56,6 +58,7 @@ async function Conteudo() {
         aulasHoje={turmasDeHoje}
         agora={agora}
         emAndamento={emAndamento && <AulaEmAndamento aula={emAndamento} />}
+        experimentais={concluidas.length > 0 && <ExperimentaisConcluidas lista={concluidas} />}
       />
     );
   }
@@ -74,6 +77,7 @@ async function Conteudo() {
     aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
     matriculasAtivasPorAluno(),
   ]);
+  const concluidas = await experimentaisConcluidas();
   // Decisão 88: aluno que aceitou o convite nos últimos 30 dias e ainda não está na agenda.
   const recemChegados = alunos.filter(
     (a) => a.situacao === "ativo" && a.aceitoEm && agora.getTime() - Date.parse(a.aceitoEm) < 30 * 86_400_000 && !matriculas[a.vinculoId],
@@ -144,6 +148,8 @@ async function Conteudo() {
       <AtivarNotificacoes texto="Receba na hora os pedidos e avisos dos alunos, os pagamentos e as mensalidades que vencem hoje." />
 
       {emAndamento && <AulaEmAndamento aula={emAndamento} />}
+
+      {concluidas.length > 0 && <ExperimentaisConcluidas lista={concluidas} />}
 
       <EstudioNoInicio estudios={estudios} aulasHoje={turmasHoje} agora={agora} />
 

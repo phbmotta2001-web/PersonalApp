@@ -781,6 +781,58 @@ export async function agendarAulaExperimental(
   return { ok: true, alunoId: r.aluno, link: `${await origemDoSite()}/estudio/aluno/${r.codigo}` };
 }
 
+export interface ExperimentalConcluida {
+  alunoId: string;
+  estudioId: string;
+  estudio: string;
+  nome: string;
+  whatsapp: string | null;
+  inicio: string;
+  faltou: boolean;
+}
+
+/** Decisão 93: experimentais que já aconteceram e esperam a coordenação (só de quem coordena). */
+export async function experimentaisConcluidas(): Promise<ExperimentalConcluida[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const coordeno = (await meusEstudios()).filter((e) => e.papel === "coordenacao");
+  if (!coordeno.length) return [];
+  const { data } = await supabase
+    .from("estudio_experimentais")
+    .select("estudio_id, estudio_aluno_id, aula_turma_id, aulas_turma(inicio, fim, situacao), estudio_alunos(nome, whatsapp, situacao)")
+    .in(
+      "estudio_id",
+      coordeno.map((e) => e.id),
+    )
+    .is("resultado", null);
+  const agora = Date.now();
+  const lista = (data ?? []).flatMap((x) => {
+    const a = x.aulas_turma as unknown as { inicio: string; fim: string; situacao: string } | null;
+    const al = x.estudio_alunos as unknown as { nome: string; whatsapp: string | null; situacao: string } | null;
+    if (!a || !al || al.situacao !== "experimental" || a.situacao === "cancelada" || Date.parse(a.fim) > agora) return [];
+    return [{ x, a, al }];
+  });
+  if (!lista.length) return [];
+  const { data: presencas } = await supabase
+    .from("presencas")
+    .select("aula_turma_id, estudio_aluno_id, situacao")
+    .in(
+      "estudio_aluno_id",
+      lista.map((l) => l.x.estudio_aluno_id),
+    );
+  return lista
+    .map(({ x, a, al }) => ({
+      alunoId: x.estudio_aluno_id,
+      estudioId: x.estudio_id,
+      estudio: coordeno.find((e) => e.id === x.estudio_id)?.nome ?? "Estúdio",
+      nome: al.nome,
+      whatsapp: al.whatsapp,
+      inicio: a.inicio,
+      faltou: (presencas ?? []).some((p) => p.aula_turma_id === x.aula_turma_id && p.estudio_aluno_id === x.estudio_aluno_id && p.situacao === "falta"),
+    }))
+    .sort((p, q) => p.inicio.localeCompare(q.inicio));
+}
+
 /** "Cadastrar aluno": o experimental vira aluno nas turmas escolhidas. */
 export async function matricularExperimental(alunoId: string, turmas: string[]): Promise<Resposta> {
   if (!turmas.length) return { ok: false, erro: "Escolha pelo menos uma turma." };

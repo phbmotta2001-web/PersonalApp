@@ -42,9 +42,12 @@ export function GestaoDoEstudio({
   pagamentos,
   professores,
   hoje,
+  cadastrar,
 }: {
   estudio: EstudioCompleto;
   aba: Aba;
+  /** Aluno em experimental para abrir já no "Cadastrar aluno" (vindo do Início, decisão 93). */
+  cadastrar?: string;
   /** Só na aba Professores: faltas no mês e previsão do pagamento (decisão 83). */
   professores?: ResumoDoProfessor[];
   /** Só na aba Agenda: a grade da semana, montada no servidor. */
@@ -65,7 +68,7 @@ export function GestaoDoEstudio({
       {/* Decisão 68: sem lista de turmas; a agenda mostra tudo e "Editar" adiciona, remove e dá professor. */}
       {aba === "agenda" && <EditarHorarios estudio={estudio} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "equipe" && <Equipe estudio={estudio} resumo={professores ?? []} atualizar={() => router.refresh()} />}
-      {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} atualizar={() => router.refresh()} />}
+      {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} cadastrar={cadastrar} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
       {aba === "ajustes" && <AjustesDoEstudio estudio={estudio} />}
       {aba !== "agenda" && complemento}
@@ -229,11 +232,13 @@ function Alunos({
   estudio,
   pagamentos,
   hoje,
+  cadastrar,
   atualizar,
 }: {
   estudio: EstudioCompleto;
   pagamentos?: Record<string, PagamentoDoAluno>;
   hoje: string;
+  cadastrar?: string;
   atualizar: () => void;
 }) {
   const [texto, setTexto] = useState("");
@@ -295,6 +300,7 @@ function Alunos({
       <AlunosEmExperimental
         estudio={estudio}
         hoje={hoje}
+        inicial={cadastrar}
         atualizar={atualizar}
         escolherTurmas={(id) => (
           <TurmasDoAluno alunoId={id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={[]} atualizar={atualizar} gravar={matricularExperimental} />

@@ -45,7 +45,7 @@ async function Conteudo({
   searchParams: PageProps<"/estudio/[estudio]">["searchParams"];
 }) {
   const { estudio: id } = await params;
-  const { aba, mes, dia, semana } = await searchParams;
+  const { aba, mes, dia, semana, cadastrar } = await searchParams;
   await exigirPersonal(`/estudio/${id}`);
   const [estudio, empresa] = await Promise.all([lerEstudio(id), souContaEmpresa()]);
   if (!estudio || estudio.papel !== "coordenacao") notFound();
@@ -78,6 +78,7 @@ async function Conteudo({
           pagamentos={pagamentos}
           professores={professores}
           hoje={hoje}
+          cadastrar={typeof cadastrar === "string" ? cadastrar : undefined}
           agenda={qual === "agenda" ? await agendaDaAba(estudio, hoje, dia, semana) : undefined}
           complemento={await complementoDaAba(estudio, qual)}
         />

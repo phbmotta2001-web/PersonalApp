@@ -15,17 +15,20 @@ const porcento = (mat: number, des: number) => (mat + des ? `${Math.round((mat /
 export function AlunosEmExperimental({
   estudio,
   hoje,
+  inicial,
   atualizar,
   escolherTurmas,
 }: {
   estudio: EstudioCompleto;
   hoje: string;
+  /** Abre este aluno já na escolha de turmas. */
+  inicial?: string;
   atualizar: () => void;
   /** As turmas do aluno (o mesmo "Colocar em turmas" dos alunos), gravando como matrícula. */
   escolherTurmas: (alunoId: string) => ReactNode;
 }) {
-  const [aberto, setAberto] = useState<string | null>(null);
-  const [cadastrando, setCadastrando] = useState<string | null>(null);
+  const [aberto, setAberto] = useState<string | null>(inicial ?? null);
+  const [cadastrando, setCadastrando] = useState<string | null>(inicial ?? null);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   if (estudio.experimentais.length === 0) return null;
