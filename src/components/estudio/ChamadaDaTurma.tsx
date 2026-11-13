@@ -6,32 +6,40 @@ import { fazerChamada, type AlunoNaChamada } from "@/data/estudio";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 
 /**
- * Chamada da turma: o professor só marca a falta (✕). Quem não for marcado recebe presença.
- * Falta avisada pelo aluno já vem marcada.
+ * Chamada da turma: presença (✓) ou falta (✕) para cada aluno. Quem não for marcado recebe
+ * presença. Falta avisada pelo aluno já vem marcada.
  */
 export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alunos: AlunoNaChamada[]; feita: boolean }) {
   const router = useRouter();
   const avisadas = new Set(alunos.filter((a) => a.situacao === "falta_avisada").map((a) => a.id));
   const [faltas, setFaltas] = useState<Set<string>>(() => new Set(alunos.filter((a) => a.situacao === "falta").map((a) => a.id)));
+  const [confirmados, setConfirmados] = useState<Set<string>>(() => new Set(alunos.filter((a) => a.situacao === "presente").map((a) => a.id)));
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
   const [ocupado, iniciar] = useTransition();
   const marcaveis = alunos.filter((a) => !avisadas.has(a.id));
   const presentes = marcaveis.filter((a) => !faltas.has(a.id)).length;
 
-  const alternar = (id: string) => {
+  const marcar = (id: string, situacao: "presente" | "falta") => {
     setSalvo(false);
-    setFaltas((atual) => {
-      const novo = new Set(atual);
-      if (novo.has(id)) novo.delete(id);
-      else novo.add(id);
-      return novo;
-    });
+    const tira = (s: Set<string>) => {
+      const n = new Set(s);
+      n.delete(id);
+      return n;
+    };
+    const poe = (s: Set<string>) => new Set(s).add(id);
+    if (situacao === "falta") {
+      setFaltas(faltas.has(id) ? tira(faltas) : poe(faltas));
+      setConfirmados(tira(confirmados));
+    } else {
+      setConfirmados(confirmados.has(id) ? tira(confirmados) : poe(confirmados));
+      setFaltas(tira(faltas));
+    }
   };
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[14px] text-ink-3">Marque só quem faltou. Os outros ficam com presença.</p>
+      <p className="text-[14px] text-ink-3">Quem você não marcar fica com presença.</p>
       <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
         {alunos.map((a) => {
           const faltou = faltas.has(a.id);
@@ -45,9 +53,25 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
               {!avisadas.has(a.id) && (
                 <button
                   type="button"
+                  aria-pressed={confirmados.has(a.id)}
+                  aria-label={`${a.nome}: presente`}
+                  onClick={() => marcar(a.id, "presente")}
+                  className={`flex h-11 items-center gap-1.5 rounded-[12px] border px-3 text-[15px] font-bold ${
+                    confirmados.has(a.id) ? "border-transparent bg-ok/10 text-ok" : "border-line text-ink-3"
+                  }`}
+                >
+                  <span className="text-[17px] font-extrabold" aria-hidden="true">
+                    ✓
+                  </span>
+                  Presente
+                </button>
+              )}
+              {!avisadas.has(a.id) && (
+                <button
+                  type="button"
                   aria-pressed={faltou}
                   aria-label={`${a.nome}: falta`}
-                  onClick={() => alternar(a.id)}
+                  onClick={() => marcar(a.id, "falta")}
                   className={`flex h-11 items-center gap-1.5 rounded-[12px] border px-3 text-[15px] font-bold ${
                     faltou ? "border-transparent bg-bad/10 text-bad" : "border-line text-ink-3"
                   }`}

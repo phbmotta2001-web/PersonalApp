@@ -5,6 +5,7 @@ import { BarraDoPersonal } from "@/components/agenda/BarraDoPersonal";
 import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
+import { AulaEmAndamento } from "@/components/estudio/AulaEmAndamento";
 import { EstudioNoInicio } from "@/components/estudio/EstudioNoInicio";
 import { InicioDoSoEstudio } from "@/components/estudio/InicioDoSoEstudio";
 import { InstalarApp } from "@/components/InstalarApp";
@@ -12,7 +13,7 @@ import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/a
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
 import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
-import { aulasDeTurmaParaMim, meusEstudios } from "@/data/estudio";
+import { aulasDeTurmaParaMim, lerAulaParaChamada, meusEstudios, type AulaDeTurma } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { soNoEstudio } from "@/data/so-estudio";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
@@ -47,7 +48,16 @@ async function Conteudo() {
       meusEstudios(),
       aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
     ]);
-    return <InicioDoSoEstudio nome={personal.nomeCompleto} estudios={estudiosDoProfissional} aulasHoje={turmasDeHoje} agora={agora} />;
+    const emAndamento = await aulaEmAndamento(turmasDeHoje, agora);
+    return (
+      <InicioDoSoEstudio
+        nome={personal.nomeCompleto}
+        estudios={estudiosDoProfissional}
+        aulasHoje={turmasDeHoje}
+        agora={agora}
+        emAndamento={emAndamento && <AulaEmAndamento aula={emAndamento} />}
+      />
+    );
   }
   const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes, estudios, turmasHoje] = await Promise.all([
     contarAvisosNaoLidos(),
@@ -63,6 +73,7 @@ async function Conteudo() {
     meusEstudios(),
     aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
   ]);
+  const emAndamento = await aulaEmAndamento(turmasHoje, agora);
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
   );
@@ -126,6 +137,8 @@ async function Conteudo() {
 
       <InstalarApp />
       <AtivarNotificacoes texto="Receba na hora os pedidos e avisos dos alunos, os pagamentos e as mensalidades que vencem hoje." />
+
+      {emAndamento && <AulaEmAndamento aula={emAndamento} />}
 
       <EstudioNoInicio estudios={estudios} aulasHoje={turmasHoje} agora={agora} />
 
@@ -363,6 +376,13 @@ async function Conteudo() {
 }
 
 /** "qui 23/10" */
+/** Decisão 87: a aula de turma que o professor está dando agora (com a lista de alunos), se houver. */
+async function aulaEmAndamento(aulas: AulaDeTurma[], agora: Date) {
+  const t = agora.getTime();
+  const a = aulas.find((x) => !x.turno && !x.cancelada && Date.parse(x.inicio) <= t && Date.parse(x.fim) > t);
+  return a ? lerAulaParaChamada(a.id) : null;
+}
+
 function diaCurto(inicio: string): string {
   const { data } = emBrasilia(inicio);
   return `${curtoDoDia(diaDaSemana(data)).toLowerCase()} ${dataCurta(data)}`;

@@ -16,11 +16,14 @@ export function InicioDoSoEstudio({
   estudios,
   aulasHoje,
   agora,
+  emAndamento,
 }: {
   nome: string;
   estudios: MeuEstudio[];
   aulasHoje: AulaDeTurma[];
   agora: Date;
+  /** A caixa "Aula em andamento" (decisão 87), quando há aula agora. */
+  emAndamento?: React.ReactNode;
 }) {
   const doDia = aulasHoje.filter((a) => !a.cancelada && Date.parse(a.fim) > agora.getTime());
   return (
@@ -32,6 +35,8 @@ export function InicioDoSoEstudio({
 
       <InstalarApp />
       <AtivarNotificacoes texto="Receba os avisos do estúdio no celular." />
+
+      {emAndamento}
 
       <EstudioNoInicio estudios={estudios} aulasHoje={aulasHoje} agora={agora} />
 

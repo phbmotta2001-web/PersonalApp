@@ -665,6 +665,13 @@ export async function fazerChamada(aulaId: string, marcas: { aluno: string; situ
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a chamada.") } : { ok: true };
 }
 
+/** Decisão 87: presença ou falta de um aluno, sem fechar a chamada (caixa "Aula em andamento"). */
+export async function marcarPresenca(aulaId: string, alunoId: string, situacao: "presente" | "falta"): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("marcar_presenca", { p_aula: aulaId, p_aluno: alunoId, p_situacao: situacao });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível marcar.") } : { ok: true };
+}
+
 export interface AulaNaAgendaDoEstudio {
   id: string;
   inicio: string;
