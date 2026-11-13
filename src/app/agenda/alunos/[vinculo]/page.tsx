@@ -5,6 +5,7 @@ import { ConvidarParaConta } from "@/components/agenda/ConvidarParaConta";
 import { PausasDoAluno } from "@/components/agenda/PausasDoAluno";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
 import { SuspensaoAutomatica } from "@/components/agenda/SuspensaoAutomatica";
+import { TreinoDoAluno } from "@/components/agenda/TreinoDoAluno";
 import { Avatar } from "@/components/Avatar";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
@@ -15,6 +16,7 @@ import { listarCobrancas } from "@/data/cobrancas";
 import { listarPausas } from "@/data/pausas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { treinoDoVinculo } from "@/data/treino";
 import { lerMatricula, matriculasSuspensas, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { resumoDoMes } from "@/lib/aula";
@@ -46,7 +48,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
   const hojeBr = agoraEmBrasilia().data;
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -57,6 +59,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     origemDoSite(),
     listarPausas(vinculo, hojeBr),
     lerRegras(),
+    treinoDoVinculo(vinculo),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -208,6 +211,9 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           <span aria-hidden="true">›</span>
         </Link>
       )}
+
+      {/* Decisão 81: o treino de cada dia, só por texto; o aluno vê no app. */}
+      <TreinoDoAluno vinculoId={vinculo} dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} inicial={treino} />
 
       <section className="grid grid-cols-2 gap-2" aria-label="Este mês">
         <Numero titulo="Aulas dadas no mês" valor={resumo.dadas} />

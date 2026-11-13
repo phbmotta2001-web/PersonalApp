@@ -15,9 +15,10 @@ import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
+import { treinoDoVinculo } from "@/data/treino";
 import { lerMatricula, matriculasSuspensas, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
-import { agoraEmBrasilia } from "@/lib/expediente";
+import { agoraEmBrasilia, DIAS } from "@/lib/expediente";
 import { resumoDaModalidade, resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -60,7 +61,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -70,6 +71,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     pixParaAluno(vinculo),
     checkinsPendentesDoAluno(vinculo),
     matriculasSuspensas(),
+    treinoDoVinculo(vinculo),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -156,6 +158,21 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         ) : (
           <section className="rounded-[20px] border border-dashed border-line p-4 text-[14px] text-ink-3">
             {primeiro} ainda não marcou seus horários fixos. Quando marcar, suas aulas aparecem aqui.
+          </section>
+        )}
+
+        {/* Decisão 81: o treino de cada dia, escrito pelo personal. */}
+        {Object.keys(treino).length > 0 && (
+          <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Seu treino">
+            <h2 className="text-[17px] font-bold">Seu treino</h2>
+            <ul className="flex flex-col gap-1.5">
+              {DIAS.filter((d) => treino[d.valor]).map((d) => (
+                <li key={d.valor} className="flex gap-3 text-[15px]">
+                  <span className="w-20 shrink-0 font-bold">{d.nome}</span>
+                  <span className="whitespace-pre-line text-ink-2">{treino[d.valor]}</span>
+                </li>
+              ))}
+            </ul>
           </section>
         )}
 
