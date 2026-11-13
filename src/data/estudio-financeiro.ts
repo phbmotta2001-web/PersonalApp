@@ -51,10 +51,19 @@ export async function salvarValorProfessor(estudioId: string, personalId: string
 }
 
 /** Tabela de mensalidades: vezes na semana → centavos (vezes sem valor deixam de ser oferecidas). */
-export async function salvarPrecosEstudio(estudioId: string, precos: Partial<Record<number, number>>): Promise<Resposta> {
-  const lista = Object.entries(precos)
-    .filter(([, v]) => v != null)
-    .map(([vezes, v]) => ({ vezes: Number(vezes), valor_centavos: v as number }));
+export async function salvarPrecosEstudio(
+  estudioId: string,
+  precos: Partial<Record<number, number>>,
+  precosPlano: Partial<Record<number, Partial<Record<number, number>>>> = {},
+): Promise<Resposta> {
+  const linhas = (meses: number, tabela: Partial<Record<number, number>>) =>
+    Object.entries(tabela)
+      .filter(([, v]) => v != null)
+      .map(([vezes, v]) => ({ vezes: Number(vezes), meses, valor_centavos: v as number }));
+  const lista = [
+    ...linhas(1, precos),
+    ...Object.entries(precosPlano).flatMap(([meses, tabela]) => ([3, 6, 12].includes(Number(meses)) ? linhas(Number(meses), tabela ?? {}) : [])),
+  ];
   if (lista.some((p) => !Number.isInteger(p.vezes) || p.vezes < 1 || p.vezes > 7 || !Number.isInteger(p.valor_centavos) || p.valor_centavos < 100))
     return { ok: false, erro: "Cada mensalidade precisa ser de pelo menos R$ 1,00." };
   const supabase = await criarClienteSupabase();
@@ -75,6 +84,28 @@ export async function salvarPixEstudio(estudioId: string, p: { tipo: TipoChavePi
     p_cidade: dados.cidade,
   });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o Pix.") } : { ok: true };
+}
+
+/** Decisão 90: planos de 3, 6 e 12 meses oferecidos e a taxa de matrícula (null: não cobra). */
+export async function salvarPlanosEstudio(
+  estudioId: string,
+  planos: { meses: number; pagamento: "mensal" | "unico" }[],
+  taxaCentavos: number | null,
+): Promise<Resposta> {
+  if (planos.some((p) => ![3, 6, 12].includes(p.meses) || !["mensal", "unico"].includes(p.pagamento))) return { ok: false, erro: "Confira os planos." };
+  if (taxaCentavos != null && (!Number.isInteger(taxaCentavos) || taxaCentavos < 100)) return { ok: false, erro: "A taxa precisa ser de pelo menos R$ 1,00." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_planos_estudio", { p_estudio: estudioId, p_planos: planos, p_taxa: taxaCentavos });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar os planos.") } : { ok: true };
+}
+
+/** Plano do aluno (1, 3, 6 ou 12 meses; início "AAAA-MM-01") e se cobra a taxa de matrícula. */
+export async function salvarPlanoAluno(alunoId: string, meses: number, inicio: string | null, taxa: boolean): Promise<Resposta> {
+  if (![1, 3, 6, 12].includes(meses)) return { ok: false, erro: "Escolha o plano." };
+  if (inicio != null && !/^\d{4}-\d{2}-01$/.test(inicio)) return { ok: false, erro: "Confira o mês de início." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_plano_aluno", { p_aluno: alunoId, p_meses: meses, p_inicio: inicio, p_taxa: taxa });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o plano.") } : { ok: true };
 }
 
 export async function salvarMensalidadeAluno(alunoId: string, valorCentavos: number | null, dia: number | null): Promise<Resposta> {
@@ -148,7 +179,7 @@ export async function lerFinanceiroDoMes(estudioId: string, mes: string): Promis
   const [{ data: cobrancas }, { data: professores }] = await Promise.all([
     supabase
       .from("estudio_cobrancas")
-      .select("id, estudio_aluno_id, vencimento, valor_centavos, situacao, pago_em, aluno_avisou_em, estudio_alunos(nome)")
+      .select("id, estudio_aluno_id, vencimento, valor_centavos, situacao, pago_em, aluno_avisou_em, tipo, estudio_alunos(nome)")
       .eq("estudio_id", estudioId)
       .gte("vencimento", mes)
       .lt("vencimento", proximo)
@@ -159,7 +190,7 @@ export async function lerFinanceiroDoMes(estudioId: string, mes: string): Promis
     mensalidades: (cobrancas ?? []).map((c) => ({
       id: c.id,
       alunoId: c.estudio_aluno_id,
-      aluno: (c.estudio_alunos as unknown as { nome: string } | null)?.nome ?? "Aluno",
+      aluno: ((c.estudio_alunos as unknown as { nome: string } | null)?.nome ?? "Aluno") + (c.tipo === "taxa" ? " (taxa de matrícula)" : ""),
       vencimento: c.vencimento,
       valor: c.valor_centavos,
       situacao: c.situacao,

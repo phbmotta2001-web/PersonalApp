@@ -110,11 +110,22 @@ export interface ConfigDoEstudio {
   pix: { tipo: string; chave: string; nome: string; cidade: string } | null;
   /** Mensalidade por vezes na semana (1 a 7), em centavos. */
   precos: Partial<Record<number, number>>;
+  /** Decisão 90: planos de 3, 6 e 12 meses oferecidos, pagos mês a mês ou de uma vez. */
+  planos: PlanoDoEstudio[];
+  /** Valor POR MÊS de cada plano (meses → vezes → centavos). */
+  precosPlano: Partial<Record<number, Partial<Record<number, number>>>>;
+  /** Taxa de matrícula (vazio: não cobra). */
+  taxaMatricula: number | null;
   /** Dias e horários de funcionamento (vazio: ainda não definido). */
   funcionamento: Funcionamento;
 }
 
 export type TipoDeHorario = "turma" | "turno";
+
+export interface PlanoDoEstudio {
+  meses: 3 | 6 | 12;
+  pagamento: "mensal" | "unico";
+}
 
 export interface TurmaDoEstudio {
   id: string;
@@ -137,6 +148,11 @@ export interface AlunoDoEstudio {
   /** Exceção à tabela, em centavos. */
   valorMensal: number | null;
   diaVencimento: number | null;
+  /** Plano do aluno: 1 (mensal), 3, 6 ou 12 meses, e o mês em que começou ("AAAA-MM-01"). */
+  planoMeses: number;
+  planoInicio: string | null;
+  /** A taxa de matrícula sai junto com a próxima mensalidade. */
+  taxaPendente: boolean;
 }
 
 export interface EstudioCompleto {
@@ -167,11 +183,11 @@ export interface ExtraDoEstudio {
 export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | null> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return null;
-  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }] = await Promise.all([
+  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }, { data: planos }] = await Promise.all([
     supabase
       .from("estudios")
       .select(
-        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade",
+        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade, taxa_matricula_centavos",
       )
       .eq("id", estudioId)
       .maybeSingle(),
@@ -187,7 +203,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .order("inicio_min"),
     supabase
       .from("estudio_alunos")
-      .select("id, nome, whatsapp, aluno_id, valor_mensal_centavos, dia_vencimento")
+      .select("id, nome, whatsapp, aluno_id, valor_mensal_centavos, dia_vencimento, plano_meses, plano_inicio, taxa_pendente")
       .eq("estudio_id", estudioId)
       .eq("situacao", "ativo")
       .order("nome"),
@@ -196,7 +212,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .from("estudio_membros")
       .select("personal_id, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual")
       .eq("estudio_id", estudioId),
-    supabase.from("estudio_precos").select("vezes, valor_centavos").eq("estudio_id", estudioId),
+    supabase.from("estudio_precos").select("vezes, meses, valor_centavos").eq("estudio_id", estudioId),
     supabase.from("estudio_funcionamento").select("dia_semana, inicio_min, fim_min").eq("estudio_id", estudioId),
     supabase
       .from("turmas")
@@ -206,6 +222,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .gte("avulsa", new Date(Date.now() - 3 * 3600_000).toISOString().slice(0, 10))
       .order("avulsa")
       .order("inicio_min"),
+    supabase.from("estudio_planos").select("meses, pagamento").eq("estudio_id", estudioId).order("meses"),
   ]);
   const valoresDe = (v: { valor_hora_centavos: number | null; valor_aula_centavos: number | null; valor_por_aluno_centavos: number | null; percentual: number | string | null } | undefined): ValoresDePagamento => ({
     valorHora: v?.valor_hora_centavos ?? null,
@@ -228,7 +245,15 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       valores: valoresDe(e),
       maxAlunosTurma: e.max_alunos_turma,
       pix: e.pix_tipo && e.pix_chave ? { tipo: e.pix_tipo, chave: e.pix_chave, nome: e.pix_nome ?? "", cidade: e.pix_cidade ?? "" } : null,
-      precos: Object.fromEntries((precos ?? []).map((p) => [p.vezes, p.valor_centavos])),
+      precos: Object.fromEntries((precos ?? []).filter((p) => (p.meses ?? 1) === 1).map((p) => [p.vezes, p.valor_centavos])),
+      planos: (planos ?? []).map((p) => ({ meses: p.meses as 3 | 6 | 12, pagamento: p.pagamento as "mensal" | "unico" })),
+      precosPlano: (precos ?? [])
+        .filter((p) => (p.meses ?? 1) > 1)
+        .reduce<Partial<Record<number, Partial<Record<number, number>>>>>((acc, p) => {
+          acc[p.meses] = { ...acc[p.meses], [p.vezes]: p.valor_centavos };
+          return acc;
+        }, {}),
+      taxaMatricula: e.taxa_matricula_centavos ?? null,
       funcionamento: Object.fromEntries((funcionamento ?? []).map((f) => [f.dia_semana, { inicio: f.inicio_min, fim: f.fim_min }])),
     },
     equipe: ((equipe ?? []) as { personal_id: string; nome: string; papel: string }[]).map((m) => ({
@@ -265,6 +290,9 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       turmas: doAluno(a.id),
       valorMensal: a.valor_mensal_centavos,
       diaVencimento: a.dia_vencimento,
+      planoMeses: a.plano_meses ?? 1,
+      planoInicio: a.plano_inicio ?? null,
+      taxaPendente: a.taxa_pendente === true,
     })),
   };
 }
@@ -694,6 +722,43 @@ export async function salvarFeriadosDoEstudio(
     p_excecoes: regra.excecoes.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
   });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar os feriados.") } : { ok: true };
+}
+
+export interface DiaFechado {
+  data: string;
+  motivo: string | null;
+}
+
+/** Decisão 91: dias em que a coordenação fechou o estúdio, de hoje em diante. */
+export async function lerDiasFechados(estudioId: string, hoje: string): Promise<DiaFechado[]> {
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase
+    .from("estudio_dias_fechados")
+    .select("data, motivo")
+    .eq("estudio_id", estudioId)
+    .gte("data", hoje)
+    .order("data");
+  return (data ?? []).map((d) => ({ data: d.data as string, motivo: d.motivo ?? null }));
+}
+
+/** Fecha o estúdio num dia: cancela todas as aulas e avisa alunos e professores. Devolve quantos foram avisados. */
+export async function fecharDiaEstudio(
+  estudioId: string,
+  data: string,
+  motivo: string,
+): Promise<{ ok: true; avisados: number } | { ok: false; erro: string }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { ok: false, erro: "Escolha o dia." };
+  const texto = motivo.trim().slice(0, 80);
+  const supabase = await criarClienteSupabase();
+  const { data: n, error } = await supabase.rpc("fechar_dia_estudio", { p_estudio: estudioId, p_data: data, p_motivo: texto || null });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível fechar o dia.") } : { ok: true, avisados: (n as number) ?? 0 };
+}
+
+export async function reabrirDiaEstudio(estudioId: string, data: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return { ok: false, erro: "Escolha o dia." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("reabrir_dia_estudio", { p_estudio: estudioId, p_data: data });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível reabrir o dia.") } : { ok: true };
 }
 
 export interface AulaNaAgendaDoEstudio {

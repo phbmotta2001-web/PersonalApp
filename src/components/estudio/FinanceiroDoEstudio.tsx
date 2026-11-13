@@ -14,6 +14,8 @@ import {
   salvarMensalidadeAluno,
   salvarPixEstudio,
   salvarPrecosEstudio,
+  salvarPlanosEstudio,
+  salvarPlanoAluno,
   salvarValorProfessor,
   type FinanceiroDoMes,
   type MesDeAlunos,
@@ -246,9 +248,18 @@ function FuncionamentoDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
   );
 }
 
+const NOME_PLANO: Record<number, string> = { 1: "Mensal", 3: "Trimestral", 6: "Semestral", 12: "Anual" };
+
 function TabelaDeMensalidades({ estudio }: { estudio: EstudioCompleto }) {
   const router = useRouter();
   const [precos, setPrecos] = useState(estudio.config.precos);
+  const [planos, setPlanos] = useState(estudio.config.planos);
+  const [precosPlano, setPrecosPlano] = useState(estudio.config.precosPlano);
+  const [comTaxa, setComTaxa] = useState(estudio.config.taxaMatricula != null);
+  const [taxa, setTaxa] = useState<number | null>(estudio.config.taxaMatricula);
+  const alternarPlano = (meses: 3 | 6 | 12) =>
+    setPlanos(planos.some((p) => p.meses === meses) ? planos.filter((p) => p.meses !== meses) : [...planos, { meses, pagamento: "mensal" as const }].sort((a, b) => a.meses - b.meses));
+  const valoresDosPlanos = Object.values(precosPlano).flatMap((x) => Object.values(x ?? {}));
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
@@ -263,14 +274,67 @@ function TabelaDeMensalidades({ estudio }: { estudio: EstudioCompleto }) {
         ))}
       </div>
       <p className="text-[13px] text-ink-3">Valor diferente para um aluno: em Alunos, abra o aluno.</p>
+
+      <div className="flex flex-col gap-2 border-t border-line pt-3">
+        <p className="font-bold">Planos mais longos (opcionais)</p>
+        <div className="flex flex-wrap gap-2">
+          {([3, 6, 12] as const).map((m) => (
+            <Chip key={m} ativo={planos.some((p) => p.meses === m)} onClick={() => alternarPlano(m)}>
+              {NOME_PLANO[m]}
+            </Chip>
+          ))}
+        </div>
+        {planos.map((p) => (
+          <div key={p.meses} className="flex flex-col gap-2 rounded-[16px] bg-surface-2 p-3">
+            <p className="text-[14px] font-bold">{NOME_PLANO[p.meses]} · valor por mês</p>
+            <div className="flex flex-wrap gap-2">
+              <Chip ativo={p.pagamento === "mensal"} onClick={() => setPlanos(planos.map((x) => (x.meses === p.meses ? { ...x, pagamento: "mensal" } : x)))}>
+                Paga mês a mês
+              </Chip>
+              <Chip ativo={p.pagamento === "unico"} onClick={() => setPlanos(planos.map((x) => (x.meses === p.meses ? { ...x, pagamento: "unico" } : x)))}>
+                Paga de uma vez
+              </Chip>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {VEZES_POR_SEMANA.map((v) => (
+                <CampoDinheiro
+                  key={v}
+                  rotulo={`${v}x na semana`}
+                  valor={precosPlano[p.meses]?.[v] ?? null}
+                  dica={precos[v] == null ? undefined : centavosParaCampo(precos[v]!)}
+                  onChange={(c) => setPrecosPlano({ ...precosPlano, [p.meses]: { ...precosPlano[p.meses], [v]: c ?? undefined } })}
+                />
+              ))}
+            </div>
+            {p.pagamento === "unico" && <p className="text-[13px] text-ink-3">O aluno paga {p.meses} meses juntos, no começo de cada período.</p>}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2 border-t border-line pt-3">
+        <label className="flex items-center gap-2 font-bold">
+          <input type="checkbox" checked={comTaxa} onChange={(e) => setComTaxa(e.target.checked)} className="size-5 accent-estudio" />
+          Cobrar taxa de matrícula
+        </label>
+        {comTaxa && (
+          <div className="sm:w-1/2">
+            <CampoDinheiro rotulo="Valor da taxa" valor={taxa} onChange={setTaxa} />
+            <p className="pt-1 text-[13px] text-ink-3">Sai junto com a primeira mensalidade dos alunos novos (dá para desmarcar no aluno).</p>
+          </div>
+        )}
+      </div>
+
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
       <button
         type="button"
         disabled={ocupado}
         onClick={() => {
-          if (Object.values(precos).some((x) => x != null && Number.isNaN(x))) return setAviso({ tipo: "erro", texto: "Confira os valores." });
+          if ([...Object.values(precos), ...valoresDosPlanos].some((x) => x != null && Number.isNaN(x))) return setAviso({ tipo: "erro", texto: "Confira os valores." });
+          if (comTaxa && (taxa == null || Number.isNaN(taxa))) return setAviso({ tipo: "erro", texto: "Digite o valor da taxa de matrícula." });
           iniciar(async () => {
-            const r = await salvarPrecosEstudio(estudio.id, precos);
+            const oferecidos = Object.fromEntries(planos.map((p) => [p.meses, precosPlano[p.meses] ?? {}]));
+            const a = await salvarPlanosEstudio(estudio.id, planos, comTaxa ? taxa : null);
+            const r = a.ok ? await salvarPrecosEstudio(estudio.id, precos, oferecidos) : a;
             setAviso(r.ok ? { tipo: "ok", texto: "Tabela salva." } : { tipo: "erro", texto: r.erro });
             if (r.ok) router.refresh();
           });
@@ -393,16 +457,44 @@ export function ValorDoProfessor({ estudio, membro }: { estudio: EstudioCompleto
 export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioCompleto; aluno: AlunoDoEstudio }) {
   const router = useRouter();
   const vezes = Math.min(7, aluno.turmas.length);
-  const daTabela = vezes ? (estudio.config.precos[vezes] ?? null) : null;
+  const [plano, setPlano] = useState(aluno.planoMeses);
+  const daTabela = vezes ? (estudio.config.precosPlano[plano]?.[vezes] ?? estudio.config.precos[vezes] ?? null) : null;
   const [valor, setValor] = useState(aluno.valorMensal);
   const [dia, setDia] = useState(aluno.diaVencimento ?? 10);
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const [inicio, setInicio] = useState((aluno.planoInicio ?? `${mesAtual}-01`).slice(0, 7));
+  const taxaDoEstudio = estudio.config.taxaMatricula;
+  // Aluno que ainda não é cobrado: a taxa já vem marcada (se o estúdio cobra).
+  const [taxa, setTaxa] = useState(aluno.taxaPendente || (!aluno.diaVencimento && taxaDoEstudio != null));
+  const ofertas = [1, ...estudio.config.planos.map((p) => p.meses)];
+  const unico = estudio.config.planos.find((p) => p.meses === plano)?.pagamento === "unico";
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [ocupado, iniciar] = useTransition();
   return (
     <div className="flex flex-col gap-2 border-t border-line pt-2.5">
       <p className="text-[14px] font-bold text-ink-2">
-        Mensalidade{vezes ? ` · ${vezes}x na semana: ${reais(daTabela)} na tabela` : ""}
+        Mensalidade{vezes ? ` · ${vezes}x na semana: ${reais(daTabela)} por mês na tabela` : ""}
       </p>
+      {ofertas.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {ofertas.map((m) => (
+            <Chip key={m} ativo={plano === m} onClick={() => setPlano(m)}>
+              {NOME_PLANO[m]}
+            </Chip>
+          ))}
+        </div>
+      )}
+      {plano > 1 && (
+        <label className={ROTULO + " sm:w-1/2"}>
+          Começou em
+          <input type="month" value={inicio} onChange={(e) => setInicio(e.target.value)} className={ESTILO_CAIXA} />
+        </label>
+      )}
+      {plano > 1 && unico && daTabela != null && (
+        <p className="text-[13px] text-ink-3">
+          Paga {centavosParaReais((valor ?? daTabela) * plano)} de uma vez, a cada {plano} meses.
+        </p>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <CampoDinheiro rotulo="Valor diferente (opcional)" valor={valor} dica={daTabela == null ? undefined : centavosParaCampo(daTabela)} onChange={setValor} />
         <label className={ROTULO}>
@@ -416,6 +508,12 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
           </select>
         </label>
       </div>
+      {taxaDoEstudio != null && (
+        <label className="flex items-center gap-2 text-[14px]">
+          <input type="checkbox" checked={taxa} onChange={(e) => setTaxa(e.target.checked)} className="size-5 accent-estudio" />
+          Cobrar taxa de matrícula ({centavosParaReais(taxaDoEstudio)}) junto com a próxima mensalidade
+        </label>
+      )}
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
       <button
         type="button"
@@ -423,6 +521,8 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
         onClick={() =>
           iniciar(async () => {
             if (valor != null && Number.isNaN(valor)) return setAviso({ tipo: "erro", texto: "Confira o valor." });
+            const p = await salvarPlanoAluno(aluno.id, plano, plano > 1 ? `${inicio}-01` : null, taxaDoEstudio != null && taxa);
+            if (!p.ok) return setAviso({ tipo: "erro", texto: p.erro });
             const r = await salvarMensalidadeAluno(aluno.id, valor, dia);
             setAviso(r.ok ? { tipo: "ok", texto: "Mensalidade salva." } : { tipo: "erro", texto: r.erro });
             if (r.ok) router.refresh();
@@ -610,8 +710,23 @@ function PlanosDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
 }
 
 /** Mensalidade do aluno pelo plano (vezes na semana) ou pela exceção dele. */
-const mensalidadeDe = (estudio: EstudioCompleto, a: AlunoDoEstudio) =>
-  a.turmas.length === 0 ? 0 : (a.valorMensal ?? estudio.config.precos[Math.min(7, a.turmas.length)] ?? 0);
+/** Valor POR MÊS do aluno: exceção, tabela do plano dele ou tabela mensal (decisão 90). */
+const mensalidadeDe = (estudio: EstudioCompleto, a: AlunoDoEstudio) => {
+  if (a.turmas.length === 0) return 0;
+  const v = Math.min(7, a.turmas.length);
+  return a.valorMensal ?? estudio.config.precosPlano[a.planoMeses]?.[v] ?? estudio.config.precos[v] ?? 0;
+};
+
+/** O que o aluno paga no mês ("AAAA-MM"): no plano pago de uma vez, o total só no 1º mês de cada período. */
+const cobrancaNoMes = (estudio: EstudioCompleto, a: AlunoDoEstudio, mes: string) => {
+  const valor = mensalidadeDe(estudio, a);
+  const plano = estudio.config.planos.find((p) => p.meses === a.planoMeses);
+  if (!plano || plano.pagamento !== "unico") return valor;
+  const [ai, mi] = (a.planoInicio ?? `${mes}-01`).split("-").map(Number);
+  const [am, mm] = mes.split("-").map(Number);
+  const passados = am * 12 + mm - (ai * 12 + mi);
+  return passados >= 0 && passados % plano.meses === 0 ? valor * plano.meses : 0;
+};
 
 /**
  * Decisão 85: a projeção do mês, bem grande. Arrecadado sobre o total previsto, quanto falta e quem
@@ -627,13 +742,13 @@ function contasDoMes(estudio: EstudioCompleto, mes: string, hoje: string, dados:
       ? []
       : estudio.alunos
           // Todo aluno ativo com plano entra na previsão do mês, mesmo sem dia de vencimento (vencimento vazio).
-          .filter((x) => mensalidadeDe(estudio, x) > 0 && !ativas.some((c) => c.alunoId === x.id))
+          .filter((x) => cobrancaNoMes(estudio, x, mes) > 0 && !ativas.some((c) => c.alunoId === x.id))
           .map((x) => ({
             id: `prevista-${x.id}`,
             alunoId: x.id,
             aluno: x.nome,
             vencimento: x.diaVencimento == null ? "" : `${mes}-${String(Math.min(x.diaVencimento, ultimoDia)).padStart(2, "0")}`,
-            valor: mensalidadeDe(estudio, x),
+            valor: cobrancaNoMes(estudio, x, mes),
             alunoAvisou: false,
           }));
   const arrecadado = ativas.filter((x) => x.situacao === "paga").reduce((s, x) => s + x.valor, 0);
