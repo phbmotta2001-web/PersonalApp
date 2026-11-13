@@ -16,7 +16,7 @@ import { aniversariantesDoMes, listarMeusAlunos } from "@/data/convites";
 import { aulasDeTurmaParaMim, lerAulaParaChamada, meusEstudios, type AulaDeTurma } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { soNoEstudio } from "@/data/so-estudio";
-import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
+import { listarAulas, matriculasAtivasPorAluno, matriculasSuspensas } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { situacaoDaCobranca } from "@/lib/cobranca";
 import { agoraEmBrasilia, curtoDoDia, dataCurta, diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
@@ -59,7 +59,7 @@ async function Conteudo() {
       />
     );
   }
-  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes, estudios, turmasHoje] = await Promise.all([
+  const [naoLidos, pedidos, aulas, financeiro, cobrancas, aniversarios, suspensas, alunos, decidir, reposicoes, estudios, turmasHoje, matriculas] = await Promise.all([
     contarAvisosNaoLidos(),
     pedidosPendentes(),
     listarAulas(agora.toISOString(), new Date(agora.getTime() + 7 * 86_400_000).toISOString()),
@@ -72,7 +72,12 @@ async function Conteudo() {
     reposicoesPorAluno(),
     meusEstudios(),
     aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
+    matriculasAtivasPorAluno(),
   ]);
+  // Decisão 88: aluno que aceitou o convite nos últimos 30 dias e ainda não está na agenda.
+  const recemChegados = alunos.filter(
+    (a) => a.situacao === "ativo" && a.aceitoEm && agora.getTime() - Date.parse(a.aceitoEm) < 30 * 86_400_000 && !matriculas[a.vinculoId],
+  );
   const emAndamento = await aulaEmAndamento(turmasHoje, agora);
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
@@ -258,12 +263,17 @@ async function Conteudo() {
       <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
       <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Precisa de você">
         <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
-        {pedidos.length + decidir.length + avisaram.length + atrasadas.length === 0 ? (
+        {pedidos.length + decidir.length + avisaram.length + atrasadas.length + recemChegados.length === 0 ? (
           <p className="flex items-center gap-2 pb-1 text-[14px] text-ok">
             <Icone nome="certo" className="size-4" /> Tudo em dia por aqui.
           </p>
         ) : (
           <ul className="flex flex-col divide-y divide-line">
+            {recemChegados.map((a) => (
+              <Pendencia key={a.vinculoId} href={`/agenda/alunos/${a.vinculoId}/matricula`} icone="calendario" tom="text-brand">
+                <strong>{a.nome.split(" ")[0]}</strong> completou o cadastro: inclua na sua agenda
+              </Pendencia>
+            ))}
             {pedidos.map((p) => (
               <Pendencia key={p.id} href={`/agenda/aula/${p.id}`} icone="calendario" tom="text-gold">
                 <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
@@ -277,7 +287,7 @@ async function Conteudo() {
             ))}
             {avisaram.map((c) => (
               <Pendencia key={c.id} href="/agenda/financeiro" icone="certo" tom="text-ok">
-                <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}
+                <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}: confirme o recebimento em Financeiro
               </Pendencia>
             ))}
             {atrasadas.slice(0, 3).map((c) => (
