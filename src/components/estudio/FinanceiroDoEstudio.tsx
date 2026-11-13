@@ -716,7 +716,11 @@ function CustoComProfissionais({ estudio, custos, previsto }: { estudio: Estudio
           <span className="tabular-nums">{centavosParaReais(total)}</span>
         </li>
       </ul>
-      <p className="text-[13px] text-ink-3">{previsto ? "Previsto para o mês: as aulas já dadas e as que ainda vão acontecer." : "As aulas já dadas no mês."}</p>
+      <p className="text-[13px] text-ink-3">{estudio.config.pagamentoModelo === "percentual"
+          ? "Pelo mês: a % da mensalidade dos alunos das turmas de cada um, mais as reposições."
+          : previsto
+            ? "Previsto para o mês: as aulas já dadas e as que ainda vão acontecer."
+            : "As aulas já dadas no mês."}</p>
     </section>
   );
 }
@@ -864,14 +868,19 @@ function Professores({ estudio, mes, dados, atualizar }: { estudio: EstudioCompl
     const aulas = `${p.aulas} aula${p.aulas === 1 ? "" : "s"}`;
     if (modelo === "hora") return `${aulas} · ${horas} h`;
     if (modelo === "aula_comissao") return `${aulas} · ${p.presencas} presença${p.presencas === 1 ? "" : "s"}`;
-    return `${aulas} · parte da mensalidade dos alunos`;
+    return `${aulas} dadas · % da mensalidade dos alunos das turmas dele`;
   };
   return (
     <section className="flex flex-col gap-2" aria-label="Pagamento dos professores">
       <h3 className="text-[16px] font-bold">Pagamento dos professores</h3>
-      <p className="text-[13px] text-ink-3">Conta só as aulas já dadas e não canceladas. O pagamento é feito por fora; aqui você marca o que já pagou.</p>
+      <p className="text-[13px] text-ink-3">
+        {modelo === "percentual"
+          ? "Pelo mês: a % da mensalidade dos alunos das turmas de cada professor. Reposições são pagas à parte, por aula."
+          : "Conta as aulas já dadas e não canceladas."}{" "}
+        O pagamento é feito por fora; aqui você marca o que já pagou.
+      </p>
       {dados.professores.length === 0 ? (
-        <p className="text-ink-3">Nenhuma aula dada neste mês.</p>
+        <p className="text-ink-3">Nenhum professor neste mês.</p>
       ) : (
         <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
           {dados.professores.map((p) => (
