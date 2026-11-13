@@ -625,19 +625,19 @@ function contasDoMes(estudio: EstudioCompleto, mes: string, hoje: string, dados:
     mes < hoje.slice(0, 7)
       ? []
       : estudio.alunos
-          .filter((x) => x.diaVencimento != null && mensalidadeDe(estudio, x) > 0 && !ativas.some((c) => c.alunoId === x.id))
+          // Todo aluno ativo com plano entra na previsão do mês, mesmo sem dia de vencimento (vencimento vazio).
+          .filter((x) => mensalidadeDe(estudio, x) > 0 && !ativas.some((c) => c.alunoId === x.id))
           .map((x) => ({
             id: `prevista-${x.id}`,
             aluno: x.nome,
-            vencimento: `${mes}-${String(Math.min(x.diaVencimento ?? 1, ultimoDia)).padStart(2, "0")}`,
+            vencimento: x.diaVencimento == null ? "" : `${mes}-${String(Math.min(x.diaVencimento, ultimoDia)).padStart(2, "0")}`,
             valor: mensalidadeDe(estudio, x),
             alunoAvisou: false,
-          }))
-          .filter((x) => x.vencimento >= hoje);
+          }));
   const arrecadado = ativas.filter((x) => x.situacao === "paga").reduce((s, x) => s + x.valor, 0);
   const total = ativas.reduce((s, x) => s + x.valor, 0) + previstas.reduce((s, x) => s + x.valor, 0);
   const falta = total - arrecadado;
-  const devendo = [...ativas.filter((x) => x.situacao === "aberta"), ...previstas].sort((x, y) => x.vencimento.localeCompare(y.vencimento));
+  const devendo = [...ativas.filter((x) => x.situacao === "aberta"), ...previstas].sort((x, y) => (x.vencimento || "9999").localeCompare(y.vencimento || "9999"));
   return { arrecadado, total, falta, devendo };
 }
 
@@ -664,13 +664,13 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
           <h3 className="text-[15px] font-bold">Alunos que ainda não pagaram ({devendo.length})</h3>
           <ul className="flex flex-col divide-y divide-line">
             {mostrar.map((c) => {
-              const atrasada = c.vencimento < hoje;
+              const atrasada = c.vencimento !== "" && c.vencimento < hoje;
               return (
                 <li key={c.id} className="flex flex-wrap items-baseline gap-x-2 py-2 text-[15px]">
                   <span className="min-w-0 flex-1 font-semibold">{c.aluno}</span>
                   <span className="font-extrabold tabular-nums">{centavosParaReais(c.valor)}</span>
                   <span className={`basis-full text-[13px] ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
-                    {atrasada ? `venceu em ${dataBr(c.vencimento)}` : c.vencimento === hoje ? "vence hoje" : `vence em ${dataBr(c.vencimento)}`}
+                    {!c.vencimento ? "sem dia de vencimento" : atrasada ? `venceu em ${dataBr(c.vencimento)}` : c.vencimento === hoje ? "vence hoje" : `vence em ${dataBr(c.vencimento)}`}
                     {c.alunoAvisou && " · avisou que pagou"}
                   </span>
                 </li>
