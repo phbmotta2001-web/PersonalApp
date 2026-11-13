@@ -12,7 +12,7 @@ import {
   type EstudioCompleto,
   type TurmaDoEstudio,
 } from "@/data/estudio";
-import { marcarMensalidade, type FaltasDoProfessor, type FinanceiroDoMes, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
+import { marcarMensalidade, type FaltasDoProfessor, type FinanceiroDoMes, type ResumoDoProfessor, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
 import { textoDoVencimento } from "@/lib/cobranca";
 import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
@@ -38,10 +38,13 @@ export function GestaoDoEstudio({
   agenda,
   complemento,
   pagamentos,
+  professores,
   hoje,
 }: {
   estudio: EstudioCompleto;
   aba: Aba;
+  /** Só na aba Professores: faltas no mês e previsão do pagamento (decisão 83). */
+  professores?: ResumoDoProfessor[];
   /** Só na aba Agenda: a grade da semana, montada no servidor. */
   agenda?: React.ReactNode;
   /** Partes montadas no servidor que vão junto da aba (férias e faltas, reposição). */
@@ -59,7 +62,7 @@ export function GestaoDoEstudio({
       {aba === "agenda" && agenda}
       {/* Decisão 68: sem lista de turmas; a agenda mostra tudo e "Editar" adiciona, remove e dá professor. */}
       {aba === "agenda" && <EditarHorarios estudio={estudio} hoje={hoje} atualizar={() => router.refresh()} />}
-      {aba === "equipe" && <Equipe estudio={estudio} atualizar={() => router.refresh()} />}
+      {aba === "equipe" && <Equipe estudio={estudio} resumo={professores ?? []} atualizar={() => router.refresh()} />}
       {aba === "alunos" && <Alunos estudio={estudio} pagamentos={pagamentos} hoje={hoje} atualizar={() => router.refresh()} />}
       {aba === "financeiro" && financeiro && <FinanceiroDoEstudio estudio={estudio} {...financeiro} />}
       {aba === "ajustes" && <AjustesDoEstudio estudio={estudio} />}
@@ -70,7 +73,42 @@ export function GestaoDoEstudio({
 
 // ─── Equipe ─────────────────────────────────────────────────────────────────
 
-function Equipe({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: () => void }) {
+/** Decisão 83: faltas no mês, ocupação das turmas e quanto deve receber no fim do mês. */
+function NumerosDoProfessor({ estudio, personalId, resumo }: { estudio: EstudioCompleto; personalId: string; resumo?: ResumoDoProfessor }) {
+  const turmas = estudio.turmas.filter((t) => t.tipo === "turma" && t.professorId === personalId);
+  const vagas = turmas.reduce((s, t) => s + t.vagas, 0);
+  const ocupadas = turmas.reduce((s, t) => s + Math.min(t.alunos.length, t.vagas), 0);
+  const pct = vagas ? Math.round((ocupadas / vagas) * 100) : 0;
+  const faltas = resumo?.faltas ?? 0;
+  return (
+    <span className="grid basis-full grid-cols-3 gap-1.5 text-[12.5px]">
+      <span className="flex flex-col rounded-[10px] bg-surface-2 px-2 py-1.5">
+        <span className="text-ink-3">Faltas no mês</span>
+        <b className={`text-[15px] ${faltas > 0 ? "text-bad" : ""}`}>{faltas}</b>
+      </span>
+      <span className="flex flex-col rounded-[10px] bg-surface-2 px-2 py-1.5">
+        <span className="text-ink-3">Ocupação</span>
+        {vagas ? (
+          <>
+            <b className="text-[15px]">{pct}%</b>
+            <span className="text-ink-3">
+              {vagas - ocupadas} {vagas - ocupadas === 1 ? "vaga livre" : "vagas livres"} de {vagas}
+            </span>
+          </>
+        ) : (
+          <b className="text-[15px]">—</b>
+        )}
+      </span>
+      <span className="flex flex-col rounded-[10px] bg-surface-2 px-2 py-1.5">
+        <span className="text-ink-3">A receber</span>
+        <b className="text-[15px]">{resumo?.previsto != null ? centavosParaReais(resumo.previsto) : "—"}</b>
+        <span className="text-ink-3">previsto no mês</span>
+      </span>
+    </span>
+  );
+}
+
+function Equipe({ estudio, resumo, atualizar }: { estudio: EstudioCompleto; resumo: ResumoDoProfessor[]; atualizar: () => void }) {
   const [link, setLink] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -106,6 +144,7 @@ function Equipe({ estudio, atualizar }: { estudio: EstudioCompleto; atualizar: (
                 Remover
               </button>
             )}
+            <NumerosDoProfessor estudio={estudio} personalId={m.personalId} resumo={resumo.find((x) => x.personalId === m.personalId)} />
           </li>
         ))}
       </ul>

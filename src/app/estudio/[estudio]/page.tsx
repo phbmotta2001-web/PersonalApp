@@ -8,7 +8,7 @@ import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio"
 import { Carregando } from "@/components/Formulario";
 import { souContaEmpresa } from "@/data/conta";
 import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
-import { faltasDosProfessores, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos } from "@/data/estudio-financeiro";
+import { faltasDosProfessores, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos, resumoDosProfessores } from "@/data/estudio-financeiro";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { RegrasDosAlunos } from "@/components/estudio/RegrasDosAlunos";
@@ -59,6 +59,7 @@ async function Conteudo({
         ]).then(([dados, historico, faltas]) => ({ mes: mesEscolhido, hoje, dados, historico, faltas }))
       : undefined;
   const pagamentos = qual === "alunos" && estudio.config.tipo === "estudio" ? await pagamentosDosAlunos(estudio.id, hoje) : undefined;
+  const professores = qual === "equipe" ? await resumoDosProfessores(estudio.id, hoje, abertos.length ? abertos : null) : undefined;
   const titulo = ABAS_DA_COORDENACAO.find((a) => a.valor === qual)!.rotulo;
   return (
     <>
@@ -71,6 +72,7 @@ async function Conteudo({
           aba={qual}
           financeiro={financeiro}
           pagamentos={pagamentos}
+          professores={professores}
           hoje={hoje}
           agenda={qual === "agenda" ? await agendaDaAba(estudio, hoje, dia, semana) : undefined}
           complemento={await complementoDaAba(estudio, qual)}

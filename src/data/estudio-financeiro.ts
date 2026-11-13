@@ -327,3 +327,29 @@ export async function faltasDosProfessores(estudioId: string, mes: string, hoje:
   }
   return [...contagem].map(([personalId, c]) => ({ personalId, faltas: c.faltas.size, ferias: c.ferias.size }));
 }
+
+export interface ResumoDoProfessor {
+  personalId: string;
+  /** Dias de falta no mês (até hoje). */
+  faltas: number;
+  /** Quanto deve receber no fim do mês, contando as aulas que ainda vão acontecer (null: sem a migração 46). */
+  previsto: number | null;
+}
+
+/** Aba Professores (decisão 83): faltas no mês e previsão do pagamento de cada professor. */
+export async function resumoDosProfessores(estudioId: string, hoje: string, diasAbertos: number[] | null): Promise<ResumoDoProfessor[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return [];
+  const mes = hoje.slice(0, 7);
+  const [faltas, { data, error }] = await Promise.all([
+    faltasDosProfessores(estudioId, mes, hoje, diasAbertos),
+    supabase.rpc("previsao_pagamento_professores", { p_estudio: estudioId, p_mes: `${mes}-01` }),
+  ]);
+  const previstos = new Map(error ? [] : ((data ?? []) as { personal_id: string; valor_centavos: number }[]).map((p) => [p.personal_id, p.valor_centavos]));
+  const ids = new Set([...faltas.map((f) => f.personalId), ...previstos.keys()]);
+  return [...ids].map((personalId) => ({
+    personalId,
+    faltas: faltas.find((f) => f.personalId === personalId)?.faltas ?? 0,
+    previsto: error ? null : (previstos.get(personalId) ?? 0),
+  }));
+}
