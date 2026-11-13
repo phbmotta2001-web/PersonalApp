@@ -110,6 +110,7 @@ async function Conteudo() {
 
       <nav className="order-1 flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4 lg:order-none" aria-label="Mais do financeiro">
         <Linha href="/agenda/cobrancas" icone="dinheiro" titulo="Todas as cobranças" texto="Em aberto, pagas e canceladas" />
+        <Linha href="/agenda/financeiro/relatorio" icone="calendario" titulo="Relatório do mês" texto="O que você recebeu, para o carnê-leão ou o contador" />
         <Linha
           href="/agenda/valores"
           icone="estrela"

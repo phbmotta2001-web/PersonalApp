@@ -4,7 +4,7 @@
 // As regras ficam no banco (gerar_cobrancas, marcar_cobranca_paga, aluno_avisar_pagamento…).
 
 import QRCode from "qrcode";
-import { mensalidadesPrevistas, type Cobranca, type FormaPagamento } from "@/lib/cobranca";
+import { descricaoDaCobranca, mensalidadesPrevistas, type Cobranca, type FormaPagamento } from "@/lib/cobranca";
 import { reaisParaCentavos } from "@/lib/matricula";
 import { pixCopiaECola, problemasDoPix, type DadosPix, type TipoChavePix } from "@/lib/pix";
 import { frase } from "@/lib/formato";
@@ -336,4 +336,58 @@ export async function recebidoPorMes(hoje: string, meses = 6): Promise<{ mes: st
     soma.set(mes, (soma.get(mes) ?? 0) + (c.valor_pago_centavos ?? c.valor_centavos));
   }
   return lista.map((mes) => ({ mes, centavos: soma.get(mes) ?? 0 }));
+}
+
+export interface Recebimento {
+  id: string;
+  pagoEm: string;
+  aluno: string;
+  /** Quem pagou: o responsável, quando o aluno é menor de idade. */
+  pagador: string;
+  descricao: string;
+  forma: FormaPagamento | null;
+  centavos: number;
+}
+
+/**
+ * Relatório para o carnê-leão: o que o personal recebeu dos alunos num mês ("2026-11"), pela
+ * data do pagamento, e o total de cada mês do mesmo ano.
+ */
+export async function relatorioDeRecebimentos(mes: string): Promise<{ recebimentos: Recebimento[]; ano: { mes: string; centavos: number }[] }> {
+  const ano = mes.slice(0, 4);
+  const meses = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, "0")}`);
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return { recebimentos: [], ano: meses.map((m) => ({ mes: m, centavos: 0 })) };
+  const [{ data }, alunos] = await Promise.all([
+    supabase
+      .from("cobrancas")
+      .select(CAMPOS)
+      .eq("personal_id", id)
+      .eq("situacao", "paga")
+      .gte("pago_em", `${ano}-01-01`)
+      .lte("pago_em", `${ano}-12-31`)
+      .order("pago_em"),
+    listarMeusAlunos(),
+  ]);
+  const quem = new Map(alunos.map((a) => [a.vinculoId, a]));
+  const soma = new Map<string, number>();
+  const recebimentos: Recebimento[] = [];
+  for (const l of (data ?? []) as Linha[]) {
+    if (!l.pago_em) continue;
+    const centavos = l.valor_pago_centavos ?? l.valor_centavos;
+    soma.set(l.pago_em.slice(0, 7), (soma.get(l.pago_em.slice(0, 7)) ?? 0) + centavos);
+    if (!l.pago_em.startsWith(mes)) continue;
+    const a = quem.get(l.vinculo_id);
+    const nome = a?.nome || "Aluno";
+    recebimentos.push({
+      id: l.id,
+      pagoEm: l.pago_em,
+      aluno: nome,
+      pagador: a?.menor && a.responsavelNome ? `${a.responsavelNome} (responsável)` : nome,
+      descricao: descricaoDaCobranca(paraCobranca(l)),
+      forma: l.forma_pagamento,
+      centavos,
+    });
+  }
+  return { recebimentos, ano: meses.map((m) => ({ mes: m, centavos: soma.get(m) ?? 0 })) };
 }
