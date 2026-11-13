@@ -15,8 +15,8 @@ import {
   salvarPixEstudio,
   salvarPrecosEstudio,
   salvarValorProfessor,
-  type FaltasDoProfessor,
   type FinanceiroDoMes,
+  type MesDeAlunos,
   type MesDoEstudio,
 } from "@/data/estudio-financeiro";
 import { COR_COBRANCA, ROTULO_COBRANCA, situacaoDaCobranca } from "@/lib/cobranca";
@@ -205,6 +205,7 @@ export function AjustesDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
 
       <FuncionamentoDoEstudio estudio={estudio} />
       {c.tipo === "estudio" && <TabelaDeMensalidades estudio={estudio} />}
+      {c.tipo === "estudio" && <PlanosDoEstudio estudio={estudio} />}
       {c.tipo === "estudio" && <PixDoEstudio estudio={estudio} />}
     </div>
   );
@@ -573,38 +574,231 @@ function PlanosDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
   );
 }
 
-/** Quantos dias cada professor faltou (e ficou de férias) no mês, até hoje. */
-function FaltasDosProfessores({ estudio, faltas }: { estudio: EstudioCompleto; faltas: FaltasDoProfessor[] }) {
-  const porId = new Map(faltas.map((f) => [f.personalId, f]));
-  const dias = (n: number) => `${n} dia${n === 1 ? "" : "s"}`;
+/** Mensalidade do aluno pelo plano (vezes na semana) ou pela exceção dele. */
+const mensalidadeDe = (estudio: EstudioCompleto, a: AlunoDoEstudio) =>
+  a.turmas.length === 0 ? 0 : (a.valorMensal ?? estudio.config.precos[Math.min(7, a.turmas.length)] ?? 0);
+
+/**
+ * Decisão 85: a projeção do mês, bem grande. Arrecadado sobre o total previsto, quanto falta e quem
+ * ainda não pagou, com o valor e o vencimento. No mês atual e nos próximos, entram também as
+ * mensalidades que ainda não foram geradas (elas aparecem 7 dias antes do vencimento).
+ */
+function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto; mes: string; hoje: string; dados: FinanceiroDoMes }) {
+  const [todos, setTodos] = useState(false);
+  const ativas = dados.mensalidades.filter((x) => x.situacao !== "cancelada");
+  const [a, m] = mes.split("-").map(Number);
+  const ultimoDia = new Date(Date.UTC(a, m, 0)).getUTCDate();
+  const previstas =
+    mes < hoje.slice(0, 7)
+      ? []
+      : estudio.alunos
+          .filter((x) => x.diaVencimento != null && mensalidadeDe(estudio, x) > 0 && !ativas.some((c) => c.alunoId === x.id))
+          .map((x) => ({
+            id: `prevista-${x.id}`,
+            aluno: x.nome,
+            vencimento: `${mes}-${String(Math.min(x.diaVencimento ?? 1, ultimoDia)).padStart(2, "0")}`,
+            valor: mensalidadeDe(estudio, x),
+            alunoAvisou: false,
+          }))
+          .filter((x) => x.vencimento >= hoje);
+  const arrecadado = ativas.filter((x) => x.situacao === "paga").reduce((s, x) => s + x.valor, 0);
+  const total = ativas.reduce((s, x) => s + x.valor, 0) + previstas.reduce((s, x) => s + x.valor, 0);
+  const falta = total - arrecadado;
+  const devendo = [...ativas.filter((x) => x.situacao === "aberta"), ...previstas].sort((x, y) => x.vencimento.localeCompare(y.vencimento));
+  const pct = total ? Math.min(100, Math.round((arrecadado / total) * 100)) : 0;
+  const mostrar = todos ? devendo : devendo.slice(0, 8);
+
   return (
-    <section className="flex flex-col gap-2" aria-label="Faltas dos professores">
-      <h3 className="text-[16px] font-bold">Faltas dos professores no mês</h3>
-      {estudio.equipe.length === 0 ? (
-        <p className="text-ink-3">Nenhum professor na equipe.</p>
-      ) : (
-        <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
-          {estudio.equipe.map((p) => {
-            const f = porId.get(p.personalId);
-            const faltou = f?.faltas ?? 0;
-            const ferias = f?.ferias ?? 0;
-            return (
-              <li key={p.personalId} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
-                <span className="min-w-0 flex-1 font-semibold">{p.nome}</span>
-                {faltou === 0 && ferias === 0 ? (
-                  <span className="text-[14px] text-ink-3">Nenhuma falta</span>
-                ) : (
-                  <span className="flex flex-wrap gap-1.5">
-                    {faltou > 0 && <span className="rounded-full bg-bad px-2.5 py-0.5 text-[13px] font-bold text-white">{dias(faltou)} de falta</span>}
-                    {ferias > 0 && <span className="rounded-full bg-estudio-soft px-2.5 py-0.5 text-[13px] font-bold text-estudio">{dias(ferias)} de férias</span>}
+    <section className="flex flex-col gap-3 rounded-[24px] bg-estudio p-5 text-white" aria-label="Projeção do mês">
+      <span className="text-[14px] font-semibold opacity-85">Projeção do mês</span>
+      <p className="font-display leading-none font-extrabold">
+        <span className="text-[34px] sm:text-[44px]">{centavosParaReais(arrecadado)}</span>
+        <span className="text-[20px] opacity-75 sm:text-[26px]"> / {centavosParaReais(total)}</span>
+      </p>
+      <div className="h-3 overflow-hidden rounded-full bg-white/25" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="text-[18px] font-bold">{falta > 0 ? `Faltam ${centavosParaReais(falta)}` : total > 0 ? "Tudo recebido!" : "Nenhuma mensalidade neste mês."}</p>
+
+      {devendo.length > 0 && (
+        <div className="flex flex-col gap-1 rounded-[18px] bg-white p-3.5 text-ink">
+          <h3 className="text-[15px] font-bold">Alunos que ainda não pagaram ({devendo.length})</h3>
+          <ul className="flex flex-col divide-y divide-line">
+            {mostrar.map((c) => {
+              const atrasada = c.vencimento < hoje;
+              return (
+                <li key={c.id} className="flex flex-wrap items-baseline gap-x-2 py-2 text-[15px]">
+                  <span className="min-w-0 flex-1 font-semibold">{c.aluno}</span>
+                  <span className="font-extrabold tabular-nums">{centavosParaReais(c.valor)}</span>
+                  <span className={`basis-full text-[13px] ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
+                    {atrasada ? `venceu em ${dataBr(c.vencimento)}` : c.vencimento === hoje ? "vence hoje" : `vence em ${dataBr(c.vencimento)}`}
+                    {c.alunoAvisou && " · avisou que pagou"}
                   </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+          {devendo.length > 8 && (
+            <button type="button" onClick={() => setTodos(!todos)} className="self-start pt-1 text-[14px] font-bold text-estudio">
+              {todos ? "Mostrar menos" : `Ver todos (${devendo.length})`}
+            </button>
+          )}
+        </div>
       )}
-      <p className="text-[13px] text-ink-3">Conta os dias marcados em férias e faltas (só os dias em que o estúdio abre), até hoje.</p>
+    </section>
+  );
+}
+
+/** Decisão 84: ticket médio, receita dos planos, potencial com as turmas cheias e o custo com professores. */
+function VisaoGeral({ estudio, custo }: { estudio: EstudioCompleto; custo: number }) {
+  const valores = estudio.alunos.map((a) => mensalidadeDe(estudio, a)).filter((v) => v > 0);
+  const receita = valores.reduce((s, v) => s + v, 0);
+  const ticket = valores.length ? Math.round(receita / valores.length) : 0;
+  const turmas = estudio.turmas.filter((t) => t.tipo === "turma");
+  const vagas = turmas.reduce((s, t) => s + t.vagas, 0);
+  const ocupadas = turmas.reduce((s, t) => s + Math.min(t.alunos.length, t.vagas), 0);
+  // Cada aluno ocupa, em média, algumas vagas por semana: com as turmas cheias, cabem vagas ÷ essa média.
+  const vezes = valores.length && ocupadas ? ocupadas / valores.length : 0;
+  const cabem = vezes ? Math.floor(vagas / vezes) : 0;
+  const potencial = cabem * ticket;
+  const resultado = receita - custo;
+  return (
+    <section className="flex flex-col gap-2" aria-label="Visão geral">
+      <h3 className="text-[16px] font-bold">Visão geral</h3>
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-3">
+        <Cartao rotulo="Ticket médio" valor={centavosParaReais(ticket)} texto={`${valores.length} aluno${valores.length === 1 ? "" : "s"} com plano`} />
+        <Cartao rotulo="Receita por mês" valor={centavosParaReais(receita)} texto="soma dos planos" />
+        <Cartao
+          rotulo="Potencial com turmas cheias"
+          valor={potencial > receita ? centavosParaReais(potencial) : "—"}
+          texto={potencial > receita ? `+${centavosParaReais(potencial - receita)} com ${cabem - valores.length} alunos a mais` : "crie turmas e coloque alunos"}
+        />
+        <Cartao rotulo="Custo com professores" valor={centavosParaReais(custo)} texto={receita ? `${Math.round((custo / receita) * 100)}% da receita` : "no mês"} />
+        <Cartao rotulo="Resultado previsto" valor={centavosParaReais(resultado)} texto="receita menos professores" cor={resultado < 0 ? "text-bad" : "text-ok"} />
+      </div>
+    </section>
+  );
+}
+
+function Cartao({ rotulo, valor, texto, cor = "text-ink" }: { rotulo: string; valor: string; texto: string; cor?: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-[18px] border border-line bg-surface p-3">
+      <p className="text-[13px] text-ink-3">{rotulo}</p>
+      <p className={`text-[18px] font-extrabold tabular-nums sm:text-[22px] ${cor}`}>{valor}</p>
+      <p className="text-[12.5px] text-ink-3">{texto}</p>
+    </div>
+  );
+}
+
+/** Quanto cada profissional custa no mês (previsto, com as aulas que ainda vão acontecer). */
+function CustoComProfissionais({ estudio, custos, previsto }: { estudio: EstudioCompleto; custos: Record<string, number>; previsto: boolean }) {
+  const linhas = estudio.equipe.map((p) => ({ id: p.personalId, nome: p.nome, valor: custos[p.personalId] ?? 0 })).sort((x, y) => y.valor - x.valor);
+  const total = linhas.reduce((s, l) => s + l.valor, 0);
+  const maior = Math.max(1, ...linhas.map((l) => l.valor));
+  return (
+    <section className="flex flex-col gap-2" aria-label="Custo com profissionais">
+      <h3 className="text-[16px] font-bold">Custo com profissionais</h3>
+      <ul className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-4">
+        {linhas.map((l) => (
+          <li key={l.id} className="flex flex-col gap-1">
+            <span className="flex gap-2 text-[14.5px]">
+              <span className="min-w-0 flex-1 truncate font-semibold">{l.nome}</span>
+              <span className="font-extrabold tabular-nums">{centavosParaReais(l.valor)}</span>
+              <span className="w-11 text-right text-ink-3 tabular-nums">{total ? `${Math.round((l.valor / total) * 100)}%` : "—"}</span>
+            </span>
+            <div className="h-2 overflow-hidden rounded-full bg-surface-2">
+              <div className="h-full rounded-full bg-estudio" style={{ width: `${Math.round((l.valor / maior) * 100)}%` }} />
+            </div>
+          </li>
+        ))}
+        <li className="flex border-t border-line pt-2 font-bold">
+          <span className="flex-1">Total</span>
+          <span className="tabular-nums">{centavosParaReais(total)}</span>
+        </li>
+      </ul>
+      <p className="text-[13px] text-ink-3">{previsto ? "Previsto para o mês: as aulas já dadas e as que ainda vão acontecer." : "As aulas já dadas no mês."}</p>
+    </section>
+  );
+}
+
+/**
+ * Decisão 84: alunos ativos mês a mês, com quem entrou e quem saiu, e a projeção dos próximos 3
+ * meses no ritmo dos últimos 3 (entradas menos saídas).
+ */
+function GraficoDeCrescimento({ crescimento, ticket }: { crescimento: MesDeAlunos[]; ticket: number }) {
+  if (crescimento.length < 2) return null;
+  const ultimos = crescimento.slice(-3);
+  const ritmo = ultimos.reduce((s, x) => s + x.novos - x.saidas, 0) / ultimos.length;
+  const atual = crescimento[crescimento.length - 1];
+  const anterior = crescimento[crescimento.length - 2];
+  const projecao = [1, 2, 3].map((k) => {
+    const [a, m] = atual.mes.split("-").map(Number);
+    const d = new Date(Date.UTC(a, m - 1 + k, 1));
+    return { mes: `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`, ativos: Math.max(0, Math.round(atual.ativos + ritmo * k)) };
+  });
+  const maior = Math.max(1, ...crescimento.map((x) => x.ativos), ...projecao.map((x) => x.ativos));
+  const altura = (v: number) => `${v > 0 ? Math.max(3, Math.round((v / maior) * 100)) : 0}%`;
+  const nome = (mes: string) => MES_CURTO[Number(mes.slice(5)) - 1];
+  const variacao = anterior.ativos ? Math.round(((atual.ativos - anterior.ativos) / anterior.ativos) * 100) : null;
+  const fim = projecao[2];
+  const porMes = Math.round(ritmo * 10) / 10;
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Crescimento">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <h3 className="flex-1 text-[16px] font-bold">Crescimento de alunos</h3>
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
+          <span className="size-3 rounded-[4px] bg-estudio" /> Alunos
+        </span>
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-2">
+          <span className="size-3 rounded-[4px] border border-dashed border-estudio bg-estudio-soft" /> Projeção
+        </span>
+      </div>
+      <div className="flex h-44 items-end gap-1.5 lg:h-56 lg:gap-3">
+        {crescimento.map((x) => (
+          <div key={x.mes} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+            <span className="text-[11.5px] font-bold tabular-nums">{x.ativos || ""}</span>
+            <span
+              className={`w-full max-w-9 rounded-t-[6px] rounded-b-[2px] bg-estudio ${x === atual ? "" : "opacity-60"}`}
+              style={{ height: altura(x.ativos) }}
+              title={`${nome(x.mes)}: ${x.ativos} alunos, ${x.novos} entraram, ${x.saidas} saíram`}
+            />
+            <span className={`text-[12px] ${x === atual ? "font-bold" : "text-ink-3"}`}>{nome(x.mes)}</span>
+            <span className="text-[11px] leading-tight tabular-nums">
+              {x.novos > 0 && <span className="text-ok">+{x.novos}</span>}
+              {x.novos > 0 && x.saidas > 0 && " "}
+              {x.saidas > 0 && <span className="text-bad">−{x.saidas}</span>}
+              {!x.novos && !x.saidas && <span className="text-ink-3">0</span>}
+            </span>
+          </div>
+        ))}
+        {projecao.map((x) => (
+          <div key={x.mes} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+            <span className="text-[11.5px] text-ink-3 tabular-nums">{x.ativos || ""}</span>
+            <span
+              className="w-full max-w-9 rounded-t-[6px] rounded-b-[2px] border border-dashed border-estudio bg-estudio-soft"
+              style={{ height: altura(x.ativos) }}
+              title={`${nome(x.mes)} (projeção): ${x.ativos} alunos`}
+            />
+            <span className="text-[12px] text-ink-3">{nome(x.mes)}</span>
+            <span className="text-[11px] leading-tight text-ink-3">prev.</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[14px] text-ink-2">
+        Este mês: <b className="text-ok">+{atual.novos}</b> {atual.novos === 1 ? "entrou" : "entraram"}, <b className="text-bad">−{atual.saidas}</b>{" "}
+        {atual.saidas === 1 ? "saiu" : "saíram"}
+        {variacao != null && ` (${variacao >= 0 ? "+" : ""}${variacao}% de alunos em relação a ${nome(anterior.mes)})`}.
+      </p>
+      <p className="text-[14px] text-ink-2">
+        No ritmo dos últimos 3 meses ({porMes >= 0 ? "+" : ""}
+        {porMes.toLocaleString("pt-BR")} por mês), em {nome(fim.mes)}: <b>{fim.ativos} alunos</b>
+        {ticket > 0 && (
+          <>
+            , cerca de <b>{centavosParaReais(fim.ativos * ticket)}</b> por mês
+          </>
+        )}
+        .
+      </p>
     </section>
   );
 }
@@ -615,23 +809,26 @@ export function FinanceiroDoEstudio({
   hoje,
   dados,
   historico,
-  faltas,
+  crescimento,
+  previsao,
 }: {
   estudio: EstudioCompleto;
   mes: string;
   hoje: string;
   dados: FinanceiroDoMes;
   historico: MesDoEstudio[];
-  faltas: FaltasDoProfessor[];
+  crescimento: MesDeAlunos[];
+  previsao: Record<string, number> | null;
 }) {
   const router = useRouter();
   const [a, m] = mes.split("-").map(Number);
   const link = (n: number) => `/estudio/${estudio.id}?aba=financeiro&mes=${mudarMes(mes, n)}`;
   const academia = estudio.config.tipo === "academia";
-  const ativas = dados.mensalidades.filter((x) => x.situacao !== "cancelada");
-  const recebido = ativas.filter((x) => x.situacao === "paga").reduce((s, x) => s + x.valor, 0);
-  const aReceber = ativas.filter((x) => x.situacao === "aberta").reduce((s, x) => s + x.valor, 0);
-  const aPagar = dados.professores.reduce((s, p) => s + (p.valorPago ?? p.valor), 0);
+  // Custo de cada profissional: a previsão do mês (migração 46) ou, sem ela, o que já foi dado.
+  const custos = previsao ?? Object.fromEntries(dados.professores.map((p) => [p.personalId, p.valorPago ?? p.valor]));
+  const custo = Object.values(custos).reduce((s, v) => s + v, 0);
+  const comPlano = estudio.alunos.map((x) => mensalidadeDe(estudio, x)).filter((v) => v > 0);
+  const ticket = comPlano.length ? Math.round(comPlano.reduce((s, v) => s + v, 0) / comPlano.length) : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -647,26 +844,13 @@ export function FinanceiroDoEstudio({
         </Link>
       </nav>
 
-      <div className={`grid gap-2.5 ${academia ? "grid-cols-1" : "grid-cols-3"}`}>
-        {!academia && <Numero rotulo="Recebido" valor={recebido} cor="text-ok" />}
-        {!academia && <Numero rotulo="A receber" valor={aReceber} cor="text-ink" />}
-        <Numero rotulo="Professores" valor={aPagar} cor="text-estudio" />
-      </div>
-
+      {!academia && <ProjecaoDoMes estudio={estudio} mes={mes} hoje={hoje} dados={dados} />}
+      {!academia && <VisaoGeral estudio={estudio} custo={custo} />}
+      <CustoComProfissionais estudio={estudio} custos={custos} previsto={previsao != null} />
+      {!academia && <GraficoDeCrescimento crescimento={crescimento} ticket={ticket} />}
       <GraficoDoEstudio historico={historico} academia={academia} mes={mes} />
-      <PlanosDoEstudio estudio={estudio} />
       <Professores estudio={estudio} mes={mes} dados={dados} atualizar={() => router.refresh()} />
-      <FaltasDosProfessores estudio={estudio} faltas={faltas} />
       {!academia && <Mensalidades estudio={estudio} hoje={hoje} dados={dados} atualizar={() => router.refresh()} />}
-    </div>
-  );
-}
-
-function Numero({ rotulo, valor, cor }: { rotulo: string; valor: number; cor: string }) {
-  return (
-    <div className="rounded-[18px] border border-line bg-surface p-3">
-      <p className="text-[13px] text-ink-3">{rotulo}</p>
-      <p className={`text-[18px] font-extrabold sm:text-[22px] ${cor}`}>{centavosParaReais(valor)}</p>
     </div>
   );
 }

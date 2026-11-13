@@ -12,7 +12,7 @@ import {
   type EstudioCompleto,
   type TurmaDoEstudio,
 } from "@/data/estudio";
-import { marcarMensalidade, type FaltasDoProfessor, type FinanceiroDoMes, type ResumoDoProfessor, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
+import { marcarMensalidade, type FinanceiroDoMes, type MesDeAlunos, type ResumoDoProfessor, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
 import { textoDoVencimento } from "@/lib/cobranca";
 import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
@@ -50,7 +50,7 @@ export function GestaoDoEstudio({
   /** Partes montadas no servidor que vão junto da aba (férias e faltas, reposição). */
   complemento?: React.ReactNode;
   /** Só na aba Financeiro: o mês ("AAAA-MM"), hoje e os dados. */
-  financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes; historico: MesDoEstudio[]; faltas: FaltasDoProfessor[] };
+  financeiro?: { mes: string; hoje: string; dados: FinanceiroDoMes; historico: MesDoEstudio[]; crescimento: MesDeAlunos[]; previsao: Record<string, number> | null };
   /** Só na aba Alunos (estúdio que cobra mensalidade): a situação de pagamento de cada aluno. */
   pagamentos?: Record<string, PagamentoDoAluno>;
   hoje: string;

@@ -8,7 +8,7 @@ import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio"
 import { Carregando } from "@/components/Formulario";
 import { souContaEmpresa } from "@/data/conta";
 import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
-import { faltasDosProfessores, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos, resumoDosProfessores } from "@/data/estudio-financeiro";
+import { crescimentoDoEstudio, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos, previsaoDosProfessores, resumoDosProfessores } from "@/data/estudio-financeiro";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { RegrasDosAlunos } from "@/components/estudio/RegrasDosAlunos";
@@ -55,8 +55,9 @@ async function Conteudo({
       ? await Promise.all([
           lerFinanceiroDoMes(estudio.id, `${mesEscolhido}-01`),
           historicoDoEstudio(estudio.id, mesEscolhido),
-          faltasDosProfessores(estudio.id, mesEscolhido, hoje, abertos.length ? abertos : null),
-        ]).then(([dados, historico, faltas]) => ({ mes: mesEscolhido, hoje, dados, historico, faltas }))
+          crescimentoDoEstudio(estudio.id, hoje.slice(0, 7)),
+          previsaoDosProfessores(estudio.id, `${mesEscolhido}-01`),
+        ]).then(([dados, historico, crescimento, previsao]) => ({ mes: mesEscolhido, hoje, dados, historico, crescimento, previsao }))
       : undefined;
   const pagamentos = qual === "alunos" && estudio.config.tipo === "estudio" ? await pagamentosDosAlunos(estudio.id, hoje) : undefined;
   const professores = qual === "equipe" ? await resumoDosProfessores(estudio.id, hoje, abertos.length ? abertos : null) : undefined;

@@ -114,6 +114,7 @@ export async function marcarPagamentoProfessor(estudioId: string, personalId: st
 
 export interface MensalidadeDoEstudio {
   id: string;
+  alunoId: string;
   aluno: string;
   vencimento: string;
   valor: number;
@@ -147,7 +148,7 @@ export async function lerFinanceiroDoMes(estudioId: string, mes: string): Promis
   const [{ data: cobrancas }, { data: professores }] = await Promise.all([
     supabase
       .from("estudio_cobrancas")
-      .select("id, vencimento, valor_centavos, situacao, pago_em, aluno_avisou_em, estudio_alunos(nome)")
+      .select("id, estudio_aluno_id, vencimento, valor_centavos, situacao, pago_em, aluno_avisou_em, estudio_alunos(nome)")
       .eq("estudio_id", estudioId)
       .gte("vencimento", mes)
       .lt("vencimento", proximo)
@@ -157,6 +158,7 @@ export async function lerFinanceiroDoMes(estudioId: string, mes: string): Promis
   return {
     mensalidades: (cobrancas ?? []).map((c) => ({
       id: c.id,
+      alunoId: c.estudio_aluno_id,
       aluno: (c.estudio_alunos as unknown as { nome: string } | null)?.nome ?? "Aluno",
       vencimento: c.vencimento,
       valor: c.valor_centavos,
@@ -352,4 +354,54 @@ export async function resumoDosProfessores(estudioId: string, hoje: string, dias
     faltas: faltas.find((f) => f.personalId === personalId)?.faltas ?? 0,
     previsto: error ? null : (previstos.get(personalId) ?? 0),
   }));
+}
+
+export interface MesDeAlunos {
+  mes: string;
+  /** Alunos que entraram no mês. */
+  novos: number;
+  /** Alunos que saíram no mês. */
+  saidas: number;
+  /** Alunos ativos no fim do mês (ou hoje, no mês atual). */
+  ativos: number;
+}
+
+/** Mês ("AAAA-MM") de um instante, no horário de Brasília. */
+const mesEmBrasilia = (iso: string) => new Date(Date.parse(iso) - 3 * 3_600_000).toISOString().slice(0, 7);
+
+/** Decisão 84: entradas, saídas e alunos ativos em cada um dos últimos n meses (até "AAAA-MM"). */
+export async function crescimentoDoEstudio(estudioId: string, ate: string, n = 6): Promise<MesDeAlunos[]> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id || !/^\d{4}-\d{2}$/.test(ate)) return [];
+  const [a, m] = ate.split("-").map(Number);
+  const meses = Array.from({ length: n }, (_, i) => {
+    const d = new Date(Date.UTC(a, m - n + i, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  });
+  let { data, error } = await supabase.from("estudio_alunos").select("criado_em, situacao, encerrado_em").eq("estudio_id", estudioId);
+  if (error) {
+    // Sem a migração 47: quem saiu não tem data e não entra nas contas.
+    const r = await supabase.from("estudio_alunos").select("criado_em, situacao").eq("estudio_id", estudioId).eq("situacao", "ativo");
+    data = (r.data ?? []).map((x) => ({ ...x, encerrado_em: null }));
+    error = r.error;
+  }
+  if (error || !data) return [];
+  const alunos = data
+    .filter((x) => x.situacao === "ativo" || x.encerrado_em)
+    .map((x) => ({ entrou: mesEmBrasilia(x.criado_em), saiu: x.situacao === "ativo" ? null : mesEmBrasilia(x.encerrado_em as string) }));
+  return meses.map((mes) => ({
+    mes,
+    novos: alunos.filter((x) => x.entrou === mes).length,
+    saidas: alunos.filter((x) => x.saiu === mes).length,
+    ativos: alunos.filter((x) => x.entrou <= mes && (x.saiu === null || x.saiu > mes)).length,
+  }));
+}
+
+/** Quanto cada professor deve receber no mês ("AAAA-MM-01"), contando as aulas que ainda vão acontecer. */
+export async function previsaoDosProfessores(estudioId: string, mes: string): Promise<Record<string, number> | null> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return null;
+  const { data, error } = await supabase.rpc("previsao_pagamento_professores", { p_estudio: estudioId, p_mes: mes });
+  if (error) return null;
+  return Object.fromEntries(((data ?? []) as { personal_id: string; valor_centavos: number }[]).map((p) => [p.personal_id, p.valor_centavos]));
 }
