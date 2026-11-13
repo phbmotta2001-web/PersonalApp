@@ -859,6 +859,21 @@ export function FinanceiroDoEstudio({
   );
 }
 
+/** Alunos das turmas do professor e a soma das mensalidades deles (dividida pelas turmas, como no banco). */
+function baseDoPercentual(estudio: EstudioCompleto, professorId: string) {
+  const turmas = new Map(estudio.turmas.filter((t) => t.tipo === "turma").map((t) => [t.id, t.professorId]));
+  let alunos = 0;
+  let base = 0;
+  for (const a of estudio.alunos) {
+    const minhas = a.turmas.filter((id) => turmas.has(id));
+    const dele = minhas.filter((id) => turmas.get(id) === professorId).length;
+    if (!dele) continue;
+    alunos++;
+    base += (mensalidadeDe(estudio, a) * dele) / minhas.length;
+  }
+  return { alunos, base: Math.round(base) };
+}
+
 function Professores({ estudio, mes, dados, atualizar }: { estudio: EstudioCompleto; mes: string; dados: FinanceiroDoMes; atualizar: () => void }) {
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
@@ -868,7 +883,14 @@ function Professores({ estudio, mes, dados, atualizar }: { estudio: EstudioCompl
     const aulas = `${p.aulas} aula${p.aulas === 1 ? "" : "s"}`;
     if (modelo === "hora") return `${aulas} · ${horas} h`;
     if (modelo === "aula_comissao") return `${aulas} · ${p.presencas} presença${p.presencas === 1 ? "" : "s"}`;
-    return `${aulas} dadas · % da mensalidade dos alunos das turmas dele`;
+    // Decisão 86: a conta do percentual, por extenso (alunos, % e a base), e o que vem à parte.
+    const b = baseDoPercentual(estudio, p.personalId);
+    const pct = estudio.equipe.find((m) => m.personalId === p.personalId)?.valores.percentual ?? estudio.config.valores.percentual ?? 0;
+    const extra = p.valor - Math.round((b.base * pct) / 100);
+    const conta = b.alunos
+      ? `${b.alunos} aluno${b.alunos === 1 ? "" : "s"} · ${String(pct).replace(".", ",")}% de ${centavosParaReais(b.base)}`
+      : "Nenhum aluno nas turmas dele";
+    return extra > 0 ? `${conta} + ${centavosParaReais(extra)} de reposições e turnos` : conta;
   };
   return (
     <section className="flex flex-col gap-2" aria-label="Pagamento dos professores">
