@@ -663,10 +663,11 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
   const [todos, setTodos] = useState(false);
   const { arrecadado, total, falta, devendo } = contasDoMes(estudio, mes, hoje, dados);
   const pct = total ? Math.min(100, Math.round((arrecadado / total) * 100)) : 0;
-  const mostrar = todos ? devendo : devendo.slice(0, 8);
-  // Botão de cobrar para quem vence em até 7 dias (ou já venceu).
+  // Por padrão, só quem vence em até 7 dias (ou já venceu); "Ver todos" mostra o resto.
   const [ah, mh, dh] = hoje.split("-").map(Number);
   const limite = new Date(Date.UTC(ah, mh - 1, dh + 7)).toISOString().slice(0, 10);
+  const proximos = devendo.filter((c) => c.vencimento !== "" && c.vencimento <= limite);
+  const mostrar = todos ? devendo : proximos;
 
   return (
     <section className="flex flex-col gap-3 rounded-[24px] bg-estudio p-5 text-white" aria-label="Projeção do mês">
@@ -683,6 +684,7 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
       {devendo.length > 0 && (
         <div className="flex flex-col gap-1 rounded-[18px] bg-white p-3.5 text-ink">
           <h3 className="text-[15px] font-bold">Alunos que ainda não pagaram ({devendo.length})</h3>
+          {mostrar.length === 0 && <p className="py-1 text-[14px] text-ink-3">Ninguém vence nos próximos 7 dias.</p>}
           <ul className="flex flex-col divide-y divide-line">
             {mostrar.map((c) => {
               const atrasada = c.vencimento !== "" && c.vencimento < hoje;
@@ -710,9 +712,9 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
               );
             })}
           </ul>
-          {devendo.length > 8 && (
+          {devendo.length > proximos.length && (
             <button type="button" onClick={() => setTodos(!todos)} className="self-start pt-1 text-[14px] font-bold text-estudio">
-              {todos ? "Mostrar menos" : `Ver todos (${devendo.length})`}
+              {todos ? "Mostrar só os próximos 7 dias" : `Ver todos (${devendo.length})`}
             </button>
           )}
         </div>
