@@ -15,11 +15,17 @@ export function FormFeriados({
   inicial,
   feriados,
   continuar,
+  salvar = salvarRegraDeFeriados,
+  estudio = false,
 }: {
   inicial: RegraDeFeriados;
   /** Próximos feriados (uns 12 meses). */
   feriados: Feriado[];
   continuar?: string;
+  /** Outra forma de salvar (o estúdio, decisão 89). */
+  salvar?: (regra: RegraDeFeriados) => Promise<{ ok: true } | { ok: false; erro: string }>;
+  /** Textos do estúdio ("abre"/"fecha") em vez dos do personal. */
+  estudio?: boolean;
 }) {
   const router = useRouter();
   const [regra, setRegra] = useState(inicial);
@@ -42,20 +48,26 @@ export function FormFeriados({
   };
 
   return (
-    <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
+    <div className={estudio ? "flex flex-col gap-5" : "flex flex-col gap-5 px-[18px] pt-2 pb-6"}>
       <section className="flex flex-col gap-2" aria-label="Regra geral">
-        {[
-          {
-            valor: true,
-            titulo: "Trabalho em feriados",
-            texto: "As aulas fixas continuam marcadas nos feriados.",
-          },
-          {
-            valor: false,
-            titulo: "Não trabalho em feriados",
-            texto: "O dia fica bloqueado e as aulas fixas que caem nele são canceladas: o aluno ganha uma reposição.",
-          },
-        ].map((o) => (
+        {(estudio
+          ? [
+              { valor: true, titulo: "Abre em feriados", texto: "As aulas das turmas continuam marcadas nos feriados." },
+              { valor: false, titulo: "Fecha em feriados", texto: "As aulas das turmas que caem no feriado são canceladas. Aulas extras continuam." },
+            ]
+          : [
+              {
+                valor: true,
+                titulo: "Trabalho em feriados",
+                texto: "As aulas fixas continuam marcadas nos feriados.",
+              },
+              {
+                valor: false,
+                titulo: "Não trabalho em feriados",
+                texto: "O dia fica bloqueado e as aulas fixas que caem nele são canceladas: o aluno ganha uma reposição.",
+              },
+            ]
+        ).map((o) => (
           <button
             key={String(o.valor)}
             type="button"
@@ -89,16 +101,18 @@ export function FormFeriados({
                       trabalha ? "bg-brand-soft text-brand" : "bg-gold-soft text-gold"
                     }`}
                   >
-                    {trabalha ? "Trabalho" : "Folga"}
+                    {trabalha ? (estudio ? "Aberto" : "Trabalho") : estudio ? "Fechado" : "Folga"}
                   </span>
                 </button>
               </li>
             );
           })}
         </ul>
-        <p className="text-[13px] text-ink-3">
-          Feriados da sua cidade ou do seu estado: marque em Conta › Bloqueios.
-        </p>
+        {!estudio && (
+          <p className="text-[13px] text-ink-3">
+            Feriados da sua cidade ou do seu estado: marque em Conta › Bloqueios.
+          </p>
+        )}
       </section>
 
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
@@ -108,7 +122,7 @@ export function FormFeriados({
         onClick={() =>
           iniciar(async () => {
             try {
-              const r = await salvarRegraDeFeriados(regra);
+              const r = await salvar(regra);
               if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
               if (continuar) return router.push(continuar);
               setSalvo(JSON.stringify(regra));

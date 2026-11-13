@@ -313,7 +313,7 @@ function Alunos({
               <li key={a.id} className={`flex flex-col gap-2 rounded-[18px] border border-l-[5px] border-line bg-surface px-4 py-3 ${pagamentos ? s.borda : ""}`}>
                 <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">
+                    <span className={`block font-semibold ${p?.situacao === "devendo" ? "text-bad" : ""}`}>
                       {a.nome}
                       {professoresDe(a.turmas) && <span className="font-normal text-ink-2"> · {professoresDe(a.turmas)}</span>}
                     </span>

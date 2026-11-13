@@ -672,6 +672,30 @@ export async function marcarPresenca(aulaId: string, alunoId: string, situacao: 
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível marcar.") } : { ok: true };
 }
 
+/** Decisão 89: a regra de feriados do estúdio (abre ou fecha, com exceções). */
+export async function lerFeriadosDoEstudio(estudioId: string): Promise<{ trabalha: boolean; excecoes: string[] }> {
+  const supabase = await criarClienteSupabase();
+  const [{ data: e }, { data: x }] = await Promise.all([
+    supabase.from("estudios").select("trabalha_em_feriados").eq("id", estudioId).maybeSingle(),
+    supabase.from("estudio_feriados_excecoes").select("data").eq("estudio_id", estudioId),
+  ]);
+  return { trabalha: e?.trabalha_em_feriados ?? true, excecoes: (x ?? []).map((d) => d.data as string) };
+}
+
+export async function salvarFeriadosDoEstudio(
+  estudioId: string,
+  regra: { trabalha: boolean; excecoes: string[] },
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (typeof regra?.trabalha !== "boolean" || !Array.isArray(regra.excecoes)) return { ok: false, erro: "Escolha se o estúdio abre em feriados." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_feriados_estudio", {
+    p_estudio: estudioId,
+    p_trabalha: regra.trabalha,
+    p_excecoes: regra.excecoes.filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
+  });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar os feriados.") } : { ok: true };
+}
+
 export interface AulaNaAgendaDoEstudio {
   id: string;
   inicio: string;

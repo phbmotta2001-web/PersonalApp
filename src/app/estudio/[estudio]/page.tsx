@@ -7,7 +7,9 @@ import { ABAS_DA_COORDENACAO, MenuDaCoordenacao } from "@/components/estudio/Men
 import { GestaoDoEstudio, type Aba } from "@/components/estudio/GestaoDoEstudio";
 import { Carregando } from "@/components/Formulario";
 import { souContaEmpresa } from "@/data/conta";
-import { aulasDoEstudio, lerEstudio } from "@/data/estudio";
+import { aulasDoEstudio, lerEstudio, lerFeriadosDoEstudio, salvarFeriadosDoEstudio } from "@/data/estudio";
+import { FormFeriados } from "@/components/agenda/FormFeriados";
+import { feriadosEntre } from "@/lib/feriados";
 import { crescimentoDoEstudio, historicoDoEstudio, lerFinanceiroDoMes, pagamentosDosAlunos, previsaoDosProfessores, resumoDosProfessores } from "@/data/estudio-financeiro";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
@@ -86,9 +88,23 @@ async function Conteudo({
 /** Férias e faltas e reposições (Agenda e Equipe); valor da reposição (Ajustes). */
 async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, aba: Aba) {
   if (aba === "ajustes") {
-    const [config, marcarH] = await Promise.all([lerConfigReposicao(estudio.id), lerAntecedenciaParaMarcar(estudio.id)]);
+    const [config, marcarH, feriados] = await Promise.all([
+      lerConfigReposicao(estudio.id),
+      lerAntecedenciaParaMarcar(estudio.id),
+      lerFeriadosDoEstudio(estudio.id),
+    ]);
+    const hoje = emBrasilia(new Date().toISOString()).data;
     return (
       <>
+        <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Feriados">
+          <h2 className="font-bold">Feriados</h2>
+          <FormFeriados
+            inicial={feriados}
+            feriados={feriadosEntre(hoje, somarDias(hoje, 365))}
+            salvar={salvarFeriadosDoEstudio.bind(null, estudio.id)}
+            estudio
+          />
+        </section>
         <RegrasDosAlunos estudioId={estudio.id} faltaH={estudio.antecedenciaFaltaH} marcarH={marcarH} validadeDias={estudio.validadeReposicaoDias} />
         <ValorDaReposicao estudioId={estudio.id} config={config} />
       </>
