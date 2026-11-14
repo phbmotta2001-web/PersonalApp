@@ -65,3 +65,12 @@ export async function avisarPagamentoNoEstudio(cobrancaId: string): Promise<Resp
   if (!error) return { ok: true };
   return { ok: false, erro: /não/.test(error.message) && !/function|permission/.test(error.message) ? error.message : "Não foi possível avisar agora." };
 }
+
+/** Decisão 103: o plano do aluno logado no estúdio (meses e início). Vazio antes da migração 65. */
+export async function meuPlanoNoEstudio(estudioId: string): Promise<{ meses: number; inicio: string | null } | null> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return null;
+  const { data, error } = await supabase.rpc("meu_plano_no_estudio", { p_estudio: estudioId });
+  const linha = !error && Array.isArray(data) ? (data[0] as { meses: number; inicio: string | null } | undefined) : undefined;
+  return linha ? { meses: Number(linha.meses), inicio: linha.inicio } : null;
+}

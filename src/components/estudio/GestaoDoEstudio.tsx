@@ -19,6 +19,7 @@ import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
 import { linkWhatsapp } from "@/lib/convite";
 import { juntarComE } from "@/lib/formato";
+import { dataCompleta, fimDoPlano, NOME_DO_PLANO } from "@/lib/plano";
 import { DIAS, minParaHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
@@ -352,6 +353,7 @@ function Alunos({
             const p = pagamentos?.[a.id];
             const s = SITUACAO_PAGAMENTO[p?.situacao ?? "em_dia"];
             const cobrar = p && (p.situacao === "devendo" || p.situacao === "vencendo") && p.cobrancaId;
+            const fimPlano = estudio.config.tipo === "estudio" ? fimDoPlano(a.planoMeses, a.planoInicio, hoje) : null;
             return (
               <li key={a.id} className={`flex flex-col gap-2 rounded-[18px] border border-l-[5px] border-line bg-surface px-4 py-3 ${pagamentos ? s.borda : ""}`}>
                 <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
@@ -381,6 +383,11 @@ function Alunos({
                             : `Próxima: ${dataBr(p.vencimento!)}`}
                     </span>
                     {p.situacao === "devendo" && p.vencimento && <span className="text-[13px] text-bad">{textoDoVencimento(p.vencimento, hoje)}</span>}
+                    {fimPlano && (
+                      <span className="text-[13px] text-ink-2">
+                        {NOME_DO_PLANO[a.planoMeses]} até {dataCompleta(fimPlano)}
+                      </span>
+                    )}
                     {cobrar && p.alunoAvisou && <span className="text-[13px] font-semibold text-ok">avisou que pagou</span>}
                     {cobrar && (
                       <span className="ml-auto flex items-center gap-3">

@@ -6,15 +6,27 @@ import { avisarPagamentoNoEstudio, type MensalidadeNoEstudio } from "@/data/mens
 import { textoDoVencimento } from "@/lib/cobranca";
 import { dataCurta } from "@/lib/expediente";
 import { centavosParaReais } from "@/lib/matricula";
+import { dataCompleta, NOME_DO_PLANO } from "@/lib/plano";
 import { CopiarPix } from "../agenda/CopiarPix";
 import { Aviso } from "../Formulario";
 
 /** Decisão 102: mensalidades do aluno no estúdio, com o Pix e "Já paguei". */
-export function MensalidadesNoEstudio({ lista, estudio, hoje }: { lista: MensalidadeNoEstudio[]; estudio: string; hoje: string }) {
+export function MensalidadesNoEstudio({
+  lista,
+  estudio,
+  hoje,
+  plano,
+}: {
+  lista: MensalidadeNoEstudio[];
+  estudio: string;
+  hoje: string;
+  /** Decisão 103: plano de 3, 6 ou 12 meses e o último dia do período atual. */
+  plano?: { meses: number; fim: string } | null;
+}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
-  if (lista.length === 0) return null;
+  if (lista.length === 0 && !plano) return null;
   const abertas = lista.filter((c) => c.situacao === "aberta").sort((a, b) => a.vencimento.localeCompare(b.vencimento));
   const pagas = lista.filter((c) => c.situacao === "paga").slice(0, 3);
   const nome = (c: MensalidadeNoEstudio) => (c.tipo === "taxa" ? "Taxa de matrícula" : "Mensalidade");
@@ -22,7 +34,12 @@ export function MensalidadesNoEstudio({ lista, estudio, hoje }: { lista: Mensali
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Mensalidade">
       <h2 className="font-bold">Mensalidade</h2>
-      {abertas.length === 0 && <p className="text-[14px] text-ink-3">Nada em aberto. Tudo em dia!</p>}
+      {plano && (
+        <p className="text-[14px] text-ink-2">
+          Plano {NOME_DO_PLANO[plano.meses].toLowerCase()}: vai até <b>{dataCompleta(plano.fim)}</b> (renova sozinho)
+        </p>
+      )}
+      {abertas.length === 0 && lista.length > 0 && <p className="text-[14px] text-ink-3">Nada em aberto. Tudo em dia!</p>}
       {abertas.map((c) => {
         const atrasada = c.vencimento < hoje;
         return (

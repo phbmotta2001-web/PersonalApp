@@ -26,6 +26,7 @@ import { agoraEmBrasilia, dataCurta } from "@/lib/expediente";
 import { centavosParaReais, resumoDaModalidade, resumoDosHorarios, textoDaAula } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 import { origemDoSite } from "@/lib/supabase/servidor";
+import { dataCompleta, fimDaMatricula } from "@/lib/plano";
 
 export const metadata: Metadata = {
   title: "Ficha do aluno",
@@ -61,6 +62,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     lerRegras(),
     treinoDoVinculo(vinculo),
   ]);
+  const fimDoPlanoAtual = matricula ? fimDaMatricula(matricula, hojeBr) : null;
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
   const atrasado = cobrancas.some((c) => situacaoDaCobranca(c, hoje) === "atrasada");
@@ -184,7 +186,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           </p>
           <p className="text-[13px] text-ink-3">
             Desde {new Date(`${matricula.inicio}T12:00:00`).toLocaleDateString("pt-BR")}
-            {matricula.fim && ` até ${new Date(`${matricula.fim}T12:00:00`).toLocaleDateString("pt-BR")}`}
+            {fimDoPlanoAtual && ` · ${fimDoPlanoAtual === matricula.fim ? "termina em" : "plano atual até"} ${dataCompleta(fimDoPlanoAtual)}`}
           </p>
           <SuspensaoAutomatica vinculoId={vinculo} ligada={matricula.suspenderSeAtrasar} />
         </section>

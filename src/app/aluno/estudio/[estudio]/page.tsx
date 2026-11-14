@@ -12,7 +12,8 @@ import { FormulariosPendentes } from "@/components/aluno/FormulariosPendentes";
 import { meusFormulariosPendentes } from "@/data/formularios-estudio";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { MensalidadesNoEstudio } from "@/components/aluno/MensalidadesNoEstudio";
-import { minhasMensalidadesNoEstudio } from "@/data/mensalidade-estudio";
+import { meuPlanoNoEstudio, minhasMensalidadesNoEstudio } from "@/data/mensalidade-estudio";
+import { fimDoPlano } from "@/lib/plano";
 import { agoraEmBrasilia, dataCurta, DIAS, somarDias } from "@/lib/expediente";
 
 export const metadata: Metadata = {
@@ -52,7 +53,7 @@ async function Conteudo({
   const n = typeof semana === "string" && /^\d$/.test(semana) ? Math.min(Number(semana), SEMANAS) : 0;
   const inicio = somarDias(hoje, n * 7);
   const fim = somarDias(inicio, 6);
-  const [aulas, reposicoes, treino, fila, pedidos, formularios, mensalidades] = await Promise.all([
+  const [aulas, reposicoes, treino, fila, pedidos, formularios, mensalidades, plano] = await Promise.all([
     agendaDoAlunoNoEstudio(id, inicio, fim),
     minhasReposicoesNoEstudio(id),
     meuTreinoNoEstudio(id),
@@ -60,7 +61,9 @@ async function Conteudo({
     pedidosDeFrequencia(),
     meusFormulariosPendentes(),
     minhasMensalidadesNoEstudio(id),
+    meuPlanoNoEstudio(id),
   ]);
+  const fimPlano = plano ? fimDoPlano(plano.meses, plano.inicio, hoje) : null;
   const meusPedidos = pedidos.filter((p) => p.meu && p.estudioId === id);
   const formulariosDaqui = formularios.filter((f) => f.estudioId === id);
   const link = (x: number) => `/aluno/estudio/${id}${x ? `?semana=${x}` : ""}`;
@@ -80,7 +83,7 @@ async function Conteudo({
 
       {formulariosDaqui.length > 0 && <FormulariosPendentes lista={formulariosDaqui} />}
       {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
-      <MensalidadesNoEstudio lista={mensalidades} estudio={estudio.nome} hoje={hoje} />
+      <MensalidadesNoEstudio lista={mensalidades} estudio={estudio.nome} hoje={hoje} plano={plano && fimPlano ? { meses: plano.meses, fim: fimPlano } : null} />
 
       {/* Decisão 73: o que treina em cada dia, escrito pelo professor. */}
       {treino.length > 0 && (

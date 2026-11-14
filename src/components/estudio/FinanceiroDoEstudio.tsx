@@ -26,6 +26,7 @@ import { linkWhatsapp } from "@/lib/convite";
 import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/matricula";
 import { pixCopiaECola, TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/pix";
 import { VEZES_POR_SEMANA } from "@/lib/precos";
+import { dataCompleta, fimDoPlano } from "@/lib/plano";
 import { Chip } from "../Chip";
 import { TransitoLivreDoEstudio } from "./TransitoLivre";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
@@ -491,6 +492,12 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
           Começou em
           <input type="month" value={inicio} onChange={(e) => setInicio(e.target.value)} className={ESTILO_CAIXA} />
         </label>
+      )}
+      {plano > 1 && /^\d{4}-\d{2}$/.test(inicio) && (
+        <p className="text-[13px] font-semibold text-ink-2">
+          O plano atual vai até {dataCompleta(fimDoPlano(plano, `${inicio}-01`, new Date().toISOString().slice(0, 10))!)}{" "}
+          (renova sozinho)
+        </p>
       )}
       {plano > 1 && unico && daTabela != null && (
         <p className="text-[13px] text-ink-3">
