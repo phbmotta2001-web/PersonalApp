@@ -1,4 +1,7 @@
 import { FormulariosDoEstudio } from "@/components/estudio/FormulariosDoEstudio";
+import { AtencaoAosAlunos } from "@/components/estudio/AtencaoAosAlunos";
+import { ResumoDoMes } from "@/components/estudio/ResumoDoMes";
+import { alunosEmAtencao, resumoDoMes } from "@/data/estudio-atencao";
 import { lerFormulariosDoEstudio } from "@/data/formularios-estudio";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -81,6 +84,10 @@ async function Conteudo({
             alunos={estudio.alunos.map((a) => ({ id: a.id, nome: a.nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
           />
         ) : (
+        <>
+        {/* Decisão 101: quem precisa de atenção (aba Alunos) e o resumo do mês (aba Financeiro). */}
+        {qual === "alunos" && <AtencaoAosAlunos estudio={estudio.nome} alunos={await alunosEmAtencao(estudio.id)} />}
+        {qual === "financeiro" && <ResumoDoMesDaAba estudioId={estudio.id} mes={mesEscolhido} />}
         <GestaoDoEstudio
           estudio={estudio}
           aba={qual}
@@ -92,6 +99,7 @@ async function Conteudo({
           agenda={qual === "agenda" ? await agendaDaAba(estudio, hoje, dia, semana) : undefined}
           complemento={await complementoDaAba(estudio, qual)}
         />
+        </>
         )}
       </main>
     </>
@@ -99,6 +107,11 @@ async function Conteudo({
 }
 
 /** Dias fechados (Agenda); férias e faltas e reposições (Agenda e Equipe); feriados e valor da reposição (Ajustes). */
+async function ResumoDoMesDaAba({ estudioId, mes }: { estudioId: string; mes: string }) {
+  const resumo = await resumoDoMes(estudioId, mes);
+  return resumo ? <ResumoDoMes mes={mes} resumo={resumo} /> : null;
+}
+
 async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, aba: Aba) {
   if (aba === "ajustes") {
     const hoje = emBrasilia(new Date().toISOString()).data;
