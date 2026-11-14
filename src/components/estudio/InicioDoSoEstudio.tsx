@@ -36,11 +36,12 @@ export function InicioDoSoEstudio({
         <h1 className="text-[24px] font-extrabold">Olá, {nome.split(" ")[0]}</h1>
       </header>
 
-      <InstalarApp />
-      <AtivarNotificacoes texto="Receba os avisos do estúdio no celular." />
-
+      {/* Decisão 108: o que precisa do professor fica em cima. */}
       {emAndamento}
       {experimentais}
+
+      <InstalarApp />
+      <AtivarNotificacoes texto="Receba os avisos do estúdio no celular." />
 
       <EstudioNoInicio estudios={estudios} aulasHoje={aulasHoje} agora={agora} />
 

@@ -102,6 +102,23 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </div>
         </div>
 
+        {/* Decisão 108: o que o personal pediu fica em cima. Com o pedido em aberto, a avaliação sobe. */}
+        {!suspensaDesde && questionarios.map((q) => (
+          <Link
+            key={q.id}
+            href={`/aluno/questionario/${q.id}`}
+            className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
+          >
+            <span className="flex-1">
+              <span className="block text-[15px] font-bold text-gold">{q.titulo}</span>
+              <span className="block text-[13px] text-ink-2">{primeiro} está esperando suas respostas. Leva uns 2 minutos.</span>
+            </span>
+            <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
+          </Link>
+        ))}
+
+        {pedidoAvaliacao?.pedidaEm && <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />}
+
         <a
           href={linkWhatsapp(p.whatsapp, `Oi, ${primeiro}!`)}
           target="_blank"
@@ -126,20 +143,6 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
             </p>
           </section>
         )}
-
-        {!suspensaDesde && questionarios.map((q) => (
-          <Link
-            key={q.id}
-            href={`/aluno/questionario/${q.id}`}
-            className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
-          >
-            <span className="flex-1">
-              <span className="block text-[15px] font-bold text-gold">{q.titulo}</span>
-              <span className="block text-[13px] text-ink-2">{primeiro} está esperando suas respostas. Leva uns 2 minutos.</span>
-            </span>
-            <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
-          </Link>
-        ))}
 
         {suspensaDesde ? null : matricula ? (
           <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
@@ -181,7 +184,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         )}
 
         {/* Decisões 105 e 107: a evolução; o aluno também registra, e vê o pedido do personal. */}
-        <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />
+        {!pedidoAvaliacao?.pedidaEm && <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />}
 
         {!suspensaDesde && (aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
           <section className="rounded-[20px] border border-line bg-surface p-4">

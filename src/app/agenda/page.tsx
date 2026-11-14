@@ -130,6 +130,52 @@ async function Conteudo() {
     return textoDaAula(inicio, null);
   };
 
+  const temPendencia = pedidos.length + decidir.length + avisaram.length + atrasadas.length + recemChegados.length > 0;
+  const precisaDeVoce = (
+      <section className={`${temPendencia ? "border-2 border-gold" : "order-1 border border-line lg:order-none"} flex flex-col gap-1 rounded-[20px] bg-surface px-4 py-3`} aria-label="Precisa de você">
+        <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
+        {!temPendencia ? (
+          <p className="flex items-center gap-2 pb-1 text-[14px] text-ok">
+            <Icone nome="certo" className="size-4" /> Tudo em dia por aqui.
+          </p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-line">
+            {recemChegados.map((a) => (
+              <Pendencia key={a.vinculoId} href={`/agenda/alunos/${a.vinculoId}/matricula`} icone="calendario" tom="text-brand">
+                <strong>{a.nome.split(" ")[0]}</strong> completou o cadastro: inclua na sua agenda
+              </Pendencia>
+            ))}
+            {pedidos.map((p) => (
+              <Pendencia key={p.id} href={`/agenda/aula/${p.id}`} icone="calendario" tom="text-gold">
+                <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
+                {textoDaAula(p.inicio, null)}
+              </Pendencia>
+            ))}
+            {decidir.map((a) => (
+              <Pendencia key={a.id} href={`/agenda/aula/${a.id}`} icone="calendario" tom="text-bad">
+                <strong>{a.nome.split(" ")[0]}</strong> não aceitou remarcar a aula de {textoDaAula(a.inicio, null)}: cancelar ou manter?
+              </Pendencia>
+            ))}
+            {avisaram.map((c) => (
+              <Pendencia key={c.id} href="/agenda/financeiro" icone="certo" tom="text-ok">
+                <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}: confirme o recebimento em Financeiro
+              </Pendencia>
+            ))}
+            {atrasadas.slice(0, 3).map((c) => (
+              <Pendencia key={c.id} href={`/agenda/cobrancas/${c.id}`} icone="dinheiro" tom="text-bad">
+                <strong>{c.nome.split(" ")[0]}</strong> · {centavosParaReais(c.valorCentavos)} em atraso
+              </Pendencia>
+            ))}
+            {atrasadas.length > 3 && (
+              <Pendencia href="/agenda/financeiro" icone="dinheiro" tom="text-bad">
+                e mais {atrasadas.length - 3} em atraso
+              </Pendencia>
+            )}
+          </ul>
+        )}
+      </section>
+  );
+
   // No computador (opção C): à esquerda o que precisa de você; à direita a próxima aula,
   // o dinheiro do mês e o resto do dia. No celular, uma coluna só (a ordem vem do "order").
   return (
@@ -154,14 +200,14 @@ async function Conteudo() {
         </Link>
       </header>
 
+      {/* Decisão 108: tudo o que precisa do professor fica em cima, antes de qualquer outra coisa. */}
+      {emAndamento && <AulaEmAndamento aula={emAndamento} />}
+      {temPendencia && precisaDeVoce}
+      {paraDecidir.length > 0 && <PedidosDeFrequencia lista={paraDecidir} coordenacao />}
+      {concluidas.length > 0 && <ExperimentaisConcluidas lista={concluidas} />}
+
       <InstalarApp />
       <AtivarNotificacoes texto="Receba na hora os pedidos e avisos dos alunos, os pagamentos e as mensalidades que vencem hoje." />
-
-      {emAndamento && <AulaEmAndamento aula={emAndamento} />}
-
-      {paraDecidir.length > 0 && <PedidosDeFrequencia lista={paraDecidir} coordenacao />}
-
-      {concluidas.length > 0 && <ExperimentaisConcluidas lista={concluidas} />}
 
       <EstudioNoInicio estudios={estudios} aulasHoje={turmasHoje} agora={agora} />
 
@@ -279,48 +325,7 @@ async function Conteudo() {
       </div>
 
       <div className="contents lg:col-start-1 lg:row-start-2 lg:flex lg:flex-col lg:gap-4">
-      <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Precisa de você">
-        <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
-        {pedidos.length + decidir.length + avisaram.length + atrasadas.length + recemChegados.length === 0 ? (
-          <p className="flex items-center gap-2 pb-1 text-[14px] text-ok">
-            <Icone nome="certo" className="size-4" /> Tudo em dia por aqui.
-          </p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-line">
-            {recemChegados.map((a) => (
-              <Pendencia key={a.vinculoId} href={`/agenda/alunos/${a.vinculoId}/matricula`} icone="calendario" tom="text-brand">
-                <strong>{a.nome.split(" ")[0]}</strong> completou o cadastro: inclua na sua agenda
-              </Pendencia>
-            ))}
-            {pedidos.map((p) => (
-              <Pendencia key={p.id} href={`/agenda/aula/${p.id}`} icone="calendario" tom="text-gold">
-                <strong>{p.nome.split(" ")[0]}</strong> {p.remarcacao ? "quer remarcar para" : "pediu reposição em"}{" "}
-                {textoDaAula(p.inicio, null)}
-              </Pendencia>
-            ))}
-            {decidir.map((a) => (
-              <Pendencia key={a.id} href={`/agenda/aula/${a.id}`} icone="calendario" tom="text-bad">
-                <strong>{a.nome.split(" ")[0]}</strong> não aceitou remarcar a aula de {textoDaAula(a.inicio, null)}: cancelar ou manter?
-              </Pendencia>
-            ))}
-            {avisaram.map((c) => (
-              <Pendencia key={c.id} href="/agenda/financeiro" icone="certo" tom="text-ok">
-                <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}: confirme o recebimento em Financeiro
-              </Pendencia>
-            ))}
-            {atrasadas.slice(0, 3).map((c) => (
-              <Pendencia key={c.id} href={`/agenda/cobrancas/${c.id}`} icone="dinheiro" tom="text-bad">
-                <strong>{c.nome.split(" ")[0]}</strong> · {centavosParaReais(c.valorCentavos)} em atraso
-              </Pendencia>
-            ))}
-            {atrasadas.length > 3 && (
-              <Pendencia href="/agenda/financeiro" icone="dinheiro" tom="text-bad">
-                e mais {atrasadas.length - 3} em atraso
-              </Pendencia>
-            )}
-          </ul>
-        )}
-      </section>
+      {!temPendencia && precisaDeVoce}
 
       {pendentes.length > 0 && (
         <section className="order-1 flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3 lg:order-none" aria-label="Reposições pendentes">

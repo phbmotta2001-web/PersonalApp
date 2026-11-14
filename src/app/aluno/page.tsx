@@ -15,6 +15,7 @@ import { meusFormulariosPendentes } from "@/data/formularios-estudio";
 import { ComunicadosDoAluno } from "@/components/aluno/ComunicadosDoAluno";
 import { meusComunicados } from "@/data/comunicados";
 import { minhasMensalidadesNoEstudio } from "@/data/mensalidade-estudio";
+import { pedidoDeAvaliacao } from "@/data/avaliacoes";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -75,12 +76,13 @@ async function Conteudo() {
   );
   const porPersonal = await Promise.all(
     personais.map(async (p) => {
-      const [aulas, cobrancas, questionarios] = await Promise.all([
+      const [aulas, cobrancas, questionarios, avaliacao] = await Promise.all([
         proximasAulasDoAluno(p.vinculoId, 4),
         cobrancasDoAluno(p.vinculoId),
         checkinsPendentesDoAluno(p.vinculoId),
+        pedidoDeAvaliacao(p.vinculoId),
       ]);
-      return { p, aulas, cobrancas, questionarios };
+      return { p, aulas, cobrancas, questionarios, avaliacao };
     }),
   );
   const nomeDe = (vinculo: string | null) => personais.find((p) => p.vinculoId === vinculo)?.nome.split(" ")[0] ?? "seu personal";
@@ -93,6 +95,8 @@ async function Conteudo() {
     .flatMap((x) => x.cobrancas.map((c) => ({ ...c, personal: x.p.nome.split(" ")[0] })))
     .filter((c) => c.situacao === "aberta" && c.vencimento <= somarDias(hoje, 7))
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
+  // Decisão 107: o personal pediu a avaliação física e o aluno ainda não registrou.
+  const avaliacoesPedidas = porPersonal.filter((x) => x.avaliacao?.pedidaEm && !suspensas[x.p.vinculoId]).map((x) => x.p);
   const questionarios = porPersonal.flatMap((x) => x.questionarios.map((q) => ({ ...q, personal: x.p.nome.split(" ")[0] })));
 
   // "Começa em 25 min", "Hoje às 18:00", "Amanhã às 07:00", "qui, 23/10 às 07:00"
@@ -132,6 +136,89 @@ async function Conteudo() {
           </Link>
         ))}
 
+      {/* Decisão 108: tudo o que precisa do aluno fica em cima, antes de qualquer outra coisa. */}
+      {sugestoes.map((a) => (
+        <Link
+          key={a.id}
+          href="/aluno/aulas"
+          className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
+        >
+          <Icone nome="calendario" className="size-5 shrink-0 text-gold" />
+          <span className="min-w-0 flex-1 text-[14.5px]">
+            <strong className="text-gold">
+              {nomeDe(a.vinculoId)} {a.aulaOriginalId ? "pediu para remarcar sua aula" : "sugeriu outro horário"}
+            </strong>
+            <span className="block text-ink-2">{textoDaAula(a.inicio, null)} · toque para responder</span>
+          </span>
+        </Link>
+      ))}
+
+      {avaliacoesPedidas.map((p) => (
+        <Link
+          key={"av" + p.vinculoId}
+          href={`/aluno/personal/${p.vinculoId}`}
+          className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
+        >
+          <Icone nome="estrela" className="size-5 shrink-0 text-gold" />
+          <span className="min-w-0 flex-1 text-[14.5px]">
+            <strong className="text-gold">{p.nome.split(" ")[0]} pediu sua avaliação física</strong>
+            <span className="block text-ink-2">Registre seu peso e suas medidas</span>
+          </span>
+          <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Registrar</span>
+        </Link>
+      ))}
+    {formularios.length > 0 && <FormulariosPendentes lista={formularios} />}
+      {questionarios.map((q) => (
+        <Link
+          key={q.id}
+          href={`/aluno/questionario/${q.id}`}
+          className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4"
+        >
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-info-soft text-info">
+            <Icone nome="conversa" className="size-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold">{q.titulo}</span>
+            <span className="block text-[13px] text-ink-3">{q.personal} está esperando suas respostas. Leva uns 2 minutos.</span>
+          </span>
+          <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
+        </Link>
+      ))}
+
+      {cobrancas.map((c) => {
+        const atrasada = situacaoDaCobranca(c, hoje) === "atrasada";
+        return (
+          <section
+            key={c.id}
+            className={`flex flex-col gap-2.5 rounded-[20px] border p-4 ${atrasada ? "border-bad bg-bad/5" : "border-line bg-surface"}`}
+            aria-label="Matrícula"
+          >
+            <p className="flex items-start gap-2 text-[15px]">
+              <Icone nome="dinheiro" className={`mt-0.5 size-5 shrink-0 ${atrasada ? "text-bad" : "text-gold"}`} />
+              <span className="flex-1">
+                <strong className={atrasada ? "text-bad" : ""}>
+                  Sua matrícula {textoDoVencimento(c.vencimento, hoje).split(" (")[0]}
+                </strong>
+                <span className="block text-[14px] text-ink-2">
+                  {centavosParaReais(c.valorCentavos)} · {c.personal}
+                </span>
+              </span>
+            </p>
+            {c.alunoAvisouEm ? (
+              <p className="text-[14px] text-ink-3">Você avisou que pagou. {c.personal} confere e confirma.</p>
+            ) : (
+              <Link
+                href="/aluno/pagamentos"
+                className="botao-macio flex min-h-11 items-center justify-center rounded-[13px] bg-brand text-[15px] font-bold text-brand-ink"
+              >
+                Pagar com Pix
+              </Link>
+            )}
+          </section>
+        );
+      })}
+
+
       <InstalarApp />
       <AtivarNotificacoes texto="Receba o lembrete 1 hora antes da aula, as respostas do seu personal e o aviso de vencimento da matrícula." />
 
@@ -148,7 +235,6 @@ async function Conteudo() {
       )}
 
       <ComunicadosDoAluno lista={comunicados} />
-      {formularios.length > 0 && <FormulariosPendentes lista={formularios} />}
       {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
       {fila.length > 0 && <FilaDeEspera lista={fila} />}
 
@@ -224,72 +310,6 @@ async function Conteudo() {
               </>
             )}
           </section>
-
-          {sugestoes.map((a) => (
-            <Link
-              key={a.id}
-              href="/aluno/aulas"
-              className="flex items-center gap-3 rounded-[20px] border-2 border-gold bg-gold-soft p-4"
-            >
-              <Icone nome="calendario" className="size-5 shrink-0 text-gold" />
-              <span className="min-w-0 flex-1 text-[14.5px]">
-                <strong className="text-gold">
-                  {nomeDe(a.vinculoId)} {a.aulaOriginalId ? "pediu para remarcar sua aula" : "sugeriu outro horário"}
-                </strong>
-                <span className="block text-ink-2">{textoDaAula(a.inicio, null)} · toque para responder</span>
-              </span>
-            </Link>
-          ))}
-
-          {cobrancas.map((c) => {
-            const atrasada = situacaoDaCobranca(c, hoje) === "atrasada";
-            return (
-              <section
-                key={c.id}
-                className={`flex flex-col gap-2.5 rounded-[20px] border p-4 ${atrasada ? "border-bad bg-bad/5" : "border-line bg-surface"}`}
-                aria-label="Matrícula"
-              >
-                <p className="flex items-start gap-2 text-[15px]">
-                  <Icone nome="dinheiro" className={`mt-0.5 size-5 shrink-0 ${atrasada ? "text-bad" : "text-gold"}`} />
-                  <span className="flex-1">
-                    <strong className={atrasada ? "text-bad" : ""}>
-                      Sua matrícula {textoDoVencimento(c.vencimento, hoje).split(" (")[0]}
-                    </strong>
-                    <span className="block text-[14px] text-ink-2">
-                      {centavosParaReais(c.valorCentavos)} · {c.personal}
-                    </span>
-                  </span>
-                </p>
-                {c.alunoAvisouEm ? (
-                  <p className="text-[14px] text-ink-3">Você avisou que pagou. {c.personal} confere e confirma.</p>
-                ) : (
-                  <Link
-                    href="/aluno/pagamentos"
-                    className="botao-macio flex min-h-11 items-center justify-center rounded-[13px] bg-brand text-[15px] font-bold text-brand-ink"
-                  >
-                    Pagar com Pix
-                  </Link>
-                )}
-              </section>
-            );
-          })}
-
-          {questionarios.map((q) => (
-            <Link
-              key={q.id}
-              href={`/aluno/questionario/${q.id}`}
-              className="flex items-center gap-3 rounded-[20px] border border-line bg-surface p-4"
-            >
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-info-soft text-info">
-                <Icone nome="conversa" className="size-5" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-[15px] font-bold">{q.titulo}</span>
-                <span className="block text-[13px] text-ink-3">{q.personal} está esperando suas respostas. Leva uns 2 minutos.</span>
-              </span>
-              <span className="rounded-[11px] bg-brand px-3 py-2 text-[14px] font-bold text-brand-ink">Responder</span>
-            </Link>
-          ))}
 
           <section className="flex flex-col gap-2" aria-label={personais.length > 1 ? "Seus personais" : "Seu personal"}>
             <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">
