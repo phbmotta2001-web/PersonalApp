@@ -87,15 +87,14 @@ async function Conteudo({
   );
 }
 
-/** Férias e faltas e reposições (Agenda e Equipe); valor da reposição (Ajustes). */
+/** Dias fechados (Agenda); férias e faltas e reposições (Agenda e Equipe); feriados e valor da reposição (Ajustes). */
 async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof lerEstudio>>>, aba: Aba) {
   if (aba === "ajustes") {
     const hoje = emBrasilia(new Date().toISOString()).data;
-    const [config, marcarH, feriados, fechados] = await Promise.all([
+    const [config, marcarH, feriados] = await Promise.all([
       lerConfigReposicao(estudio.id),
       lerAntecedenciaParaMarcar(estudio.id),
       lerFeriadosDoEstudio(estudio.id),
-      lerDiasFechados(estudio.id, hoje),
     ]);
     return (
       <>
@@ -108,16 +107,22 @@ async function complementoDaAba(estudio: NonNullable<Awaited<ReturnType<typeof l
             estudio
           />
         </section>
-        <DiasFechados estudioId={estudio.id} hoje={hoje} dias={fechados} />
         <RegrasDosAlunos estudioId={estudio.id} faltaH={estudio.antecedenciaFaltaH} marcarH={marcarH} validadeDias={estudio.validadeReposicaoDias} />
         <ValorDaReposicao estudioId={estudio.id} config={config} />
       </>
     );
   }
   if (aba !== "agenda" && aba !== "equipe") return null;
-  const [ausencias, reposicoes] = await Promise.all([ausenciasDoEstudio(estudio.id), reposicoesAbertas(estudio.id)]);
+  const hoje = emBrasilia(new Date().toISOString()).data;
+  // Fechar o estúdio num dia é coisa do dia a dia: fica na Agenda (Ajustes é para o padrão).
+  const [ausencias, reposicoes, fechados] = await Promise.all([
+    ausenciasDoEstudio(estudio.id),
+    reposicoesAbertas(estudio.id),
+    aba === "agenda" ? lerDiasFechados(estudio.id, hoje) : Promise.resolve(null),
+  ]);
   return (
     <>
+      {fechados && <DiasFechados estudioId={estudio.id} hoje={hoje} dias={fechados} />}
       <ReposicoesAbertas reposicoes={reposicoes} podeAssumir={false} />
       <AusenciasDoEstudio
         estudioId={estudio.id}
