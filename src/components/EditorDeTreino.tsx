@@ -54,7 +54,7 @@ export function EditorDeTreino({
       ))}
       {outrosDias && faltam.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 text-[13px] text-ink-3">
-          {visiveis.length === 0 ? "Escolha os dias:" : "Outro dia:"}
+          {visiveis.length === 0 ? "Escolha os dias para escrever o treino:" : "Outro dia:"}
           {faltam.map((d) => (
             <button
               key={d.valor}

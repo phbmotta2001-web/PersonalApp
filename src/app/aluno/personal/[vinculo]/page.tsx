@@ -17,7 +17,7 @@ import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas"
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
 import { treinoDoVinculo } from "@/data/treino";
 import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
-import { avaliacoesDoVinculo } from "@/data/avaliacoes";
+import { avaliacoesDoVinculo, pedidoDeAvaliacao } from "@/data/avaliacoes";
 import { lerMatricula, matriculasSuspensas, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia, DIAS } from "@/lib/expediente";
@@ -63,7 +63,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, avaliacoes] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, avaliacoes, pedidoAvaliacao] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -75,6 +75,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     matriculasSuspensas(),
     treinoDoVinculo(vinculo),
     avaliacoesDoVinculo(vinculo),
+    pedidoDeAvaliacao(vinculo),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -179,8 +180,8 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </section>
         )}
 
-        {/* Decisão 105: a evolução das avaliações físicas (sem notificação no celular). */}
-        <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} editavel={false} />
+        {/* Decisões 105 e 107: a evolução; o aluno também registra, e vê o pedido do personal. */}
+        <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />
 
         {!suspensaDesde && (aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
           <section className="rounded-[20px] border border-line bg-surface p-4">

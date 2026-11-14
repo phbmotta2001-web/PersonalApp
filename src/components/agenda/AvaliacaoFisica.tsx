@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { apagarAvaliacao, salvarAvaliacao } from "@/data/avaliacoes";
-import { lerNumero, MEDIDAS, numeroBr, type AvaliacaoFisica as Avaliacao, type Medida } from "@/lib/avaliacao";
+import { apagarAvaliacao, pedirAvaliacao, programarAvaliacao, salvarAvaliacao } from "@/data/avaliacoes";
+import { lerNumero, MEDIDAS, numeroBr, type AvaliacaoFisica as Avaliacao, type Medida, type PedidoDeAvaliacao } from "@/lib/avaliacao";
 import { dataCurta } from "@/lib/expediente";
 import { Chip } from "../Chip";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
@@ -23,20 +23,28 @@ const dataBr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(2, 4
 /**
  * Decisão 105: avaliação física com evolução. O personal registra (data, peso, % de gordura e
  * medidas); o personal e o aluno veem o último valor de cada item, a diferença para a avaliação
- * anterior e o gráfico. O aluno só vê (\`editavel\` falso).
+ * anterior e o gráfico. Decisão 107: o aluno também registra (e edita as que registrou), e o
+ * personal pede ao aluno, agora ou programado (todo mês, a cada 2 ou 3 meses).
  */
 export function AvaliacaoFisica({
   vinculoId,
   lista,
   hoje,
-  editavel,
+  quem,
+  pedido,
+  nomeAluno,
 }: {
   vinculoId: string;
   /** Da mais antiga para a mais nova. */
   lista: Avaliacao[];
   hoje: string;
-  editavel: boolean;
+  quem: "personal" | "aluno";
+  /** Pedido do personal (null: aluno sem o app, ou antes da migração 69). */
+  pedido: PedidoDeAvaliacao | null;
+  /** Primeiro nome do aluno (no app do personal). */
+  nomeAluno?: string;
 }) {
+  const doAluno = quem === "aluno";
   const [editando, setEditando] = useState<Avaliacao | "nova" | null>(null);
   const [todas, setTodas] = useState(false);
   const indicadores = (["peso", "gordura", ...MEDIDAS.map((m) => m.chave)] as Indicador[]).filter((i) =>
@@ -45,18 +53,28 @@ export function AvaliacaoFisica({
   const [grafico, setGrafico] = useState<Indicador>(indicadores[0] ?? "peso");
   const atual = indicadores.includes(grafico) ? grafico : (indicadores[0] ?? "peso");
 
-  if (!editavel && lista.length === 0) return null;
-
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Avaliação física">
       <div className="flex items-center gap-2">
-        <h3 className="flex-1 text-[16px] font-bold">{editavel ? "Avaliação física" : "Sua evolução"}</h3>
-        {editavel && !editando && (
+        <h3 className="flex-1 text-[16px] font-bold">{doAluno ? "Sua evolução" : "Avaliação física"}</h3>
+        {!editando && (
           <button type="button" onClick={() => setEditando("nova")} className="text-[14.5px] font-bold text-brand">
             + Nova avaliação
           </button>
         )}
       </div>
+
+      {doAluno && pedido?.pedidaEm && !editando && (
+        <div className="flex flex-col gap-2 rounded-[16px] border-2 border-brand bg-surface-2 p-3">
+          <p className="font-bold">Seu personal pediu uma avaliação</p>
+          <p className="-mt-1 text-[14px] text-ink-2">Registre seu peso e, se puder, o % de gordura e as medidas.</p>
+          <button type="button" onClick={() => setEditando("nova")} className={ESTILO_BOTAO_PRINCIPAL + " sm:self-start"}>
+            Registrar agora
+          </button>
+        </div>
+      )}
+
+      {!doAluno && pedido && !editando && <PedidoAoAluno vinculoId={vinculoId} pedido={pedido} nome={nomeAluno ?? "O aluno"} />}
 
       {editando && (
         <FormAvaliacao
@@ -69,7 +87,11 @@ export function AvaliacaoFisica({
       )}
 
       {lista.length === 0 && !editando && (
-        <p className="text-[14px] text-ink-3">Registre peso, % de gordura e medidas. O aluno acompanha a evolução no app.</p>
+        <p className="text-[14px] text-ink-3">
+          {doAluno
+            ? "Registre seu peso, % de gordura e medidas quando quiser e acompanhe a evolução."
+            : "Registre peso, % de gordura e medidas. O aluno acompanha a evolução no app."}
+        </p>
       )}
 
       {lista.length > 0 && (
@@ -105,8 +127,10 @@ export function AvaliacaoFisica({
                       .filter(Boolean)
                       .join(" · ")}
                     {a.observacao && <span className="block text-[13px] text-ink-3">{a.observacao}</span>}
+                    {a.porAluno && <span className="block text-[13px] font-semibold text-ink-3">{doAluno ? "Registrada por você" : "Registrada pelo aluno"}</span>}
                   </span>
-                  {editavel && (
+                  {/* Cada um edita as que registrou. */}
+                  {a.porAluno === doAluno && (
                     <button type="button" onClick={() => setEditando(a)} className="font-bold text-brand">
                       Editar
                     </button>
@@ -122,6 +146,53 @@ export function AvaliacaoFisica({
         </>
       )}
     </section>
+  );
+}
+
+const REPETIR = [
+  { meses: 0, rotulo: "Não" },
+  { meses: 1, rotulo: "Todo mês" },
+  { meses: 2, rotulo: "A cada 2 meses" },
+  { meses: 3, rotulo: "A cada 3 meses" },
+];
+const diaMes = (instante: string) =>
+  new Date(instante).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit" });
+
+/** Decisão 107: o personal pede ao aluno que registre (agora ou programado), com notificação. */
+function PedidoAoAluno({ vinculoId, pedido, nome }: { vinculoId: string; pedido: PedidoDeAvaliacao; nome: string }) {
+  const router = useRouter();
+  const [erro, setErro] = useState<string | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  const fazer = (acao: () => Promise<{ ok: true } | { ok: false; erro: string }>) =>
+    iniciar(async () => {
+      setErro(null);
+      const r = await acao();
+      if (!r.ok) return setErro(r.erro);
+      router.refresh();
+    });
+  return (
+    <div className="flex flex-col gap-2 rounded-[14px] bg-surface-2 p-3 text-[14px]">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="min-w-0 flex-1 text-ink-2">
+          {pedido.pedidaEm ? `Pedido em ${diaMes(pedido.pedidaEm)}: aguardando ${nome} registrar.` : `${nome} também pode registrar pelo app.`}
+        </span>
+        <button type="button" disabled={ocupado} onClick={() => fazer(() => pedirAvaliacao(vinculoId))} className="font-bold text-brand">
+          {pedido.pedidaEm ? "Pedir de novo" : "Pedir ao aluno"}
+        </button>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 font-bold text-ink-2">Pedir sempre:</span>
+        {REPETIR.map((o) => (
+          <Chip key={o.meses} ativo={(pedido.repetirMeses ?? 0) === o.meses} onClick={() => !ocupado && fazer(() => programarAvaliacao(vinculoId, o.meses))}>
+            {o.rotulo}
+          </Chip>
+        ))}
+      </div>
+      {pedido.repetirMeses && pedido.proxima ? (
+        <p className="text-[13px] text-ink-3">Próximo pedido em {dataBr(pedido.proxima)}, com notificação no celular.</p>
+      ) : null}
+      <Aviso>{erro}</Aviso>
+    </div>
   );
 }
 

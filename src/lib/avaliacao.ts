@@ -20,6 +20,18 @@ export interface AvaliacaoFisica {
   gorduraPct: number | null;
   medidas: Partial<Record<Medida, number>>;
   observacao: string | null;
+  /** Decisão 107: registrada pelo próprio aluno. */
+  porAluno: boolean;
+}
+
+/** Decisão 107: pedido do personal para o aluno registrar a avaliação. */
+export interface PedidoDeAvaliacao {
+  /** Pedido em aberto (o aluno ainda não registrou). */
+  pedidaEm: string | null;
+  /** Repetir a cada 1, 2 ou 3 meses (null: não repete). */
+  repetirMeses: number | null;
+  /** "AAAA-MM-DD" do próximo pedido automático. */
+  proxima: string | null;
 }
 
 /** "82,4" → 82.4; vazio → null; inválido → NaN. */

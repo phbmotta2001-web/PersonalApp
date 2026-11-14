@@ -29,7 +29,7 @@ import { origemDoSite } from "@/lib/supabase/servidor";
 import { dataCompleta, fimDaMatricula } from "@/lib/plano";
 import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
 import { FormulariosDaFicha } from "@/components/agenda/FormulariosDaFicha";
-import { avaliacoesDoVinculo } from "@/data/avaliacoes";
+import { avaliacoesDoVinculo, pedidoDeAvaliacao } from "@/data/avaliacoes";
 import { formulariosDoVinculo } from "@/data/formularios-personal";
 
 export const metadata: Metadata = {
@@ -53,7 +53,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
   const hojeBr = agoraEmBrasilia().data;
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, avaliacoes, formularios] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, avaliacoes, formularios, pedidoAvaliacao] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -67,6 +67,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     treinoDoVinculo(vinculo),
     avaliacoesDoVinculo(vinculo),
     formulariosDoVinculo(vinculo),
+    pedidoDeAvaliacao(vinculo),
   ]);
   const fimDoPlanoAtual = matricula ? fimDaMatricula(matricula, hojeBr) : null;
   const suspensaDesde = suspensas[vinculo];
@@ -127,9 +128,19 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         </div>
       </section>
 
+      {/* Decisão 81: o treino de cada dia, só por texto; o aluno vê no app. */}
+      <TreinoDoAluno vinculoId={vinculo} dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} inicial={treino} />
+
       {/* Decisão 105: ParQ e anamnese (aluno com o app) e a avaliação física. */}
       {!a.semConta && <FormulariosDaFicha vinculoId={vinculo} nome={a.nomeCompleto} whatsapp={a.whatsapp} lista={formularios} />}
-      <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hojeBr} editavel />
+      <AvaliacaoFisica
+        vinculoId={vinculo}
+        lista={avaliacoes}
+        hoje={hojeBr}
+        quem="personal"
+        pedido={a.semConta ? null : pedidoAvaliacao}
+        nomeAluno={a.nomeCompleto.split(" ")[0]}
+      />
 
       {a.semConta && (
         <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Aluno sem app">
@@ -223,9 +234,6 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           <span aria-hidden="true">›</span>
         </Link>
       )}
-
-      {/* Decisão 81: o treino de cada dia, só por texto; o aluno vê no app. */}
-      <TreinoDoAluno vinculoId={vinculo} dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} inicial={treino} />
 
       <section className="grid grid-cols-2 gap-2" aria-label="Este mês">
         <Numero titulo="Aulas dadas no mês" valor={resumo.dadas} />
