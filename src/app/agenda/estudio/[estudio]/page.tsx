@@ -11,6 +11,7 @@ import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { AgendarExperimental } from "@/components/estudio/AgendarExperimental";
 import { CadastrarAlunoDaEquipe } from "@/components/estudio/CadastrarAlunoDaEquipe";
+import { MeusAlunosNoEstudio } from "@/components/estudio/MeusAlunosNoEstudio";
 import { ausenciasDoEstudio, reposicoesAbertas } from "@/data/reposicao";
 import { usuarioAtual } from "@/lib/supabase/servidor";
 import { DIAS, agoraEmBrasilia, diaDaSemana, instante, minParaHora, somarDias } from "@/lib/expediente";
@@ -57,7 +58,18 @@ async function Conteudo({
   ]);
   if (!estudio) notFound();
   const minhas = aulas.filter((a) => a.estudioId === id && !a.cancelada);
-  const minhasTurmas = estudio.turmas.filter((t) => minhas.some((a) => a.turmaId === t.id));
+  // Alunos das minhas turmas, em ordem alfabética: aulas por semana no total e comigo.
+  const deTurma = new Set(estudio.turmas.filter((t) => t.tipo === "turma").map((t) => t.id));
+  const minhasIds = new Set(estudio.turmas.filter((t) => t.tipo === "turma" && t.professorId === eu).map((t) => t.id));
+  const meusAlunos = estudio.alunos
+    .map((a) => ({
+      id: a.id,
+      nome: a.nome,
+      total: a.turmas.filter((t) => deTurma.has(t)).length,
+      comigo: a.turmas.filter((t) => minhasIds.has(t)).length,
+    }))
+    .filter((a) => a.comigo > 0)
+    .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
   return (
     <div className="flex flex-col gap-4 px-[18px] pt-2 pb-10">
       <section className="flex flex-col gap-1 rounded-[20px] bg-estudio p-4 text-white">
@@ -110,21 +122,7 @@ async function Conteudo({
         />
       )}
 
-      {minhasTurmas.length > 0 && (
-        <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Seus alunos no estúdio">
-          <h2 className="pb-1 text-[16px] font-semibold">Seus alunos no estúdio</h2>
-          {minhasTurmas.map((t) => (
-            <div key={t.id} className="py-1.5">
-              <p className="text-[13px] font-bold text-estudio">{t.modalidade}</p>
-              <p className="text-[14.5px] text-ink-2">
-                {t.alunos.length
-                  ? t.alunos.map((aid) => estudio.alunos.find((a) => a.id === aid)?.nome).filter(Boolean).join(", ")
-                  : "Sem alunos ainda"}
-              </p>
-            </div>
-          ))}
-        </section>
-      )}
+      {minhasIds.size > 0 && <MeusAlunosNoEstudio alunos={meusAlunos} />}
 
       <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Equipe">
         <h2 className="pb-1 text-[16px] font-semibold">Equipe</h2>

@@ -784,7 +784,18 @@ function mensagemDeCobranca(estudio: EstudioCompleto, nome: string, valor: numbe
 }
 
 function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto; mes: string; hoje: string; dados: FinanceiroDoMes }) {
+  const router = useRouter();
   const [todos, setTodos] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  // Confirmar o pagamento direto da lista (só mensalidades já geradas; as previstas ainda não existem).
+  const recebido = (id: string) =>
+    iniciar(async () => {
+      setErro(null);
+      const r = await marcarMensalidade(id, "paga");
+      if (!r.ok) return setErro(r.erro);
+      router.refresh();
+    });
   const { arrecadado, total, falta, devendo } = contasDoMes(estudio, mes, hoje, dados);
   const pct = total ? Math.min(100, Math.round((arrecadado / total) * 100)) : 0;
   // Por padrão, só quem vence em até 7 dias (ou já venceu); "Ver todos" mostra o resto.
@@ -815,7 +826,7 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
               const aluno = estudio.alunos.find((x) => x.id === c.alunoId);
               const cobrar = c.vencimento !== "" && c.vencimento <= limite && aluno;
               return (
-                <li key={c.id} className="flex flex-wrap items-center gap-x-2 py-2 text-[15px]">
+                <li key={c.id} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 py-2 text-[15px]">
                   <span className="min-w-0 flex-1 font-semibold">{c.aluno}</span>
                   <span className="font-extrabold tabular-nums">{centavosParaReais(c.valor)}</span>
                   {cobrar && (
@@ -828,6 +839,16 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
                       Cobrar no WhatsApp
                     </a>
                   )}
+                  {!c.id.startsWith("prevista-") && (
+                    <button
+                      type="button"
+                      disabled={ocupado}
+                      onClick={() => recebido(c.id)}
+                      className="rounded-full border border-estudio px-3 py-1 text-[13px] font-bold text-estudio"
+                    >
+                      Recebido
+                    </button>
+                  )}
                   <span className={`basis-full text-[13px] ${atrasada ? "font-semibold text-bad" : "text-ink-3"}`}>
                     {!c.vencimento ? "sem dia de vencimento" : atrasada ? `venceu em ${dataBr(c.vencimento)}` : c.vencimento === hoje ? "vence hoje" : `vence em ${dataBr(c.vencimento)}`}
                     {c.alunoAvisou && " · avisou que pagou"}
@@ -836,6 +857,7 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
               );
             })}
           </ul>
+          <Aviso>{erro}</Aviso>
           {devendo.length > proximos.length && (
             <button type="button" onClick={() => setTodos(!todos)} className="self-start pt-1 text-[14px] font-bold text-estudio">
               {todos ? "Mostrar só os próximos 7 dias" : `Ver todos (${devendo.length})`}
