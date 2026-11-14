@@ -73,7 +73,13 @@ export function AgendaDoAlunoNoEstudio({
     setEscolhida(null);
     agir(a.id, async () => {
       const r = await entrarNaTurma(a.turmaId, troca);
-      return r.ok ? { ok: true, texto: "Pronto: você está na turma. A coordenação e o professor foram avisados." } : r;
+      if (!r.ok) return r;
+      return {
+        ok: true,
+        texto: r.pendente
+          ? "Pedido enviado. A vaga fica guardada para você até a coordenação responder."
+          : "Pronto: você está na turma. A coordenação e o professor foram avisados.",
+      };
     });
   };
   const esperar = (a: AulaNaAgendaDoAluno) =>
@@ -92,7 +98,11 @@ export function AgendaDoAlunoNoEstudio({
     if (!confirm(`Sair da turma de ${rotulo(a)} toda semana? A mensalidade acompanha a partir da próxima.`)) return;
     agir(a.id, async () => {
       const r = await sairDaTurma(a.turmaId);
-      return r.ok ? { ok: true, texto: "Você saiu da turma. A coordenação e o professor foram avisados." } : r;
+      if (!r.ok) return r;
+      return {
+        ok: true,
+        texto: r.pendente ? "Pedido enviado. Você é avisado quando a coordenação responder." : "Você saiu da turma. A coordenação e o professor foram avisados.",
+      };
     });
   };
 

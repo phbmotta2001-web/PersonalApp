@@ -7,8 +7,9 @@ import { Avatar, corPorId } from "@/components/Avatar";
 import { InstalarApp } from "@/components/InstalarApp";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
-import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhaFilaDeEspera, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhaFilaDeEspera, minhasReposicoesNoEstudio, pedidosDeFrequencia } from "@/data/aluno-estudio";
 import { FilaDeEspera } from "@/components/aluno/FilaDeEspera";
+import { PedidosDeFrequencia } from "@/components/estudio/PedidosDeFrequencia";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -42,12 +43,14 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno, fila] = await Promise.all([
+  const [personais, suspensas, estudiosDoAluno, fila, pedidos] = await Promise.all([
     listarMeusPersonais(),
     matriculasSuspensas(),
     meusEstudiosComoAluno(),
     minhaFilaDeEspera(),
+    pedidosDeFrequencia(),
   ]);
+  const meusPedidos = pedidos.filter((p) => p.meu);
   const estudios = await Promise.all(
     estudiosDoAluno.map(async (e) => {
       const [aulasDoEstudio, reposicoes] = await Promise.all([
@@ -132,6 +135,7 @@ async function Conteudo() {
         </section>
       )}
 
+      {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
       {fila.length > 0 && <FilaDeEspera lista={fila} />}
 
       {estudios.map(({ e, proxima: p, reposicoes }) => (

@@ -27,6 +27,7 @@ import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/m
 import { pixCopiaECola, TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/pix";
 import { VEZES_POR_SEMANA } from "@/lib/precos";
 import { Chip } from "../Chip";
+import { TransitoLivreDoEstudio } from "./TransitoLivre";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 export const MODELOS: { valor: ModeloDePagamento; rotulo: string; texto: string }[] = [
@@ -207,6 +208,7 @@ export function AjustesDoEstudio({ estudio }: { estudio: EstudioCompleto }) {
       </section>
 
       <FuncionamentoDoEstudio estudio={estudio} />
+      <TransitoLivreDoEstudio estudioId={estudio.id} ligado={c.transitoLivre} />
       {c.tipo === "estudio" && <TabelaDeMensalidades estudio={estudio} />}
       {c.tipo === "estudio" && <PlanosDoEstudio estudio={estudio} />}
       {c.tipo === "estudio" && <PixDoEstudio estudio={estudio} />}

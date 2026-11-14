@@ -15,6 +15,8 @@ export interface DadosCadastroEmpresa {
   tipo: "estudio" | "academia";
   /** Dias e horários de funcionamento. */
   funcionamento: Funcionamento;
+  /** Decisão 96: alunos mudam de turma sem confirmação. */
+  transitoLivre: boolean;
   aceitouTermo: boolean;
 }
 

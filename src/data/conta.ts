@@ -161,6 +161,7 @@ export async function cadastrarEmpresa(dados: DadosCadastroEmpresa): Promise<Res
         estudio_nome: dados.nomeEstudio.trim(),
         estudio_tipo: dados.tipo,
         estudio_funcionamento: dados.funcionamento,
+        estudio_transito_livre: dados.transitoLivre !== false,
         termos_versao: TERMOS_PUBLICADOS ? VERSAO_TERMOS : undefined,
         nome_completo: dados.nomeCompleto.trim(),
         whatsapp: soDigitos(dados.whatsapp),
@@ -176,6 +177,9 @@ export async function cadastrarEmpresa(dados: DadosCadastroEmpresa): Promise<Res
   if (estudio && dados.tipo === "academia") {
     await supabase.rpc("salvar_config_estudio", { p_estudio: estudio, p: { tipo: "academia", pagamento_modelo: "hora" } });
   }
+  if (estudio && dados.transitoLivre === false) {
+    await supabase.rpc("salvar_transito_livre", { p_estudio: estudio, p_ligado: false });
+  }
   if (estudio) {
     await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: estudio, p: funcionamentoParaBanco(dados.funcionamento) });
   }
@@ -190,7 +194,7 @@ export async function souContaEmpresa(): Promise<boolean> {
 }
 
 /** Nome e tipo informados no cadastro empresarial (para criar o estúdio depois de confirmar o e-mail). */
-export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento } | null> {
+export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento; transitoLivre?: boolean } | null> {
   const supabase = await criarClienteSupabase();
   const { data } = await supabase.auth.getClaims();
   const m = data?.claims?.user_metadata;
@@ -199,6 +203,7 @@ export async function estudioDoCadastro(): Promise<{ nome: string; tipo: "estudi
     nome: m.estudio_nome,
     tipo: m.estudio_tipo === "academia" ? "academia" : "estudio",
     funcionamento: typeof m.estudio_funcionamento === "object" && m.estudio_funcionamento ? (m.estudio_funcionamento as Funcionamento) : undefined,
+    transitoLivre: m.estudio_transito_livre !== false,
   };
 }
 

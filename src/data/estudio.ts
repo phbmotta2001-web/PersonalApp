@@ -116,6 +116,8 @@ export interface ConfigDoEstudio {
   precosPlano: Partial<Record<number, Partial<Record<number, number>>>>;
   /** Taxa de matrícula (vazio: não cobra). */
   taxaMatricula: number | null;
+  /** Decisão 96: o aluno muda de turma sem confirmação (desligado: vira pedido). */
+  transitoLivre: boolean;
   /** Dias e horários de funcionamento (vazio: ainda não definido). */
   funcionamento: Funcionamento;
 }
@@ -202,7 +204,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     supabase
       .from("estudios")
       .select(
-        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade, taxa_matricula_centavos",
+        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade, taxa_matricula_centavos, transito_livre",
       )
       .eq("id", estudioId)
       .maybeSingle(),
@@ -261,6 +263,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     validadeReposicaoDias: e.validade_reposicao_dias,
     config: {
       tipo: e.tipo as TipoDeEstudio,
+      transitoLivre: e.transito_livre !== false,
       pagamentoModelo: e.pagamento_modelo as ModeloDePagamento,
       valores: valoresDe(e),
       maxAlunosTurma: e.max_alunos_turma,
@@ -463,6 +466,7 @@ export async function criarEstudio(
   funcionamento?: Funcionamento,
   /** Aulas lançadas em todo o funcionamento (decisão 63); null: não lançar. */
   grade?: { duracao: number; modalidade: string } | null,
+  transitoLivre = true,
 ): Promise<{ ok: true; id: string } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("criar_estudio", { p_nome: typeof nome === "string" ? nome : "" });
@@ -470,6 +474,7 @@ export async function criarEstudio(
   if (tipo === "academia") {
     await supabase.rpc("salvar_config_estudio", { p_estudio: data, p: { tipo: "academia", pagamento_modelo: "hora" } });
   }
+  if (!transitoLivre) await supabase.rpc("salvar_transito_livre", { p_estudio: data, p_ligado: false });
   if (funcionamento && problemasDoFuncionamento(funcionamento).length === 0) {
     const { error: erroFuncionamento } = await supabase.rpc("salvar_funcionamento_estudio", { p_estudio: data, p: funcionamentoParaBanco(funcionamento) });
     if (!erroFuncionamento && grade) await gerarGrade(data as string, grade.duracao, grade.modalidade);
@@ -970,6 +975,13 @@ export async function aulasDoEstudio(estudioId: string, de: string, ate: string)
 }
 
 /** Dias e horários de funcionamento do estúdio (só a coordenação). */
+/** Decisão 96: liga ou desliga o trânsito livre dos alunos entre horários. */
+export async function salvarTransitoLivre(estudioId: string, ligado: boolean): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_transito_livre", { p_estudio: estudioId, p_ligado: ligado });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar (falta atualizar o banco: migração 57).") } : { ok: true };
+}
+
 export async function salvarFuncionamento(estudioId: string, f: Funcionamento): Promise<Resposta> {
   const problemas = problemasDoFuncionamento(f);
   if (problemas.length) return { ok: false, erro: problemas[0][0].toUpperCase() + problemas[0].slice(1) + "." };

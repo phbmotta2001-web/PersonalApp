@@ -118,16 +118,64 @@ export async function minhaFilaDeEspera(): Promise<FilaDoAluno[]> {
 }
 
 /** Entra numa turma toda semana (com `trocar`, larga essa turma dele). */
-export async function entrarNaTurma(turmaId: string, trocar: string | null = null): Promise<Resposta> {
+/** pendente: o trânsito livre está desligado e virou pedido para a coordenação (decisão 96). */
+export async function entrarNaTurma(turmaId: string, trocar: string | null = null): Promise<{ ok: true; pendente: boolean } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("entrar_na_turma_estudio", { p_turma: turmaId, p_trocar: trocar });
-  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível entrar na turma.") } : { ok: true };
+  const { data, error } = await supabase.rpc("entrar_na_turma_estudio", { p_turma: turmaId, p_trocar: trocar });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível entrar na turma.") } : { ok: true, pendente: data === "pendente" };
 }
 
-export async function sairDaTurma(turmaId: string): Promise<Resposta> {
+export async function sairDaTurma(turmaId: string): Promise<{ ok: true; pendente: boolean } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("sair_da_turma_estudio", { p_turma: turmaId });
-  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível sair da turma.") } : { ok: true };
+  const { data, error } = await supabase.rpc("sair_da_turma_estudio", { p_turma: turmaId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível sair da turma.") } : { ok: true, pendente: data === "pendente" };
+}
+
+// ─── Pedidos de mudança de turma (decisão 96) ───────────────────────────────
+
+export interface PedidoDeFrequencia {
+  id: string;
+  estudioId: string;
+  estudio: string;
+  aluno: string;
+  whatsapp: string | null;
+  tipo: "entrar" | "sair";
+  turmaId: string;
+  turma: string;
+  trocar: string | null;
+  /** É um pedido do próprio aluno logado. */
+  meu: boolean;
+}
+
+/** Pedidos pendentes: os do aluno logado e os dos estúdios que ele coordena. */
+export async function pedidosDeFrequencia(): Promise<PedidoDeFrequencia[]> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("pedidos_frequencia_pendentes");
+  if (error || !data) return [];
+  return (data as Record<string, unknown>[]).map((p) => ({
+    id: p.id as string,
+    estudioId: p.estudio_id as string,
+    estudio: p.estudio as string,
+    aluno: p.aluno as string,
+    whatsapp: (p.whatsapp as string | null) ?? null,
+    tipo: p.tipo === "sair" ? "sair" : "entrar",
+    turmaId: p.turma_id as string,
+    turma: p.turma as string,
+    trocar: (p.trocar as string | null) ?? null,
+    meu: p.meu === true,
+  }));
+}
+
+export async function decidirPedidoDeFrequencia(pedidoId: string, aprovar: boolean): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("decidir_pedido_frequencia", { p_pedido: pedidoId, p_aprovar: aprovar });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível responder o pedido.") } : { ok: true };
+}
+
+export async function cancelarPedidoDeFrequencia(pedidoId: string): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("cancelar_pedido_frequencia", { p_pedido: pedidoId });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível cancelar o pedido.") } : { ok: true };
 }
 
 /** Entra na fila de uma turma cheia. Devolve a posição. */

@@ -9,6 +9,7 @@ import { problemasDoCadastroEmpresa, type DadosCadastroEmpresa } from "@/lib/emp
 import { frase } from "@/lib/formato";
 import { FUNCIONAMENTO_PADRAO } from "@/lib/funcionamento";
 import { HorarioDeFuncionamento } from "../estudio/HorarioDeFuncionamento";
+import { InterruptorTransito } from "../estudio/TransitoLivre";
 import { Chip } from "../Chip";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 import { AceiteDosTermos } from "./AceiteDosTermos";
@@ -21,6 +22,7 @@ const VAZIO: DadosCadastroEmpresa = {
   nomeEstudio: "",
   tipo: "estudio",
   funcionamento: FUNCIONAMENTO_PADRAO,
+  transitoLivre: true,
   aceitouTermo: false,
 };
 
@@ -115,6 +117,8 @@ export function FormCadastroEmpresa({ termos = false }: { termos?: boolean }) {
         <HorarioDeFuncionamento valor={dados.funcionamento} mudar={(f) => mudar({ funcionamento: f })} />
         <span className="text-[13px] text-ink-3">A agenda de turmas e turnos fica dentro deste horário. Dá para mudar depois.</span>
       </div>
+
+      <InterruptorTransito ligado={dados.transitoLivre} mudar={(v) => mudar({ transitoLivre: v })} />
 
       <Campo id="pe-nome" rotulo="Seu nome completo" ajuda="De quem responde pela coordenação.">
         <input

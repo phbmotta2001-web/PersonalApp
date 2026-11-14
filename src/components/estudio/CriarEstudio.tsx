@@ -6,16 +6,22 @@ import { criarEstudio } from "@/data/estudio";
 import { FUNCIONAMENTO_PADRAO, problemasDoFuncionamento, type Funcionamento } from "@/lib/funcionamento";
 import { Chip } from "../Chip";
 import { HorarioDeFuncionamento } from "./HorarioDeFuncionamento";
+import { InterruptorTransito } from "./TransitoLivre";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 const DURACOES = [60, 45, 50, 30, 75, 90, 120, 0];
 
 /** Cria o estúdio; quem cria fica na coordenação. */
-export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento } | null }) {
+export function CriarEstudio({
+  inicial,
+}: {
+  inicial?: { nome: string; tipo: "estudio" | "academia"; funcionamento?: Funcionamento; transitoLivre?: boolean } | null;
+}) {
   const router = useRouter();
   const [nome, setNome] = useState(inicial?.nome ?? "");
   const [tipo, setTipo] = useState<"estudio" | "academia">(inicial?.tipo ?? "estudio");
   const [funcionamento, setFuncionamento] = useState<Funcionamento>(inicial?.funcionamento ?? FUNCIONAMENTO_PADRAO);
+  const [transitoLivre, setTransitoLivre] = useState(inicial?.transitoLivre !== false);
   // Decisão 63: as aulas já entram na agenda (ex.: de 1 h, das 6h às 22h); 0 = não lançar.
   const [duracao, setDuracao] = useState(60);
   const [modalidade, setModalidade] = useState("");
@@ -28,7 +34,7 @@ export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "est
         iniciar(async () => {
           const problema = problemasDoFuncionamento(funcionamento)[0];
           if (problema) return setErro(problema[0].toUpperCase() + problema.slice(1) + ".");
-          const r = await criarEstudio(nome, tipo, funcionamento, duracao ? { duracao, modalidade } : null);
+          const r = await criarEstudio(nome, tipo, funcionamento, duracao ? { duracao, modalidade } : null, transitoLivre);
           if (!r.ok) return setErro(r.erro);
           // Primeiro, como os professores recebem (e, no estúdio, as mensalidades).
           router.replace(`/estudio/${r.id}?aba=ajustes`);
@@ -67,6 +73,7 @@ export function CriarEstudio({ inicial }: { inicial?: { nome: string; tipo: "est
         <span className="text-[14px] font-bold text-ink-2">Dias e horários de funcionamento</span>
         <HorarioDeFuncionamento valor={funcionamento} mudar={setFuncionamento} />
       </div>
+      <InterruptorTransito ligado={transitoLivre} mudar={setTransitoLivre} />
       <div className="grid gap-2.5 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
           Aulas

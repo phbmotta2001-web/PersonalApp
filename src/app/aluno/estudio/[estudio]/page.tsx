@@ -6,7 +6,8 @@ import { AgendaDoAlunoNoEstudio } from "@/components/aluno/AgendaDoAlunoNoEstudi
 import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhaFilaDeEspera, minhasReposicoesNoEstudio } from "@/data/aluno-estudio";
+import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhaFilaDeEspera, minhasReposicoesNoEstudio, pedidosDeFrequencia } from "@/data/aluno-estudio";
+import { PedidosDeFrequencia } from "@/components/estudio/PedidosDeFrequencia";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { agoraEmBrasilia, dataCurta, DIAS, somarDias } from "@/lib/expediente";
 
@@ -47,12 +48,14 @@ async function Conteudo({
   const n = typeof semana === "string" && /^\d$/.test(semana) ? Math.min(Number(semana), SEMANAS) : 0;
   const inicio = somarDias(hoje, n * 7);
   const fim = somarDias(inicio, 6);
-  const [aulas, reposicoes, treino, fila] = await Promise.all([
+  const [aulas, reposicoes, treino, fila, pedidos] = await Promise.all([
     agendaDoAlunoNoEstudio(id, inicio, fim),
     minhasReposicoesNoEstudio(id),
     meuTreinoNoEstudio(id),
     minhaFilaDeEspera(),
+    pedidosDeFrequencia(),
   ]);
+  const meusPedidos = pedidos.filter((p) => p.meu && p.estudioId === id);
   const link = (x: number) => `/aluno/estudio/${id}${x ? `?semana=${x}` : ""}`;
 
   return (
@@ -67,6 +70,8 @@ async function Conteudo({
                 .join(", ")}. Toque numa turma para repor, mudar seus dias ou entrar na lista de espera.`}
         </span>
       </section>
+
+      {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
 
       {/* Decisão 73: o que treina em cada dia, escrito pelo professor. */}
       {treino.length > 0 && (
