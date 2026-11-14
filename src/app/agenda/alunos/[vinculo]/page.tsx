@@ -27,6 +27,10 @@ import { centavosParaReais, resumoDaModalidade, resumoDosHorarios, textoDaAula }
 import { formatarWhatsapp } from "@/lib/personal";
 import { origemDoSite } from "@/lib/supabase/servidor";
 import { dataCompleta, fimDaMatricula } from "@/lib/plano";
+import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
+import { FormulariosDaFicha } from "@/components/agenda/FormulariosDaFicha";
+import { avaliacoesDoVinculo } from "@/data/avaliacoes";
+import { formulariosDoVinculo } from "@/data/formularios-personal";
 
 export const metadata: Metadata = {
   title: "Ficha do aluno",
@@ -49,7 +53,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
   const hojeBr = agoraEmBrasilia().data;
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, avaliacoes, formularios] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -61,6 +65,8 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     listarPausas(vinculo, hojeBr),
     lerRegras(),
     treinoDoVinculo(vinculo),
+    avaliacoesDoVinculo(vinculo),
+    formulariosDoVinculo(vinculo),
   ]);
   const fimDoPlanoAtual = matricula ? fimDaMatricula(matricula, hojeBr) : null;
   const suspensaDesde = suspensas[vinculo];
@@ -120,6 +126,10 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           )}
         </div>
       </section>
+
+      {/* Decisão 105: ParQ e anamnese (aluno com o app) e a avaliação física. */}
+      {!a.semConta && <FormulariosDaFicha vinculoId={vinculo} nome={a.nomeCompleto} whatsapp={a.whatsapp} lista={formularios} />}
+      <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hojeBr} editavel />
 
       {a.semConta && (
         <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4" aria-label="Aluno sem app">

@@ -150,7 +150,8 @@ export async function formulariosDoAluno(
 
 export interface FormularioPendente {
   id: string;
-  estudioId: string;
+  /** Vazio nos formulários do personal (decisão 105); "estudio" traz o nome do personal. */
+  estudioId: string | null;
   estudio: string;
   tipo: TipoDeFormulario;
   titulo: string;
@@ -171,22 +172,32 @@ export async function meusFormulariosPendentes(): Promise<FormularioPendente[]> 
 
 export async function lerFormularioParaResponder(
   id: string,
-): Promise<{ id: string; tipo: TipoDeFormulario; titulo: string; estudioId: string; perguntas: Pergunta[]; respondidoEm: string | null } | null> {
+): Promise<{
+  id: string;
+  tipo: TipoDeFormulario;
+  titulo: string;
+  /** Formulário do estúdio; ou, do personal (decisão 105), o vínculo com ele. */
+  estudioId: string | null;
+  vinculoId: string | null;
+  perguntas: Pergunta[];
+  respondidoEm: string | null;
+} | null> {
   if (!/^[0-9a-f-]{36}$/.test(id ?? "")) return null;
   const supabase = await criarClienteSupabase();
-  const { data } = await supabase
-    .from("estudio_respostas")
-    .select("id, tipo, titulo, estudio_id, perguntas, respondido_em")
-    .eq("id", id)
-    .maybeSingle();
-  if (!data) return null;
+  const [{ data }, { data: doPersonal }] = await Promise.all([
+    supabase.from("estudio_respostas").select("id, tipo, titulo, estudio_id, perguntas, respondido_em").eq("id", id).maybeSingle(),
+    supabase.from("personal_respostas").select("id, tipo, titulo, vinculo_id, perguntas, respondido_em").eq("id", id).maybeSingle(),
+  ]);
+  const r = data ?? doPersonal;
+  if (!r) return null;
   return {
-    id: data.id,
-    tipo: data.tipo as TipoDeFormulario,
-    titulo: data.titulo,
-    estudioId: data.estudio_id,
-    perguntas: data.perguntas as Pergunta[],
-    respondidoEm: data.respondido_em,
+    id: r.id,
+    tipo: r.tipo as TipoDeFormulario,
+    titulo: r.titulo,
+    estudioId: data ? data.estudio_id : null,
+    vinculoId: doPersonal ? doPersonal.vinculo_id : null,
+    perguntas: r.perguntas as Pergunta[],
+    respondidoEm: r.respondido_em,
   };
 }
 

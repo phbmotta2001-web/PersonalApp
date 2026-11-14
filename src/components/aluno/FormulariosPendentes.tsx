@@ -9,7 +9,7 @@ export function FormulariosPendentes({ lista }: { lista: FormularioPendente[] })
       <div>
         <p className="text-[13px] font-bold tracking-wide text-brand uppercase">Para responder</p>
         <p className="text-[15px] text-ink-2">
-          {inicial ? "Preencha antes da sua primeira aula: o professor lê antes de treinar você." : "O estúdio quer saber sua opinião. Leva poucos minutos."}
+          {inicial ? "Preencha antes de treinar: quem treina você lê antes da aula." : "O estúdio quer saber sua opinião. Leva poucos minutos."}
         </p>
       </div>
       <ul className="flex flex-col gap-2">

@@ -11,6 +11,7 @@ import {
   type FormularioDoEstudio,
   type RespostaDeFormulario,
 } from "@/data/formularios-estudio";
+import { enviarFormularioDoPersonal, respostasDoFormularioDoPersonal, salvarFormularioDoPersonal } from "@/data/formularios-personal";
 import { linkWhatsapp } from "@/lib/convite";
 import { dataCurta, emBrasilia } from "@/lib/expediente";
 import { novoIdPergunta } from "@/lib/questionario";
@@ -20,6 +21,11 @@ import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Icone } from "../Icone";
 import { RespostasDoFormulario } from "./RespostasDoAluno";
 
+const AJUDA_PERSONAL: Record<FormularioDoEstudio["tipo"], string> = {
+  parq: "Padrão do P-Bell. Todo aluno novo recebe ao entrar no app pelo seu convite.",
+  anamnese: "Padrão do P-Bell. Todo aluno novo recebe junto com o ParQ; as respostas ficam na ficha dele.",
+  pesquisa: "",
+};
 const AJUDA: Record<FormularioDoEstudio["tipo"], string> = {
   parq: "Padrão do P-Bell. Todo aluno novo recebe ao entrar no app, inclusive na aula experimental.",
   anamnese: "Padrão do P-Bell. Todo aluno novo recebe junto com o ParQ; o professor da experimental vê antes da aula.",
@@ -27,7 +33,9 @@ const AJUDA: Record<FormularioDoEstudio["tipo"], string> = {
 };
 
 /**
- * Decisão 97: aba Formulários da coordenação. ParQ e anamnese padrão (editáveis), pesquisas
+ * Decisão 97: aba Formulários da coordenação. Decisão 105: a mesma tela serve ao personal
+ * autônomo (`personal`: só ParQ e anamnese, enviados aos alunos dele com o app).
+ * Decisão 97 (coordenação): ParQ e anamnese padrão (editáveis), pesquisas
  * novas, envio para todos ou alunos escolhidos (aviso no app e link no WhatsApp) e as respostas.
  */
 export function FormulariosDoEstudio({
@@ -35,9 +43,13 @@ export function FormulariosDoEstudio({
   estudio,
   formularios,
   alunos,
+  personal = false,
 }: {
+  /** Vazio no personal. */
   estudioId: string;
+  /** Nome do estúdio (ou do personal), para a mensagem do WhatsApp. */
   estudio: string;
+  personal?: boolean;
   formularios: FormularioDoEstudio[];
   /** Alunos ativos, em ordem alfabética. */
   alunos: { id: string; nome: string }[];
@@ -61,7 +73,9 @@ export function FormulariosDoEstudio({
           nomeInicial={f?.nome ?? ""}
           perguntasIniciais={f?.perguntas ?? [{ id: novoIdPergunta(), tipo: "nota", texto: "", obrigatoria: true }]}
           palavra="formulário"
-          salvar={(nome, perguntas) => salvarFormularioDoEstudio(estudioId, f?.id ?? null, nome, perguntas)}
+          salvar={(nome, perguntas) =>
+            personal && f ? salvarFormularioDoPersonal(f.id, nome, perguntas) : salvarFormularioDoEstudio(estudioId, f?.id ?? null, nome, perguntas)
+          }
           apagar={f && f.tipo === "pesquisa" ? () => arquivarFormularioDoEstudio(f.id) : null}
           terminar={terminar}
         />
@@ -72,11 +86,14 @@ export function FormulariosDoEstudio({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-[14px] text-ink-2">
-        Só a coordenação cria e edita. O aluno responde no app; você e os professores dele veem as respostas na ficha do aluno.
+        {personal
+          ? "O aluno responde no app e as respostas ficam na ficha dele. Aluno sem o app não recebe."
+          : "Só a coordenação cria e edita. O aluno responde no app; você e os professores dele veem as respostas na ficha do aluno."}
       </p>
       {formularios.map((f) => (
-        <CartaoDoFormulario key={f.id} f={f} estudio={estudio} alunos={alunos} editar={() => setEditando(f)} />
+        <CartaoDoFormulario key={f.id} f={f} estudio={estudio} alunos={alunos} editar={() => setEditando(f)} personal={personal} />
       ))}
+      {!personal && (
       <button
         type="button"
         onClick={() => setEditando("novo")}
@@ -84,6 +101,7 @@ export function FormulariosDoEstudio({
       >
         <Icone nome="mais" className="size-4" /> Novo formulário (pesquisa)
       </button>
+      )}
     </div>
   );
 }
@@ -93,11 +111,13 @@ function CartaoDoFormulario({
   estudio,
   alunos,
   editar,
+  personal,
 }: {
   f: FormularioDoEstudio;
   estudio: string;
   alunos: { id: string; nome: string }[];
   editar: () => void;
+  personal: boolean;
 }) {
   const router = useRouter();
   const [painel, setPainel] = useState<"enviar" | "respostas" | null>(null);
@@ -114,11 +134,13 @@ function CartaoDoFormulario({
     setPainel(painel === p ? null : p);
     if (p === "respostas" && painel !== p)
       iniciar(async () => {
-        setRespostas(await respostasDoFormulario(f.id));
+        setRespostas(personal ? await respostasDoFormularioDoPersonal(f.id) : await respostasDoFormulario(f.id));
       });
   };
   const mensagem = (e: EnvioDeFormulario) =>
-    `Olá, ${e.nome.split(" ")[0]}! O ${estudio} enviou o formulário "${f.nome}". Responda pelo app, leva poucos minutos: ${window.location.origin}/aluno/formulario/${e.respostaId}`;
+    personal
+      ? `Olá, ${e.nome.split(" ")[0]}! Mandei o formulário "${f.nome}" no app. Responda antes do treino, leva poucos minutos: ${window.location.origin}/aluno/formulario/${e.respostaId}`
+      : `Olá, ${e.nome.split(" ")[0]}! O ${estudio} enviou o formulário "${f.nome}". Responda pelo app, leva poucos minutos: ${window.location.origin}/aluno/formulario/${e.respostaId}`;
 
   return (
     <section className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
@@ -127,7 +149,7 @@ function CartaoDoFormulario({
           <h2 className="min-w-0 flex-1 text-[17px] font-bold">{f.nome}</h2>
           {f.tipo !== "pesquisa" && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] font-bold text-ink-3">Padrão</span>}
         </div>
-        {AJUDA[f.tipo] && <p className="text-[13px] text-ink-3">{AJUDA[f.tipo]}</p>}
+        {(personal ? AJUDA_PERSONAL : AJUDA)[f.tipo] && <p className="text-[13px] text-ink-3">{(personal ? AJUDA_PERSONAL : AJUDA)[f.tipo]}</p>}
         <p className="mt-1 text-[14px] text-ink-2">
           {f.perguntas.length} pergunta{f.perguntas.length === 1 ? "" : "s"} · {f.respondidos} resposta{f.respondidos === 1 ? "" : "s"}
           {f.pendentes > 0 && ` · ${f.pendentes} aguardando`}
@@ -185,7 +207,7 @@ function CartaoDoFormulario({
               <legend className="mb-1.5 text-[14px] font-bold text-ink-2">Para quem</legend>
               <div className="flex flex-wrap gap-2">
                 <Chip ativo={todos} onClick={() => setTodos(true)}>
-                  Todos os alunos
+                  {personal ? "Todos com o app" : "Todos os alunos"}
                 </Chip>
                 <Chip ativo={!todos} onClick={() => setTodos(false)}>
                   Escolher alunos
@@ -222,7 +244,9 @@ function CartaoDoFormulario({
                 iniciar(async () => {
                   setErro(null);
                   if (!todos && escolhidos.size === 0) return setErro("Escolha pelo menos um aluno.");
-                  const r = await enviarFormularioDoEstudio(f.id, todos ? null : [...escolhidos]);
+                  const r = personal
+                    ? await enviarFormularioDoPersonal(f.id, todos ? null : [...escolhidos])
+                    : await enviarFormularioDoEstudio(f.id, todos ? null : [...escolhidos]);
                   if (!r.ok) return setErro(r.erro);
                   setEnviados(r.enviados);
                   router.refresh();

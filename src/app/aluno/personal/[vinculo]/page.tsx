@@ -16,6 +16,8 @@ import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
 import { treinoDoVinculo } from "@/data/treino";
+import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
+import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { lerMatricula, matriculasSuspensas, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
 import { agoraEmBrasilia, DIAS } from "@/lib/expediente";
@@ -61,7 +63,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, avaliacoes] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -72,6 +74,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     checkinsPendentesDoAluno(vinculo),
     matriculasSuspensas(),
     treinoDoVinculo(vinculo),
+    avaliacoesDoVinculo(vinculo),
   ]);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
@@ -175,6 +178,9 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
             </ul>
           </section>
         )}
+
+        {/* Decisão 105: a evolução das avaliações físicas (sem notificação no celular). */}
+        <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} editavel={false} />
 
         {!suspensaDesde && (aulas.length > 0 || reposicoes.length > 0 || recusados.length > 0) && (
           <section className="rounded-[20px] border border-line bg-surface p-4">

@@ -90,6 +90,8 @@ async function Conteudo() {
           texto={`${feriados.trabalha ? "Trabalho" : "Não trabalho"} em feriados${feriados.excecoes.length ? " (com exceções)" : ""}`}
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+        {/* Decisão 105: ParQ e anamnese que o aluno novo preenche no app. */}
+        <Linha href="/agenda/formularios" icone="conversa" titulo="ParQ e anamnese" texto="O aluno novo preenche no app antes de treinar" />
       </Grupo>
       )}
 
