@@ -353,6 +353,8 @@ export interface AlunoNaChamada {
   troca?: boolean;
   /** Trocou esta aula por outro horário só neste dia (decisão 100). */
   trocou?: boolean;
+  /** O treino do aluno neste dia da semana, escrito na ficha (decisão 106). */
+  treino?: string;
 }
 
 export interface AulaParaChamada {
@@ -382,10 +384,13 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     .eq("id", aulaId)
     .maybeSingle();
   if (!a) return null;
-  const [{ data: matriculas }, { data: presencas }] = await Promise.all([
+  const [{ data: matriculas }, { data: presencas }, { data: treinos }] = await Promise.all([
     supabase.from("turma_alunos").select("estudio_alunos(id, nome, situacao)").eq("turma_id", a.turma_id),
     supabase.from("presencas").select("estudio_aluno_id, situacao, origem, estudio_alunos(id, nome)").eq("aula_turma_id", a.id),
+    // Decisão 106: o treino do dia de cada aluno. Sem a migração 68, fica sem treino.
+    supabase.rpc("treinos_da_aula_estudio", { p_aula: a.id }),
   ]);
+  const treinoDe = new Map(((treinos ?? []) as { estudio_aluno_id: string; texto: string }[]).map((x) => [x.estudio_aluno_id, x.texto]));
   // Quem trocou esta aula por outro horário (decisão 100). Sem a migração 62, a lista fica vazia.
   const { data: trocas } = await supabase.from("presencas").select("estudio_aluno_id").eq("troca_de", a.id);
   const trocaram = new Set((trocas ?? []).map((x) => x.estudio_aluno_id as string));
@@ -416,7 +421,9 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     souProfessor: a.professor_id === id,
     professorId: a.professor_id,
     diaSemana: t?.dia_semana ?? 0,
-    alunos: [...alunos.values()].sort((x, y) => x.nome.localeCompare(y.nome)),
+    alunos: [...alunos.values()]
+      .map((x) => (treinoDe.has(x.id) ? { ...x, treino: treinoDe.get(x.id) } : x))
+      .sort((x, y) => x.nome.localeCompare(y.nome)),
   };
 }
 

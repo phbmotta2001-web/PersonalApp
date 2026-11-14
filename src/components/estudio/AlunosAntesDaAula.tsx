@@ -56,6 +56,8 @@ export function AlunosAntesDaAula({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">{a.nome}</span>
                   {r && <span className={`block text-[13px] font-semibold ${r.cor}`}>{r.texto}</span>}
+                  {/* Decisão 106: o treino do aluno neste dia. */}
+                  {a.treino && <span className="mt-0.5 block text-[14px] whitespace-pre-line text-ink-2"><b className="text-estudio">Treino:</b> {a.treino}</span>}
                 </span>
                 {daTurma && a.situacao !== "falta_avisada" && (
                   <button

@@ -51,6 +51,8 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
               <span className="min-w-0 flex-1">
                 <span className={`block truncate text-[16px] font-semibold ${faltou ? "text-ink-3 line-through" : a.experimental ? "text-info" : ""}`}>{a.nome}</span>
                 {avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
+                {/* Decisão 106: o treino do aluno neste dia. */}
+                {a.treino && <span className="mt-0.5 block text-[14px] whitespace-pre-line text-ink-2"><b className="text-estudio">Treino:</b> {a.treino}</span>}
                 {a.reposicao && !avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-estudio">Reposição</span>}
                 {a.experimental && (
                   <button type="button" onClick={() => setVerFicha(verFicha === a.id ? null : a.id)} className="block text-left text-[13px] font-semibold text-info">
