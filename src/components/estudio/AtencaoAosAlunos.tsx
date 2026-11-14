@@ -25,7 +25,7 @@ export function AtencaoAosAlunos({ estudio, alunos }: { estudio: string; alunos:
               <span className={`block text-[13px] font-semibold ${a.tipo === "sumindo" ? "text-gold" : "text-estudio"}`}>
                 {a.tipo === "sumindo"
                   ? `Faltou às últimas ${a.quantidade} aulas`
-                  : `${a.quantidade === 1 ? "1 reposição vence" : `${a.quantidade} reposições vencem`} até ${dataCurta(a.ate ?? "")}${a.comApp ? " · avisado no app" : ""}`}
+                  : `${a.quantidade === 1 ? "1 reposição vence" : `${a.quantidade} reposições vencem`} até ${dataCurta(a.ate ?? "")}${a.comApp ? " · vê no app" : ""}`}
               </span>
             </span>
             {a.whatsapp ? (

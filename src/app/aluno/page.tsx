@@ -148,11 +148,18 @@ async function Conteudo() {
           <span className="font-display text-[24px] leading-tight font-extrabold">
             {p ? `${p.modalidade} · ${quando(p.inicio)}` : "Nenhuma aula sua nos próximos dias"}
           </span>
-          <span className="mt-1 self-start rounded-full bg-white/15 px-3 py-1 text-[14px] font-bold">
-            {reposicoes.length === 0
-              ? "Nenhuma reposição para usar"
-              : `${reposicoes.length} ${reposicoes.length === 1 ? "reposição" : "reposições"} para usar · vale até ${dataCurta(reposicoes[0].validoAte)}`}
-          </span>
+          {/* Decisão 101: faltando 10 dias ou menos, o aviso fica em destaque (sem notificação no celular). */}
+          {reposicoes.length > 0 && reposicoes[0].validoAte <= somarDias(hoje, 10) ? (
+            <span className="mt-1 self-start rounded-full bg-gold px-3 py-1 text-[14px] font-bold text-surface">
+              {reposicoes.length === 1 ? "1 reposição vence" : `${reposicoes.length} reposições vencem`} até {dataCurta(reposicoes[0].validoAte)} · marque já
+            </span>
+          ) : (
+            <span className="mt-1 self-start rounded-full bg-white/15 px-3 py-1 text-[14px] font-bold">
+              {reposicoes.length === 0
+                ? "Nenhuma reposição para usar"
+                : `${reposicoes.length} ${reposicoes.length === 1 ? "reposição" : "reposições"} para usar · vale até ${dataCurta(reposicoes[0].validoAte)}`}
+            </span>
+          )}
           <span className="text-[14px] opacity-90">Ver a agenda e as vagas ›</span>
         </Link>
       ))}

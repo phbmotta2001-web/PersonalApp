@@ -1,7 +1,7 @@
 -- 63 · Reposições vencendo, aluno sumindo e resumo do mês (decisão 101).
 --
--- • Reposições vencendo: faltando 10 dias ou menos para vencer, o aluno é avisado no app (uma vez
---   por data de validade). Na aba Alunos, a coordenação vê quem tem reposição vencendo.
+-- • Reposições vencendo: faltando 10 dias ou menos para vencer, o aluno vê um destaque no Início
+--   do app (sem notificação no celular). Na aba Alunos, a coordenação vê quem tem reposição vencendo.
 -- • Aluno sumindo: quem faltou às últimas 3 aulas seguidas (com ou sem aviso) aparece na aba Alunos
 --   e a coordenação é avisada uma vez (de novo só depois que o aluno voltar e sumir outra vez).
 -- • Resumo do mês: na aba Financeiro, os números do mês escolhido. No dia 1, a coordenação é
@@ -109,7 +109,7 @@ begin
 end
 $$;
 
--- Robô das 9h: avisos de reposição vencendo, aluno sumindo e, no dia 1, o resumo do mês.
+-- Robô das 9h: aluno sumindo e, no dia 1, o resumo do mês (só para a coordenação).
 create or replace function public.avisos_diarios_estudio()
 returns void
 language plpgsql
@@ -125,23 +125,6 @@ declare
   v_txt  text;
   meses  text[] := array['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 begin
-  -- Reposições vencendo (aluno com o app).
-  for x in
-    select al.id, al.aluno_id, al.estudio_id, e.nome estudio, count(*) n, min(r.valido_ate) ate
-      from public.estudio_reposicoes r
-      join public.estudio_alunos al on al.id = r.estudio_aluno_id and al.situacao = 'ativo' and al.aluno_id is not null
-      join public.estudios e on e.id = al.estudio_id
-     where r.usada_aula_id is null and r.valido_ate between v_hoje and v_hoje + 10
-     group by al.id, al.aluno_id, al.estudio_id, e.nome
-  loop
-    perform public.notificar(x.aluno_id, 'reposicao_vencendo_estudio',
-      case when x.n = 1 then 'Sua reposição vence logo' else 'Suas reposições vencem logo' end,
-      case when x.n = 1 then 'Você tem 1 reposição' else 'Você tem ' || x.n || ' reposições' end
-        || ' no ' || x.estudio || ' que ' || case when x.n = 1 then 'vence' else 'vencem' end
-        || ' até ' || to_char(x.ate, 'DD/MM') || '. Marque já a sua aula.',
-      '/aluno/estudio/' || x.estudio_id, p_chave => 'repvence:' || x.id || ':' || x.ate);
-  end loop;
-
   -- Aluno sumindo: avisa a coordenação uma vez (de novo só depois de uma presença).
   for x in
     select al.id, al.estudio_id, al.nome, f.n
