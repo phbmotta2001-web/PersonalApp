@@ -12,6 +12,7 @@ export const ABAS_DA_COORDENACAO: { valor: Aba; rotulo: string; curto: string; i
   { valor: "alunos", rotulo: "Alunos", curto: "Alunos", icone: "usuario" },
   { valor: "financeiro", rotulo: "Financeiro", curto: "Financeiro", icone: "dinheiro" },
   { valor: "ajustes", rotulo: "Ajustes", curto: "Ajustes", icone: "filtros" },
+  { valor: "formularios", rotulo: "Formulários", curto: "Formulários", icone: "prancheta" },
 ];
 
 export function MenuDaCoordenacao({ estudioId, nome, aba, empresa }: { estudioId: string; nome: string; aba: Aba; empresa: boolean }) {
@@ -71,7 +72,7 @@ export function MenuDaCoordenacao({ estudioId, nome, aba, empresa }: { estudioId
         aria-label="Coordenação"
         className="fixed inset-x-0 bottom-0 z-20 bg-estudio-fundo pb-[env(safe-area-inset-bottom)] text-on-estudio-2 lg:hidden"
       >
-        <ul className="mx-auto grid max-w-lg grid-cols-5">
+        <ul className="mx-auto grid max-w-lg grid-cols-6">
           {ABAS_DA_COORDENACAO.map((a) => {
             const ativa = a.valor === aba;
             return (
@@ -80,7 +81,7 @@ export function MenuDaCoordenacao({ estudioId, nome, aba, empresa }: { estudioId
                   href={href(a.valor)}
                   scroll={false}
                   aria-current={ativa ? "page" : undefined}
-                  className={`flex min-h-[62px] flex-col items-center justify-center gap-1 pt-2 pb-1.5 text-[11.5px] ${
+                  className={`flex min-h-[62px] flex-col items-center justify-center gap-1 pt-2 pb-1.5 text-[10.5px] ${
                     ativa ? "font-bold text-on-estudio" : "font-semibold"
                   }`}
                 >

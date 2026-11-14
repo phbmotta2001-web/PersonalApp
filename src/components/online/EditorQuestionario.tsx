@@ -17,15 +17,29 @@ import { Icone } from "../Icone";
 
 const estiloSelect = "min-h-10 rounded-[11px] border border-line bg-surface px-2 text-[15px]";
 
-/** Criar ou editar um modelo de questionário. */
+type Acao = { ok: true } | { ok: false; erro: string };
+
+/**
+ * Criar ou editar um modelo de questionário. Por padrão, os do personal; o estúdio (decisão 97)
+ * passa salvar, apagar (null: não se apaga) e terminar.
+ */
 export function EditorQuestionario({
   id,
   nomeInicial,
   perguntasIniciais,
+  salvar: salvarFora,
+  apagar: apagarFora,
+  terminar,
+  palavra = "questionário",
 }: {
   id: string | null;
   nomeInicial: string;
   perguntasIniciais: Pergunta[];
+  salvar?: (nome: string, perguntas: Pergunta[]) => Promise<Acao>;
+  apagar?: (() => Promise<Acao>) | null;
+  /** Depois de salvar ou apagar (padrão: volta para a lista do personal). */
+  terminar?: () => void;
+  palavra?: string;
 }) {
   const router = useRouter();
   const [nome, setNome] = useState(nomeInicial);
@@ -55,8 +69,9 @@ export function EditorQuestionario({
     if (problemas.length > 0) return;
     iniciar(async () => {
       try {
-        const r = await salvarQuestionario(id, nome, perguntas);
+        const r = salvarFora ? await salvarFora(nome, perguntas) : await salvarQuestionario(id, nome, perguntas);
         if (!r.ok) return setErro(r.erro);
+        if (terminar) return terminar();
         router.replace("/agenda/online/questionarios");
         router.refresh();
       } catch {
@@ -68,7 +83,7 @@ export function EditorQuestionario({
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-col gap-4 px-[18px] pt-2 pb-6">
-        <Campo id="q-nome" rotulo="Nome do questionário" ajuda="Ex.: Check-in semanal, Avaliação mensal.">
+        <Campo id="q-nome" rotulo={`Nome do ${palavra}`} ajuda={salvarFora ? undefined : "Ex.: Check-in semanal, Avaliação mensal."}>
           <input id="q-nome" value={nome} maxLength={60} onChange={(e) => setNome(e.target.value)} className={ESTILO_CAIXA} />
         </Campo>
 
@@ -121,13 +136,14 @@ export function EditorQuestionario({
               <label htmlFor={`q-texto-${q.id}`} className="sr-only">
                 Texto da pergunta
               </label>
-              <input
+              <textarea
                 id={`q-texto-${q.id}`}
+                rows={Math.min(4, Math.max(2, Math.ceil(q.texto.length / 32)))}
                 value={q.texto}
                 maxLength={140}
                 placeholder={TIPOS_PERGUNTA.find((t) => t.valor === q.tipo)?.exemplo}
-                onChange={(e) => mudar(i, { texto: e.target.value })}
-                className={`${ESTILO_CAIXA} min-h-11`}
+                onChange={(e) => mudar(i, { texto: e.target.value.replace(/\s*\n\s*/g, " ") })}
+                className={`${ESTILO_CAIXA} min-h-11 resize-none py-2 leading-snug`}
               />
               {q.tipo === "escolha" && (
                 <div className="flex flex-col gap-1.5">
@@ -202,10 +218,12 @@ export function EditorQuestionario({
         )}
 
         {id &&
+          apagarFora !== null &&
           (apagando ? (
             <div className="flex flex-col gap-2 rounded-[14px] border border-bad/40 p-3 text-[14px] text-ink-2">
-              Apagar este questionário? As programações dele param de enviar. As respostas que já chegaram continuam
-              guardadas.
+              {apagarFora
+                ? `Apagar este ${palavra}? Quem ainda não respondeu deixa de ver. As respostas que já chegaram continuam guardadas.`
+                : "Apagar este questionário? As programações dele param de enviar. As respostas que já chegaram continuam guardadas."}
               <div className="flex gap-2">
                 <button type="button" onClick={() => setApagando(false)} className="flex-1 rounded-[12px] border border-line py-2 font-bold">
                   Manter
@@ -215,8 +233,9 @@ export function EditorQuestionario({
                   disabled={ocupado}
                   onClick={() =>
                     iniciar(async () => {
-                      const r = await arquivarQuestionario(id);
+                      const r = apagarFora ? await apagarFora() : await arquivarQuestionario(id);
                       if (!r.ok) return setErro(r.erro);
+                      if (terminar) return terminar();
                       router.replace("/agenda/online/questionarios");
                       router.refresh();
                     })
@@ -229,15 +248,15 @@ export function EditorQuestionario({
             </div>
           ) : (
             <button type="button" onClick={() => setApagando(true)} className="self-start text-[14px] font-semibold text-bad">
-              Apagar questionário
+              Apagar {palavra}
             </button>
           ))}
       </div>
 
-      <div className="sticky bottom-0 mt-auto flex flex-col gap-2 border-t border-line bg-surface px-[18px] pt-3 pb-3.5">
+      <div className={`sticky mt-auto flex ${salvarFora ? "bottom-[calc(62px+env(safe-area-inset-bottom))] lg:bottom-0" : "bottom-0"} flex-col gap-2 border-t border-line bg-surface px-[18px] pt-3 pb-3.5`}>
         <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
         <button type="button" onClick={salvar} disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
-          {ocupado ? "Salvando…" : "Salvar questionário"}
+          {ocupado ? "Salvando…" : `Salvar ${palavra}`}
         </button>
       </div>
     </div>

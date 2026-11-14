@@ -11,11 +11,14 @@ export function ResponderQuestionario({
   checkinId,
   perguntas,
   voltar,
+  enviar,
 }: {
   checkinId: string;
   perguntas: Pergunta[];
   /** Para onde ir depois de enviar. */
   voltar: string;
+  /** Formulário do estúdio (decisão 97): envia por aqui em vez do check-in do personal. */
+  enviar?: (respostas: Respostas) => Promise<{ ok: true } | { ok: false; erro: string }>;
 }) {
   const router = useRouter();
   const [respostas, setRespostas] = useState<Respostas>({});
@@ -42,7 +45,7 @@ export function ResponderQuestionario({
         if (falta.length > 0) return;
         iniciar(async () => {
           try {
-            const r = await responderCheckin(checkinId, respostas);
+            const r = enviar ? await enviar(respostas) : await responderCheckin(checkinId, respostas);
             if (!r.ok) return setErro(r.erro);
             router.replace(voltar);
             router.refresh();

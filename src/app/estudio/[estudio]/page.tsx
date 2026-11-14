@@ -1,3 +1,5 @@
+import { FormulariosDoEstudio } from "@/components/estudio/FormulariosDoEstudio";
+import { lerFormulariosDoEstudio } from "@/data/formularios-estudio";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -19,9 +21,9 @@ import { ValorDaReposicao } from "@/components/estudio/ValorDaReposicao";
 import { lerAntecedenciaParaMarcar } from "@/data/aluno-estudio";
 import { ausenciasDoEstudio, lerConfigReposicao, reposicoesAbertas } from "@/data/reposicao";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
+import { DIAS, diaDaSemana, emBrasilia, instante, minParaHora, somarDias } from "@/lib/expediente";
 
-const ABAS: Aba[] = ["agenda", "turmas", "equipe", "alunos", "financeiro", "ajustes"];
+const ABAS: Aba[] = ["agenda", "turmas", "equipe", "alunos", "financeiro", "ajustes", "formularios"];
 
 export const metadata: Metadata = {
   title: "Coordenação do estúdio",
@@ -71,6 +73,17 @@ async function Conteudo({
       {/* A agenda usa a largura toda (uma coluna por profissional); as outras abas ficam centradas. */}
       <main className={`mx-auto flex w-full flex-col gap-4 px-[18px] pt-5 pb-28 lg:px-8 lg:pt-8 lg:pb-12 ${qual === "agenda" ? "" : "max-w-6xl"}`}>
         <h1 className="text-[24px] leading-tight font-extrabold">{titulo}</h1>
+        {qual === "formularios" ? (
+          <FormulariosDoEstudio
+            estudioId={estudio.id}
+            estudio={estudio.nome}
+            formularios={await lerFormulariosDoEstudio(estudio.id)}
+            turmas={estudio.turmas
+              .filter((t) => t.tipo === "turma")
+              .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin)
+              .map((t) => ({ id: t.id, nome: `${t.modalidade} · ${DIAS[t.diaSemana].curto} ${minParaHora(t.inicioMin)}` }))}
+          />
+        ) : (
         <GestaoDoEstudio
           estudio={estudio}
           aba={qual}
@@ -82,6 +95,7 @@ async function Conteudo({
           agenda={qual === "agenda" ? await agendaDaAba(estudio, hoje, dia, semana) : undefined}
           complemento={await complementoDaAba(estudio, qual)}
         />
+        )}
       </main>
     </>
   );

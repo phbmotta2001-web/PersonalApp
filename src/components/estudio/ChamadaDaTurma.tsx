@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { fazerChamada, type AlunoNaChamada } from "@/data/estudio";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
+import { RespostasDoAluno } from "./RespostasDoAluno";
 
 /**
  * Chamada da turma: presença (✓) ou falta (✕) para cada aluno. Quem não for marcado recebe
@@ -17,6 +18,8 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
   const [erro, setErro] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
   const [ocupado, iniciar] = useTransition();
+  // Decisão 97: o professor vê o ParQ e a anamnese de quem vem fazer experimental.
+  const [verFicha, setVerFicha] = useState<string | null>(null);
   const marcaveis = alunos.filter((a) => !avisadas.has(a.id));
   const presentes = marcaveis.filter((a) => !faltas.has(a.id)).length;
 
@@ -44,12 +47,16 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
         {alunos.map((a) => {
           const faltou = faltas.has(a.id);
           return (
-            <li key={a.id} className="flex items-center gap-3 py-2.5">
+            <li key={a.id} className="flex flex-wrap items-center gap-3 py-2.5">
               <span className="min-w-0 flex-1">
                 <span className={`block truncate text-[16px] font-semibold ${faltou ? "text-ink-3 line-through" : a.experimental ? "text-info" : ""}`}>{a.nome}</span>
                 {avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-gold">Avisou que ia faltar</span>}
                 {a.reposicao && !avisadas.has(a.id) && <span className="block text-[13px] font-semibold text-estudio">Reposição</span>}
-                {a.experimental && <span className="block text-[13px] font-semibold text-info">Aula experimental</span>}
+                {a.experimental && (
+                  <button type="button" onClick={() => setVerFicha(verFicha === a.id ? null : a.id)} className="block text-left text-[13px] font-semibold text-info">
+                    Aula experimental · {verFicha === a.id ? "fechar" : "ver ParQ e anamnese"}
+                  </button>
+                )}
               </span>
               {!avisadas.has(a.id) && (
                 <button
@@ -82,6 +89,11 @@ export function ChamadaDaTurma({ aulaId, alunos, feita }: { aulaId: string; alun
                   </span>
                   Falta
                 </button>
+              )}
+              {verFicha === a.id && (
+                <div className="w-full">
+                  <RespostasDoAluno alunoId={a.id} />
+                </div>
               )}
             </li>
           );

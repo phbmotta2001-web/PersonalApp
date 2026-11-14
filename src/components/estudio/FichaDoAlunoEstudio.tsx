@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { fichaDoAlunoEstudio, salvarAnotacoesDoAluno, salvarTreinoDoAluno, type FichaDoAlunoEstudio as Ficha } from "@/data/estudio";
 import { EditorDeTreino } from "../EditorDeTreino";
+import { RespostasDoAluno } from "./RespostasDoAluno";
 import { Aviso } from "../Formulario";
 
 const NIVEL = { iniciante: "Iniciante", intermediario: "Intermediário", avancado: "Avançado" } as const;
@@ -53,6 +54,7 @@ export function FichaDoAlunoEstudio({ alunoId }: { alunoId: string }) {
         exemplo="Ex.: quer correr uma meia maratona em abril"
       />
       <TreinoDaSemana alunoId={alunoId} ficha={ficha} />
+      <RespostasDoAluno alunoId={alunoId} />
     </div>
   );
 }

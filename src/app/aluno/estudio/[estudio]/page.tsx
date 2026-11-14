@@ -8,6 +8,8 @@ import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
 import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, meuTreinoNoEstudio, minhaFilaDeEspera, minhasReposicoesNoEstudio, pedidosDeFrequencia } from "@/data/aluno-estudio";
 import { PedidosDeFrequencia } from "@/components/estudio/PedidosDeFrequencia";
+import { FormulariosPendentes } from "@/components/aluno/FormulariosPendentes";
+import { meusFormulariosPendentes } from "@/data/formularios-estudio";
 import { exigirAluno } from "@/data/exigir-aluno";
 import { agoraEmBrasilia, dataCurta, DIAS, somarDias } from "@/lib/expediente";
 
@@ -48,14 +50,16 @@ async function Conteudo({
   const n = typeof semana === "string" && /^\d$/.test(semana) ? Math.min(Number(semana), SEMANAS) : 0;
   const inicio = somarDias(hoje, n * 7);
   const fim = somarDias(inicio, 6);
-  const [aulas, reposicoes, treino, fila, pedidos] = await Promise.all([
+  const [aulas, reposicoes, treino, fila, pedidos, formularios] = await Promise.all([
     agendaDoAlunoNoEstudio(id, inicio, fim),
     minhasReposicoesNoEstudio(id),
     meuTreinoNoEstudio(id),
     minhaFilaDeEspera(),
     pedidosDeFrequencia(),
+    meusFormulariosPendentes(),
   ]);
   const meusPedidos = pedidos.filter((p) => p.meu && p.estudioId === id);
+  const formulariosDaqui = formularios.filter((f) => f.estudioId === id);
   const link = (x: number) => `/aluno/estudio/${id}${x ? `?semana=${x}` : ""}`;
 
   return (
@@ -71,6 +75,7 @@ async function Conteudo({
         </span>
       </section>
 
+      {formulariosDaqui.length > 0 && <FormulariosPendentes lista={formulariosDaqui} />}
       {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
 
       {/* Decisão 73: o que treina em cada dia, escrito pelo professor. */}

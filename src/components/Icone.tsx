@@ -81,6 +81,12 @@ const CAMINHOS = {
       <path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M21.5 20a6.5 6.5 0 0 0-4-6" />
     </>
   ),
+  prancheta: (
+    <>
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3" />
+    </>
+  ),
   busca: (
     <>
       <circle cx="11" cy="11" r="7" />

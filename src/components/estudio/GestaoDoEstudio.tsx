@@ -29,7 +29,7 @@ import { EditarHorarios } from "./EditarHorarios";
 import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
 
-export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes";
+export type Aba = "agenda" | "turmas" | "equipe" | "alunos" | "financeiro" | "ajustes" | "formularios";
 
 export const rotuloDaTurma = (t: Pick<TurmaDoEstudio, "modalidade" | "diaSemana" | "inicioMin">) =>
   `${t.modalidade} · ${DIAS.find((x) => x.valor === t.diaSemana)?.curto ?? ""} ${minParaHora(t.inicioMin)}`;
