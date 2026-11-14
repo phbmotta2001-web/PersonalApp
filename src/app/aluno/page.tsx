@@ -12,6 +12,9 @@ import { FilaDeEspera } from "@/components/aluno/FilaDeEspera";
 import { PedidosDeFrequencia } from "@/components/estudio/PedidosDeFrequencia";
 import { FormulariosPendentes } from "@/components/aluno/FormulariosPendentes";
 import { meusFormulariosPendentes } from "@/data/formularios-estudio";
+import { ComunicadosDoAluno } from "@/components/aluno/ComunicadosDoAluno";
+import { meusComunicados } from "@/data/comunicados";
+import { minhasMensalidadesNoEstudio } from "@/data/mensalidade-estudio";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
@@ -45,23 +48,29 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios] = await Promise.all([
+  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados] = await Promise.all([
     listarMeusPersonais(),
     matriculasSuspensas(),
     meusEstudiosComoAluno(),
     minhaFilaDeEspera(),
     pedidosDeFrequencia(),
     meusFormulariosPendentes(),
+    meusComunicados(),
   ]);
   const meusPedidos = pedidos.filter((p) => p.meu);
   const estudios = await Promise.all(
     estudiosDoAluno.map(async (e) => {
-      const [aulasDoEstudio, reposicoes] = await Promise.all([
+      const [aulasDoEstudio, reposicoes, mensalidades] = await Promise.all([
         agendaDoAlunoNoEstudio(e.id, hoje, somarDias(hoje, 7)),
         minhasReposicoesNoEstudio(e.id),
+        minhasMensalidadesNoEstudio(e.id),
       ]);
+      // Decisão 102: a mensalidade em aberto que vence em até 7 dias (ou já venceu), se o aluno ainda não avisou.
+      const mensalidade = mensalidades
+        .filter((c) => c.situacao === "aberta" && !c.avisou && c.vencimento <= somarDias(hoje, 7))
+        .sort((x, y) => x.vencimento.localeCompare(y.vencimento))[0];
       const proximaNoEstudio = aulasDoEstudio.find((a) => a.minha && !a.aviseiFalta && !a.cancelada && Date.parse(a.inicio) > agora.getTime());
-      return { e, proxima: proximaNoEstudio, reposicoes };
+      return { e, proxima: proximaNoEstudio, reposicoes, mensalidade };
     }),
   );
   const porPersonal = await Promise.all(
@@ -138,11 +147,12 @@ async function Conteudo() {
         </section>
       )}
 
+      <ComunicadosDoAluno lista={comunicados} />
       {formularios.length > 0 && <FormulariosPendentes lista={formularios} />}
       {meusPedidos.length > 0 && <PedidosDeFrequencia lista={meusPedidos} coordenacao={false} />}
       {fila.length > 0 && <FilaDeEspera lista={fila} />}
 
-      {estudios.map(({ e, proxima: p, reposicoes }) => (
+      {estudios.map(({ e, proxima: p, reposicoes, mensalidade }) => (
         <Link key={e.id} href={`/aluno/estudio/${e.id}`} className="flex flex-col gap-1 rounded-[24px] bg-estudio p-5 text-white">
           <span className="text-[14px] opacity-85">{e.nome}</span>
           <span className="font-display text-[24px] leading-tight font-extrabold">
@@ -158,6 +168,11 @@ async function Conteudo() {
               {reposicoes.length === 0
                 ? "Nenhuma reposição para usar"
                 : `${reposicoes.length} ${reposicoes.length === 1 ? "reposição" : "reposições"} para usar · vale até ${dataCurta(reposicoes[0].validoAte)}`}
+            </span>
+          )}
+          {mensalidade && (
+            <span className="self-start rounded-full bg-gold px-3 py-1 text-[14px] font-bold text-surface">
+              {mensalidade.tipo === "taxa" ? "Taxa de matrícula" : "Mensalidade"} {mensalidade.vencimento < hoje ? "venceu" : "vence"} {dataCurta(mensalidade.vencimento)} · pagar
             </span>
           )}
           <span className="text-[14px] opacity-90">Ver a agenda e as vagas ›</span>

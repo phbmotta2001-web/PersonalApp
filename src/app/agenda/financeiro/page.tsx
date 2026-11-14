@@ -8,6 +8,8 @@ import { Carregando } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { financeiroDoMes, listarCobrancas, lerPix, recebidoPorMes } from "@/data/cobrancas";
 import { exigirPersonal } from "@/data/exigir-personal";
+import { GanhosDoMes } from "@/components/agenda/GanhosDoMes";
+import { ganhosDoMes } from "@/data/ganhos";
 import { lerTabelaDeValores } from "@/data/precos";
 import { descricaoDaCobranca, situacaoDaCobranca, textoDoVencimento, type Cobranca } from "@/lib/cobranca";
 import { agoraEmBrasilia, somarDias } from "@/lib/expediente";
@@ -44,12 +46,13 @@ function curto(centavos: number): string {
 async function Conteudo() {
   await exigirPersonal("/agenda/financeiro");
   const hoje = agoraEmBrasilia().data;
-  const [financeiro, cobrancas, meses, tabela, pix] = await Promise.all([
+  const [financeiro, cobrancas, meses, tabela, pix, ganhos] = await Promise.all([
     financeiroDoMes(hoje),
     listarCobrancas(),
     recebidoPorMes(hoje),
     lerTabelaDeValores(),
     lerPix(),
+    ganhosDoMes(hoje),
   ]);
   const abertas = cobrancas.filter((c) => c.situacao === "aberta");
   const avisaram = abertas.filter((c) => c.alunoAvisouEm);
@@ -83,6 +86,8 @@ async function Conteudo() {
           A receber inclui {centavosParaReais(financeiro.previsto)} de mensalidades que ainda vão ser geradas.
         </p>
       )}
+      {/* Decisão 102: quanto recebe no mês, por origem (estúdios, personal, online, avulsas). */}
+      <GanhosDoMes ganhos={ganhos} mes={nomeDoMes} />
 
       <section className="order-1 flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4 lg:order-none" aria-label="Recebido por mês">
         <h2 className="text-[16px] font-semibold">Recebido por mês</h2>

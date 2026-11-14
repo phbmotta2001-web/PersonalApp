@@ -2,6 +2,8 @@ import { FormulariosDoEstudio } from "@/components/estudio/FormulariosDoEstudio"
 import { AtencaoAosAlunos } from "@/components/estudio/AtencaoAosAlunos";
 import { ResumoDoMes } from "@/components/estudio/ResumoDoMes";
 import { alunosEmAtencao, resumoDoMes } from "@/data/estudio-atencao";
+import { ComunicadosDoEstudio } from "@/components/estudio/ComunicadosDoEstudio";
+import { comunicadosDoEstudio } from "@/data/comunicados";
 import { lerFormulariosDoEstudio } from "@/data/formularios-estudio";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -87,6 +89,14 @@ async function Conteudo({
         <>
         {/* Decisão 101: quem precisa de atenção (aba Alunos) e o resumo do mês (aba Financeiro). */}
         {qual === "alunos" && <AtencaoAosAlunos estudio={estudio.nome} alunos={await alunosEmAtencao(estudio.id)} />}
+        {qual === "alunos" && (
+          <ComunicadosDoEstudio
+            estudioId={estudio.id}
+            estudio={estudio.nome}
+            alunos={estudio.alunos.map((a) => ({ id: a.id, nome: a.nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
+            enviados={await comunicadosDoEstudio(estudio.id)}
+          />
+        )}
         {qual === "financeiro" && <ResumoDoMesDaAba estudioId={estudio.id} mes={mesEscolhido} />}
         <GestaoDoEstudio
           estudio={estudio}
