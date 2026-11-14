@@ -15,16 +15,19 @@ export function MeusAlunosNoEstudio({ alunos }: { alunos: { id: string; nome: st
       {alunos.length === 0 ? (
         <p className="text-[14.5px] text-ink-3">Sem alunos ainda.</p>
       ) : (
-        <ul className="flex flex-col divide-y divide-line">
+        <ul className="flex flex-col gap-1">
           {alunos.map((a) => (
-            <li key={a.id} className="flex flex-col gap-2 py-2">
+            <li
+              key={a.id}
+              className={`flex flex-col gap-2 rounded-[16px] ${aberto === a.id ? "my-1.5 border-2 border-estudio bg-surface-2 p-3" : "border-b border-line px-1 py-2 last:border-b-0"}`}
+            >
               <button
                 type="button"
                 aria-expanded={aberto === a.id}
                 onClick={() => setAberto(aberto === a.id ? null : a.id)}
                 className="flex min-h-9 items-center gap-3 text-left"
               >
-                <span className="min-w-0 flex-1 truncate text-[15.5px] font-semibold">{a.nome}</span>
+                <span className={`min-w-0 flex-1 truncate font-semibold ${aberto === a.id ? "text-[17px] font-extrabold text-estudio" : "text-[15.5px]"}`}>{a.nome}</span>
                 <span className="text-[14px] font-bold text-estudio tabular-nums">
                   {a.comigo === a.total ? `${a.total}x` : `${a.comigo}/${a.total}x`}
                 </span>
@@ -32,7 +35,14 @@ export function MeusAlunosNoEstudio({ alunos }: { alunos: { id: string; nome: st
                   {aberto === a.id ? "▴" : "▾"}
                 </span>
               </button>
-              {aberto === a.id && <FichaDoAlunoEstudio alunoId={a.id} />}
+              {aberto === a.id && (
+                <>
+                  <FichaDoAlunoEstudio alunoId={a.id} />
+                  <button type="button" onClick={() => setAberto(null)} className="self-center pt-1 text-[14px] font-bold text-estudio">
+                    Fechar a ficha de {a.nome.split(" ")[0]} ▴
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>

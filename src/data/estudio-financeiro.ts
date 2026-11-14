@@ -436,3 +436,16 @@ export async function previsaoDosProfessores(estudioId: string, mes: string): Pr
   if (error) return null;
   return Object.fromEntries(((data ?? []) as { personal_id: string; valor_centavos: number }[]).map((p) => [p.personal_id, p.valor_centavos]));
 }
+
+/** Decisão 104: "Recebido" numa mensalidade que ainda não foi gerada (só prevista): cria já paga. */
+export async function receberMensalidadePrevista(alunoId: string, mes: string, vencimento: string | null, valorCentavos: number): Promise<Resposta> {
+  if (!/^\d{4}-\d{2}$/.test(mes)) return { ok: false, erro: "Mês inválido." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("receber_mensalidade_prevista_estudio", {
+    p_aluno: alunoId,
+    p_mes: `${mes}-01`,
+    p_vencimento: vencimento || null,
+    p_valor: valorCentavos,
+  });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível confirmar.") } : { ok: true };
+}

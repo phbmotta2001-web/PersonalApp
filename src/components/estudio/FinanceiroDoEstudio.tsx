@@ -9,6 +9,7 @@ import { HorarioDeFuncionamento } from "./HorarioDeFuncionamento";
 import {
   gerarMensalidadesAgora,
   marcarMensalidade,
+  receberMensalidadePrevista,
   marcarPagamentoProfessor,
   salvarConfigEstudio,
   salvarMensalidadeAluno,
@@ -788,11 +789,13 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
   const [todos, setTodos] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
-  // Confirmar o pagamento direto da lista (só mensalidades já geradas; as previstas ainda não existem).
-  const recebido = (id: string) =>
+  // Confirmar o pagamento direto da lista. Decisão 104: a prevista (ainda não gerada) é criada já paga.
+  const recebido = (c: { id: string; alunoId: string; vencimento: string; valor: number }) =>
     iniciar(async () => {
       setErro(null);
-      const r = await marcarMensalidade(id, "paga");
+      const r = c.id.startsWith("prevista-")
+        ? await receberMensalidadePrevista(c.alunoId, mes, c.vencimento, c.valor)
+        : await marcarMensalidade(c.id, "paga");
       if (!r.ok) return setErro(r.erro);
       router.refresh();
     });
@@ -839,11 +842,11 @@ function ProjecaoDoMes({ estudio, mes, hoje, dados }: { estudio: EstudioCompleto
                       Cobrar no WhatsApp
                     </a>
                   )}
-                  {!c.id.startsWith("prevista-") && (
+                  {(cobrar || !c.id.startsWith("prevista-")) && (
                     <button
                       type="button"
                       disabled={ocupado}
-                      onClick={() => recebido(c.id)}
+                      onClick={() => recebido(c)}
                       className="rounded-full border border-estudio px-3 py-1 text-[13px] font-bold text-estudio"
                     >
                       Recebido

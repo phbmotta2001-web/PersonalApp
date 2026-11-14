@@ -7,7 +7,7 @@ import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 export function AlunoDoEstudioNaLista({ id, nome, turmas }: { id: string; nome: string; turmas: string }) {
   const [aberto, setAberto] = useState(false);
   return (
-    <li className="flex flex-col gap-2 py-2.5">
+    <li className={`flex flex-col gap-2 ${aberto ? "my-1.5 rounded-[16px] border-2 border-estudio bg-surface-2 p-3" : "py-2.5"}`}>
       <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)} className="flex items-center gap-3 text-left">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-estudio text-[14px] font-extrabold text-white">
           {nome.trim()[0]?.toUpperCase()}
@@ -20,7 +20,14 @@ export function AlunoDoEstudioNaLista({ id, nome, turmas }: { id: string; nome: 
           {aberto ? "▴" : "▾"}
         </span>
       </button>
-      {aberto && <FichaDoAlunoEstudio alunoId={id} />}
+      {aberto && (
+        <>
+          <FichaDoAlunoEstudio alunoId={id} />
+          <button type="button" onClick={() => setAberto(false)} className="self-center pt-1 text-[14px] font-bold text-estudio">
+            Fechar a ficha de {nome.split(" ")[0]} ▴
+          </button>
+        </>
+      )}
     </li>
   );
 }
