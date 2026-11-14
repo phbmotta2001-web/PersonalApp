@@ -21,7 +21,7 @@ import { ValorDaReposicao } from "@/components/estudio/ValorDaReposicao";
 import { lerAntecedenciaParaMarcar } from "@/data/aluno-estudio";
 import { ausenciasDoEstudio, lerConfigReposicao, reposicoesAbertas } from "@/data/reposicao";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { DIAS, diaDaSemana, emBrasilia, instante, minParaHora, somarDias } from "@/lib/expediente";
+import { diaDaSemana, emBrasilia, instante, somarDias } from "@/lib/expediente";
 
 const ABAS: Aba[] = ["agenda", "turmas", "equipe", "alunos", "financeiro", "ajustes", "formularios"];
 
@@ -78,10 +78,7 @@ async function Conteudo({
             estudioId={estudio.id}
             estudio={estudio.nome}
             formularios={await lerFormulariosDoEstudio(estudio.id)}
-            turmas={estudio.turmas
-              .filter((t) => t.tipo === "turma")
-              .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin)
-              .map((t) => ({ id: t.id, nome: `${t.modalidade} · ${DIAS[t.diaSemana].curto} ${minParaHora(t.inicioMin)}` }))}
+            alunos={estudio.alunos.map((a) => ({ id: a.id, nome: a.nome })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))}
           />
         ) : (
         <GestaoDoEstudio

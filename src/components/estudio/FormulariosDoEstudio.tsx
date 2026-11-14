@@ -15,7 +15,8 @@ import { linkWhatsapp } from "@/lib/convite";
 import { dataCurta, emBrasilia } from "@/lib/expediente";
 import { novoIdPergunta } from "@/lib/questionario";
 import { EditorQuestionario } from "../online/EditorQuestionario";
-import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
+import { Chip } from "../Chip";
+import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 import { Icone } from "../Icone";
 import { RespostasDoFormulario } from "./RespostasDoAluno";
 
@@ -27,18 +28,19 @@ const AJUDA: Record<FormularioDoEstudio["tipo"], string> = {
 
 /**
  * Decisão 97: aba Formulários da coordenação. ParQ e anamnese padrão (editáveis), pesquisas
- * novas, envio para todos ou uma turma (aviso no app e link no WhatsApp) e as respostas.
+ * novas, envio para todos ou alunos escolhidos (aviso no app e link no WhatsApp) e as respostas.
  */
 export function FormulariosDoEstudio({
   estudioId,
   estudio,
   formularios,
-  turmas,
+  alunos,
 }: {
   estudioId: string;
   estudio: string;
   formularios: FormularioDoEstudio[];
-  turmas: { id: string; nome: string }[];
+  /** Alunos ativos, em ordem alfabética. */
+  alunos: { id: string; nome: string }[];
 }) {
   const router = useRouter();
   const [editando, setEditando] = useState<FormularioDoEstudio | "novo" | null>(null);
@@ -73,7 +75,7 @@ export function FormulariosDoEstudio({
         Só a coordenação cria e edita. O aluno responde no app; você e os professores dele veem as respostas na ficha do aluno.
       </p>
       {formularios.map((f) => (
-        <CartaoDoFormulario key={f.id} f={f} estudio={estudio} turmas={turmas} editar={() => setEditando(f)} />
+        <CartaoDoFormulario key={f.id} f={f} estudio={estudio} alunos={alunos} editar={() => setEditando(f)} />
       ))}
       <button
         type="button"
@@ -89,17 +91,18 @@ export function FormulariosDoEstudio({
 function CartaoDoFormulario({
   f,
   estudio,
-  turmas,
+  alunos,
   editar,
 }: {
   f: FormularioDoEstudio;
   estudio: string;
-  turmas: { id: string; nome: string }[];
+  alunos: { id: string; nome: string }[];
   editar: () => void;
 }) {
   const router = useRouter();
   const [painel, setPainel] = useState<"enviar" | "respostas" | null>(null);
-  const [turma, setTurma] = useState("");
+  const [todos, setTodos] = useState(true);
+  const [escolhidos, setEscolhidos] = useState<Set<string>>(new Set());
   const [enviados, setEnviados] = useState<EnvioDeFormulario[] | null>(null);
   const [respostas, setRespostas] = useState<RespostaDeFormulario[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
@@ -178,17 +181,39 @@ function CartaoDoFormulario({
           </div>
         ) : (
           <div className="flex flex-col gap-2 rounded-[14px] bg-surface-2 p-3">
-            <label className="flex flex-col gap-1.5 text-[14px] font-bold text-ink-2">
-              Para quem
-              <select value={turma} onChange={(e) => setTurma(e.target.value)} className={ESTILO_CAIXA}>
-                <option value="">Todos os alunos</option>
-                {turmas.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    Turma de {t.nome}
-                  </option>
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="mb-1.5 text-[14px] font-bold text-ink-2">Para quem</legend>
+              <div className="flex flex-wrap gap-2">
+                <Chip ativo={todos} onClick={() => setTodos(true)}>
+                  Todos os alunos
+                </Chip>
+                <Chip ativo={!todos} onClick={() => setTodos(false)}>
+                  Escolher alunos
+                </Chip>
+              </div>
+            </fieldset>
+            {!todos && (
+              <ul className="flex max-h-72 flex-col divide-y divide-line overflow-y-auto rounded-[12px] border border-line bg-surface px-3">
+                {alunos.map((a) => (
+                  <li key={a.id}>
+                    <label className="flex min-h-11 items-center gap-3 text-[15px]">
+                      <input
+                        type="checkbox"
+                        checked={escolhidos.has(a.id)}
+                        onChange={() => {
+                          const n = new Set(escolhidos);
+                          if (n.has(a.id)) n.delete(a.id);
+                          else n.add(a.id);
+                          setEscolhidos(n);
+                        }}
+                        className="size-5 shrink-0 accent-[var(--brand)]"
+                      />
+                      {a.nome}
+                    </label>
+                  </li>
                 ))}
-              </select>
-            </label>
+              </ul>
+            )}
             <Aviso>{erro}</Aviso>
             <button
               type="button"
@@ -196,7 +221,8 @@ function CartaoDoFormulario({
               onClick={() =>
                 iniciar(async () => {
                   setErro(null);
-                  const r = await enviarFormularioDoEstudio(f.id, turma || null);
+                  if (!todos && escolhidos.size === 0) return setErro("Escolha pelo menos um aluno.");
+                  const r = await enviarFormularioDoEstudio(f.id, todos ? null : [...escolhidos]);
                   if (!r.ok) return setErro(r.erro);
                   setEnviados(r.enviados);
                   router.refresh();
@@ -204,7 +230,7 @@ function CartaoDoFormulario({
               }
               className={ESTILO_BOTAO_PRINCIPAL + " sm:w-auto"}
             >
-              {ocupado ? "Enviando…" : "Enviar"}
+              {ocupado ? "Enviando…" : todos ? "Enviar para todos" : `Enviar para ${escolhidos.size} aluno${escolhidos.size === 1 ? "" : "s"}`}
             </button>
           </div>
         ))}

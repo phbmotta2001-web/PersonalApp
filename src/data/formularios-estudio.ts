@@ -76,13 +76,13 @@ export interface EnvioDeFormulario {
   comApp: boolean;
 }
 
-/** Envia para os alunos ativos (de uma turma, se turmaId). Devolve quem recebeu. */
+/** Envia para os alunos ativos (só os escolhidos, se alunoIds). Devolve quem recebeu. */
 export async function enviarFormularioDoEstudio(
   formularioId: string,
-  turmaId: string | null,
+  alunoIds: string[] | null,
 ): Promise<{ ok: true; enviados: EnvioDeFormulario[] } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { data, error } = await supabase.rpc("enviar_formulario_estudio", { p_formulario: formularioId, p_turma: turmaId });
+  const { data, error } = await supabase.rpc("enviar_formulario_estudio", { p_formulario: formularioId, p_alunos: alunoIds });
   if (error) return { ok: false, erro: doBanco(error.message, "Não foi possível enviar o formulário.") };
   return {
     ok: true,
