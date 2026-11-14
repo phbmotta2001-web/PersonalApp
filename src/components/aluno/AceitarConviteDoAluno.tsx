@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { aceitarConviteDoAluno } from "@/data/aluno-estudio";
+import { aceitarConviteDoAluno, entrarPeloLinkDeAlunos } from "@/data/aluno-estudio";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL } from "../Formulario";
 
-/** Liga a conta de aluno ao cadastro do estúdio. */
-export function AceitarConviteDoAluno({ codigo, estudio }: { codigo: string; estudio: string }) {
+/** Liga a conta de aluno ao cadastro do estúdio (geral: pelo link de alunos do estúdio, decisão 95). */
+export function AceitarConviteDoAluno({ codigo, estudio, geral = false }: { codigo: string; estudio: string; geral?: boolean }) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
@@ -22,7 +22,7 @@ export function AceitarConviteDoAluno({ codigo, estudio }: { codigo: string; est
         disabled={ocupado}
         onClick={() =>
           iniciar(async () => {
-            const r = await aceitarConviteDoAluno(codigo);
+            const r = await (geral ? entrarPeloLinkDeAlunos : aceitarConviteDoAluno)(codigo);
             if (!r.ok) return setErro(r.erro);
             router.replace(`/aluno/estudio/${r.estudio}`);
             router.refresh();

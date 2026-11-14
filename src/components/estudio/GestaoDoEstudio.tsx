@@ -22,7 +22,9 @@ import { juntarComE } from "@/lib/formato";
 import { DIAS, minParaHora } from "@/lib/expediente";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
+import { LinkDeAlunos } from "./LinkDeAlunos";
 import { AlunosEmExperimental, ConversaoDasExperimentais } from "./ExperimentaisDoEstudio";
+import { AgendarExperimental } from "./AgendarExperimental";
 import { EditarHorarios } from "./EditarHorarios";
 import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 import { AjustesDoEstudio, FinanceiroDoEstudio, MensalidadeDoAluno, ValorDoProfessor } from "./FinanceiroDoEstudio";
@@ -63,6 +65,30 @@ export function GestaoDoEstudio({
   const router = useRouter();
   return (
     <div className="flex flex-col gap-5">
+      {aba === "agenda" && (
+        <>
+          <AgendarExperimental
+            estudioId={estudio.id}
+            estudioNome={estudio.nome}
+            equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
+            hoje={hoje}
+          />
+          <AlunosEmExperimental
+            estudio={estudio}
+            hoje={hoje}
+            atualizar={() => router.refresh()}
+            escolherTurmas={(id) => (
+              <TurmasDoAluno
+                alunoId={id}
+                turmas={estudio.turmas.filter((t) => t.tipo === "turma")}
+                escolhidas={[]}
+                atualizar={() => router.refresh()}
+                gravar={matricularExperimental}
+              />
+            )}
+          />
+        </>
+      )}
       {aba === "agenda" && complemento}
       {aba === "agenda" && agenda}
       {/* Decisão 68: sem lista de turmas; a agenda mostra tudo e "Editar" adiciona, remove e dá professor. */}
@@ -391,8 +417,9 @@ function Alunos({
 
       <div className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4">
         <h2 className="font-bold">Cadastrar alunos</h2>
-        <p className="text-[14px] text-ink-3">
-          Cole da planilha: um aluno por linha, com o nome e, se quiser, o WhatsApp separado por vírgula. Ex.: <b>Ana Souza, (21) 98888-1111</b>
+        <LinkDeAlunos estudioId={estudio.id} estudio={estudio.nome} />
+        <p className="mt-2 text-[14px] text-ink-3">
+          Ou cole da planilha: um aluno por linha, com o nome e, se quiser, o WhatsApp separado por vírgula. Ex.: <b>Ana Souza, (21) 98888-1111</b>
         </p>
         <textarea
           value={texto}

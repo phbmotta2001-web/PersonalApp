@@ -41,7 +41,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/perfil">["
           ← Voltar ao painel da equipe
         </Link>
       )}
-      <FormPerfilAluno conta={conta} voltar={voltar.startsWith("/convite/") || voltar.startsWith("/estudio/aluno/") ? voltar : undefined} />
+      <FormPerfilAluno conta={conta} voltar={voltar.startsWith("/convite/") || voltar.startsWith("/estudio/aluno/") || voltar.startsWith("/estudio/entrar/") ? voltar : undefined} />
     </>
   );
 }

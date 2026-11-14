@@ -203,6 +203,30 @@ export async function aceitarConviteDoAluno(codigo: string): Promise<{ ok: true;
   return { ok: true, estudio: data as string };
 }
 
+// ─── Link de alunos do estúdio (decisão 95) ───────────────────────────────────
+
+/** O link geral do estúdio para novos alunos se cadastrarem (novo = true troca por outro). */
+export async function linkDeAlunos(estudioId: string, novo = false): Promise<{ ok: true; link: string } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("link_alunos_estudio", { p_estudio: estudioId, p_novo: novo });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível gerar o link. Se continuar, avise a equipe do P-Bell.") };
+  return { ok: true, link: `${await origemDoSite()}/estudio/entrar/${data}` };
+}
+
+export async function verLinkDeAlunos(codigo: string): Promise<{ situacao: string; estudio?: string }> {
+  if (!/^[a-f0-9]{16,64}$/.test(codigo ?? "")) return { situacao: "inexistente" };
+  const supabase = await criarClienteSupabase();
+  const { data } = await supabase.rpc("ver_link_alunos_estudio", { p_codigo: codigo });
+  return (data as { situacao: string; estudio?: string } | null) ?? { situacao: "inexistente" };
+}
+
+export async function entrarPeloLinkDeAlunos(codigo: string): Promise<{ ok: true; estudio: string } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("entrar_pelo_link_alunos", { p_codigo: codigo });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível entrar no estúdio.") };
+  return { ok: true, estudio: data as string };
+}
+
 // ─── Regras (coordenação) ───────────────────────────────────────────────────
 
 export async function salvarRegrasDosAlunos(estudioId: string, faltaH: number, marcarH: number, validadeDias: number): Promise<Resposta> {
