@@ -75,6 +75,7 @@ async function Conteudo({
         estudioNome={estudio.nome}
         equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
         hoje={hoje}
+        soDoProfessor={estudio.papel === "coordenacao" ? null : eu}
       />
 
       {/* Decisão 98: o professor cadastra alunos (nas turmas dele, se quiser). */}

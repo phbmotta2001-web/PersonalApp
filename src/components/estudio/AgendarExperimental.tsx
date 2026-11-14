@@ -10,17 +10,21 @@ import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 /**
  * Decisão 92: o professor (ou a coordenação) agenda uma aula experimental numa aula de turma,
  * numa data só. O aluno entra como "experimental" e recebe o link de cadastro.
+ * Decisão 99: o professor só vê as aulas dele; ParQ e anamnese vão junto (pode desligar).
  */
 export function AgendarExperimental({
   estudioId,
   estudioNome,
   equipe,
   hoje,
+  soDoProfessor = null,
 }: {
   estudioId: string;
   estudioNome: string;
   equipe: { personalId: string; nome: string }[];
   hoje: string;
+  /** Professor (não coordenação): só as aulas dele. */
+  soDoProfessor?: string | null;
 }) {
   const router = useRouter();
   const [aberto, setAberto] = useState(false);
@@ -29,8 +33,9 @@ export function AgendarExperimental({
   const [aulaId, setAulaId] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [zap, setZap] = useState("");
+  const [formularios, setFormularios] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [feito, setFeito] = useState<{ nome: string; whatsapp: string; quando: string; link: string } | null>(null);
+  const [feito, setFeito] = useState<{ nome: string; whatsapp: string; quando: string; link: string; formularios: boolean } | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [ocupado, iniciar] = useTransition();
   const [carregando, carregar] = useTransition();
@@ -50,7 +55,7 @@ export function AgendarExperimental({
     carregar(async () => {
       const lista = await aulasDoEstudio(estudioId, instante(d, 0).toISOString(), instante(somarDias(d, 1), 0).toISOString());
       const agora = Date.now();
-      setAulas(lista.filter((a) => !a.cancelada && a.tipo === "turma" && new Date(a.inicio).getTime() > agora && a.alunos < a.vagas));
+      setAulas(lista.filter((a) => !a.cancelada && a.tipo === "turma" && new Date(a.inicio).getTime() > agora && a.alunos < a.vagas && (!soDoProfessor || a.professorId === soDoProfessor)));
     });
   };
 
@@ -60,9 +65,9 @@ export function AgendarExperimental({
     if (nome.trim().length < 2) return setErro("Escreva o nome do aluno.");
     setErro(null);
     iniciar(async () => {
-      const r = await agendarAulaExperimental(aula.id, nome, zap);
+      const r = await agendarAulaExperimental(aula.id, nome, zap, formularios);
       if (!r.ok) return setErro(r.erro);
-      setFeito({ nome: nome.trim(), whatsapp: zap.replace(/\D/g, ""), quando: `${quando(aula)} (${aula.modalidade})`, link: r.link });
+      setFeito({ nome: nome.trim(), whatsapp: zap.replace(/\D/g, ""), quando: `${quando(aula)} (${aula.modalidade})`, link: r.link, formularios });
       setData("");
       setAulas(null);
       setAulaId(null);
@@ -101,12 +106,15 @@ export function AgendarExperimental({
           <p>
             <b>{feito.nome}</b> está agendado para {feito.quando}.
           </p>
-          <p className="text-ink-3">Envie o link para o aluno fazer o cadastro no app (vale 14 dias):</p>
+          <p className="text-ink-3">
+            Envie o link para o aluno fazer o cadastro no app (vale 14 dias)
+            {feito.formularios ? ". Ao entrar, ele responde o ParQ e a anamnese:" : ":"}
+          </p>
           <div className="flex flex-wrap gap-3 font-bold">
             <a
               href={linkWhatsapp(
                 feito.whatsapp || null,
-                `Olá, ${feito.nome.split(" ")[0]}! Sua aula experimental no ${estudioNome} está marcada para ${feito.quando}. Faça seu cadastro no P-Bell por este link: ${feito.link}`,
+                `Olá, ${feito.nome.split(" ")[0]}! Sua aula experimental no ${estudioNome} está marcada para ${feito.quando}. Faça seu cadastro no P-Bell por este link: ${feito.link}${feito.formularios ? " Antes da aula, responda no app o ParQ e a anamnese (leva poucos minutos)." : ""}`,
               )}
               target="_blank"
               rel="noreferrer"
@@ -147,7 +155,9 @@ export function AgendarExperimental({
             <input type="date" value={data} min={hoje} onChange={(e) => escolherDia(e.target.value)} className={ESTILO_CAIXA} />
           </label>
           {carregando && <p className="text-[14px] text-ink-3">Buscando as aulas…</p>}
-          {aulas && aulas.length === 0 && <p className="text-[14px] text-ink-3">Nenhuma aula com vaga neste dia.</p>}
+          {aulas && aulas.length === 0 && (
+            <p className="text-[14px] text-ink-3">{soDoProfessor ? "Nenhuma aula sua com vaga neste dia." : "Nenhuma aula com vaga neste dia."}</p>
+          )}
           {aulas && aulas.length > 0 && (
             <fieldset className="flex flex-col gap-1.5">
               <legend className="pb-1 text-[14px] font-bold text-ink-2">Aula</legend>
@@ -180,6 +190,10 @@ export function AgendarExperimental({
                 onChange={(e) => setZap(e.target.value)}
                 className={ESTILO_CAIXA}
               />
+              <label className="flex min-h-11 items-center gap-3 text-[15px]">
+                <input type="checkbox" checked={formularios} onChange={(e) => setFormularios(e.target.checked)} className="size-5 shrink-0 accent-[var(--info)]" />
+                Enviar ParQ e anamnese
+              </label>
               <button type="button" onClick={agendar} disabled={ocupado} className={ESTILO_BOTAO_PRINCIPAL}>
                 {ocupado ? "Agendando…" : "Agendar"}
               </button>
