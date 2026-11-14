@@ -464,7 +464,8 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
   const [plano, setPlano] = useState(aluno.planoMeses);
   const daTabela = vezes ? (estudio.config.precosPlano[plano]?.[vezes] ?? estudio.config.precos[vezes] ?? null) : null;
   const [valor, setValor] = useState(aluno.valorMensal);
-  const [dia, setDia] = useState(aluno.diaVencimento ?? 10);
+  // Aluno que ainda não é cobrado: vence no dia em que começa (até o dia 28, que existe em todo mês).
+  const [dia, setDia] = useState(aluno.diaVencimento ?? Math.min(28, new Date().getDate()));
   const mesAtual = new Date().toISOString().slice(0, 7);
   const [inicio, setInicio] = useState((aluno.planoInicio ?? `${mesAtual}-01`).slice(0, 7));
   const taxaDoEstudio = estudio.config.taxaMatricula;
