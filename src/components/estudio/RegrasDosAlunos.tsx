@@ -7,7 +7,8 @@ import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
 
 const HORAS_FALTA = [0, 1, 2, 3, 4, 6, 8, 12, 24, 48];
 const HORAS_MARCAR = [0, 1, 2, 3, 4, 6, 12, 24];
-const DIAS_VALIDADE = [7, 15, 30, 45, 60, 90];
+// 0: até o fim do mês da aula perdida (padrão, decisão 100).
+const DIAS_VALIDADE = [0, 7, 15, 30, 45, 60, 90];
 const horas = (h: number) => (h === 0 ? "Até a hora da aula" : `${h} h antes`);
 
 /** Regras dos alunos: aviso de falta (gera reposição), antecedência para repor e validade. */
@@ -56,7 +57,7 @@ export function RegrasDosAlunos({ estudioId, faltaH, marcarH, validadeDias }: { 
               <select value={validade} onChange={(e) => setValidade(Number(e.target.value))} className={ESTILO_CAIXA}>
                 {opcoes(DIAS_VALIDADE, validade).map((d) => (
                   <option key={d} value={d}>
-                    {d} dias
+                    {d === 0 ? "Até o fim do mês" : `${d} dias`}
                   </option>
                 ))}
               </select>

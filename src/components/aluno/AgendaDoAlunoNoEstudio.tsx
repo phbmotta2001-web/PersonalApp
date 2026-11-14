@@ -121,7 +121,7 @@ export function AgendaDoAlunoNoEstudio({
           ? "Desmarcar a reposição? Ela volta para você usar em outra aula."
           : `Faltam menos de ${estudio.faltaH} h: se desmarcar agora, você perde esta reposição. Desmarcar mesmo assim?`
         : noPrazo
-          ? `Avisar que vai faltar? Você ganha uma reposição de ${a.modalidade} (vale ${estudio.validadeDias} dias).`
+          ? `Avisar que vai faltar? Você ganha uma reposição de ${a.modalidade} (vale ${estudio.validadeDias === 0 ? "até o fim do mês" : `${estudio.validadeDias} dias`}).`
           : `Faltam menos de ${estudio.faltaH} h: a falta é avisada ao professor, mas não gera reposição. Avisar mesmo assim?`;
     if (!confirm(pergunta)) return;
     agir(a.id, async () => {

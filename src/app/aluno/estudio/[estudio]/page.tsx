@@ -126,7 +126,7 @@ async function Conteudo({
       />
 
       <p className="text-[13px] text-ink-3">
-        Reposição: só na mesma modalidade, com pelo menos {estudio.marcarH} h de antecedência, e vale {estudio.validadeDias} dias. O professor é
+        Reposição: só na mesma modalidade, com pelo menos {estudio.marcarH} h de antecedência, e vale {estudio.validadeDias === 0 ? "até o fim do mês" : `${estudio.validadeDias} dias`}. O professor é
         avisado na hora.
       </p>
     </div>

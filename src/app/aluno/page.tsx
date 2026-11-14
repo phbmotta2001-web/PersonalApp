@@ -20,7 +20,7 @@ import { checkinsPendentesDoAluno } from "@/data/questionarios";
 import { faltaNoPerfil, perfilCompleto } from "@/lib/aluno";
 import { situacaoDaCobranca, textoDoVencimento } from "@/lib/cobranca";
 import { linkWhatsapp } from "@/lib/convite";
-import { agoraEmBrasilia, emBrasilia, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, dataCurta, emBrasilia, somarDias } from "@/lib/expediente";
 import { juntarComE } from "@/lib/formato";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 
@@ -61,7 +61,7 @@ async function Conteudo() {
         minhasReposicoesNoEstudio(e.id),
       ]);
       const proximaNoEstudio = aulasDoEstudio.find((a) => a.minha && !a.aviseiFalta && !a.cancelada && Date.parse(a.inicio) > agora.getTime());
-      return { e, proxima: proximaNoEstudio, reposicoes: reposicoes.length };
+      return { e, proxima: proximaNoEstudio, reposicoes };
     }),
   );
   const porPersonal = await Promise.all(
@@ -148,9 +148,12 @@ async function Conteudo() {
           <span className="font-display text-[24px] leading-tight font-extrabold">
             {p ? `${p.modalidade} · ${quando(p.inicio)}` : "Nenhuma aula sua nos próximos dias"}
           </span>
-          <span className="text-[14px] opacity-90">
-            {reposicoes > 0 ? `${reposicoes} ${reposicoes === 1 ? "reposição" : "reposições"} para usar · ` : ""}Ver a agenda e as vagas ›
+          <span className="mt-1 self-start rounded-full bg-white/15 px-3 py-1 text-[14px] font-bold">
+            {reposicoes.length === 0
+              ? "Nenhuma reposição para usar"
+              : `${reposicoes.length} ${reposicoes.length === 1 ? "reposição" : "reposições"} para usar · vale até ${dataCurta(reposicoes[0].validoAte)}`}
           </span>
+          <span className="text-[14px] opacity-90">Ver a agenda e as vagas ›</span>
         </Link>
       ))}
 

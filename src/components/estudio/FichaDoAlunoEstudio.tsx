@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { fichaDoAlunoEstudio, salvarAnotacoesDoAluno, salvarTreinoDoAluno, type FichaDoAlunoEstudio as Ficha } from "@/data/estudio";
+import { dataCurta } from "@/lib/expediente";
 import { EditorDeTreino } from "../EditorDeTreino";
 import { RespostasDoAluno } from "./RespostasDoAluno";
 import { Aviso } from "../Formulario";
@@ -35,6 +36,26 @@ export function FichaDoAlunoEstudio({ alunoId }: { alunoId: string }) {
 
   return (
     <div className="grid gap-2.5 sm:grid-cols-2">
+      {/* Decisão 100: quantas reposições o aluno tem para usar. */}
+      <div className={CAIXA + " sm:col-span-2"}>
+        <span className={TITULO}>Reposições</span>
+        {ficha.reposicoes.length === 0 ? (
+          <p className="text-[15px] text-ink-2">Nenhuma reposição para usar.</p>
+        ) : (
+          <>
+            <p className="text-[15px] font-bold">
+              {ficha.reposicoes.length} {ficha.reposicoes.length === 1 ? "reposição" : "reposições"} para usar
+            </p>
+            <ul className="text-[14px] text-ink-2">
+              {ficha.reposicoes.map((r, i) => (
+                <li key={i}>
+                  {r.modalidade} · vale até {dataCurta(r.validoAte)}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
       <Caixa
         alunoId={alunoId}
         campo="limitacoes"

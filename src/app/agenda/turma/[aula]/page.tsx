@@ -77,7 +77,13 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/turma/[aula]">[
         <div className="flex flex-col gap-2">
           <p className="text-ink-2">A chamada abre 30 minutos antes da aula, às {emBrasilia(new Date(abre).toISOString()).hora}.</p>
           <h2 className="pt-2 text-[16px] font-bold">Alunos da turma ({aula.alunos.length})</h2>
-          <AlunosAntesDaAula aulaId={aula.id} alunos={aula.alunos} />
+          <AlunosAntesDaAula
+            aulaId={aula.id}
+            alunos={aula.alunos}
+            estudioId={aula.estudioId}
+            dataDaAula={emBrasilia(aula.inicio).data}
+            equipe={(estudio?.equipe ?? []).map((m) => ({ personalId: m.personalId, nome: m.nome }))}
+          />
         </div>
       ) : aula.alunos.length === 0 ? (
         <p className="text-ink-2">Nenhum aluno nesta turma ainda. A coordenação inclui os alunos.</p>

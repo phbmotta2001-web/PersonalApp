@@ -204,7 +204,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     supabase
       .from("estudios")
       .select(
-        "id, nome, antecedencia_falta_h, validade_reposicao_dias, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade, taxa_matricula_centavos, transito_livre",
+        "id, nome, antecedencia_falta_h, validade_reposicao_dias, reposicao_fim_do_mes, tipo, pagamento_modelo, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, max_alunos_turma, pix_tipo, pix_chave, pix_nome, pix_cidade, taxa_matricula_centavos, transito_livre",
       )
       .eq("id", estudioId)
       .maybeSingle(),
@@ -260,7 +260,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     nome: e.nome,
     papel: papel as PapelNoEstudio,
     antecedenciaFaltaH: e.antecedencia_falta_h,
-    validadeReposicaoDias: e.validade_reposicao_dias,
+    validadeReposicaoDias: e.reposicao_fim_do_mes === false ? e.validade_reposicao_dias : 0,
     config: {
       tipo: e.tipo as TipoDeEstudio,
       transitoLivre: e.transito_livre !== false,
@@ -349,6 +349,10 @@ export interface AlunoNaChamada {
   reposicao?: boolean;
   /** Aula experimental (decisão 92). */
   experimental?: boolean;
+  /** Veio de outro horário só neste dia (decisão 100). */
+  troca?: boolean;
+  /** Trocou esta aula por outro horário só neste dia (decisão 100). */
+  trocou?: boolean;
 }
 
 export interface AulaParaChamada {
@@ -382,16 +386,19 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     supabase.from("turma_alunos").select("estudio_alunos(id, nome, situacao)").eq("turma_id", a.turma_id),
     supabase.from("presencas").select("estudio_aluno_id, situacao, origem, estudio_alunos(id, nome)").eq("aula_turma_id", a.id),
   ]);
+  // Quem trocou esta aula por outro horário (decisão 100). Sem a migração 62, a lista fica vazia.
+  const { data: trocas } = await supabase.from("presencas").select("estudio_aluno_id").eq("troca_de", a.id);
+  const trocaram = new Set((trocas ?? []).map((x) => x.estudio_aluno_id as string));
   const marcas = new Map((presencas ?? []).map((p) => [p.estudio_aluno_id, p.situacao as AlunoNaChamada["situacao"]]));
   const alunos = new Map<string, AlunoNaChamada>();
   for (const m of matriculas ?? []) {
     const x = m.estudio_alunos as unknown as { id: string; nome: string; situacao: string } | null;
-    if (x && x.situacao === "ativo") alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null });
+    if (x && x.situacao === "ativo") alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, trocou: trocaram.has(x.id) });
   }
   // Quem já tem marca na aula (ex.: reposição) entra na lista mesmo sem estar na turma.
   for (const p of presencas ?? []) {
     const x = p.estudio_alunos as unknown as { id: string; nome: string } | null;
-    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao", experimental: p.origem === "experimental" });
+    if (x && !alunos.has(x.id)) alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, reposicao: p.origem === "reposicao", experimental: p.origem === "experimental", troca: p.origem === "troca" });
   }
   const t = a.turmas as unknown as { modalidade: string; vagas: number | null; tipo: string; dia_semana: number; inicio_min: number };
   const e = a.estudios as unknown as { nome: string };
@@ -777,10 +784,16 @@ export async function agendarAulaExperimental(
   aulaId: string,
   nome: string,
   whatsapp: string,
+  formularios = true,
 ): Promise<{ ok: true; alunoId: string; link: string } | { ok: false; erro: string }> {
   if (nome.trim().length < 2) return { ok: false, erro: "Escreva o nome do aluno." };
   const supabase = await criarClienteSupabase();
-  const { data, error } = await supabase.rpc("agendar_aula_experimental", { p_aula: aulaId, p_nome: nome.trim(), p_whatsapp: whatsapp.trim() || null });
+  const { data, error } = await supabase.rpc("agendar_aula_experimental", {
+    p_aula: aulaId,
+    p_nome: nome.trim(),
+    p_whatsapp: whatsapp.trim() || null,
+    p_formularios: formularios,
+  });
   if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível agendar a aula experimental.") };
   const r = data as { aluno: string; codigo: string };
   return { ok: true, alunoId: r.aluno, link: `${await origemDoSite()}/estudio/aluno/${r.codigo}` };
@@ -1007,12 +1020,17 @@ export interface FichaDoAlunoEstudio {
   dias: number[];
   /** Dia da semana → o que treina. */
   treino: Record<number, string>;
+  /** Reposições para usar (decisão 100), da que vence primeiro. */
+  reposicoes: { modalidade: string; validoAte: string }[];
 }
 
 /** Limitações, objetivo e treino de cada dia (coordenação e professores do estúdio). */
 export async function fichaDoAlunoEstudio(estudioAlunoId: string): Promise<{ ok: true; ficha: FichaDoAlunoEstudio } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { data, error } = await supabase.rpc("ficha_aluno_estudio", { p_estudio_aluno: estudioAlunoId });
+  const [{ data, error }, { data: reps }] = await Promise.all([
+    supabase.rpc("ficha_aluno_estudio", { p_estudio_aluno: estudioAlunoId }),
+    supabase.rpc("reposicoes_do_aluno_estudio", { p_estudio_aluno: estudioAlunoId }),
+  ]);
   if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível abrir a ficha (falta atualizar o banco: migração 42).") };
   const f = data as {
     com_app: boolean;
@@ -1037,6 +1055,7 @@ export async function fichaDoAlunoEstudio(estudioAlunoId: string): Promise<{ ok:
       objetivosEstudio: f.objetivos_estudio ?? "",
       dias: (f.dias ?? []).map(Number),
       treino: Object.fromEntries((f.treino ?? []).map((t) => [t.dia, t.texto])),
+      reposicoes: ((reps ?? []) as { modalidade: string; valido_ate: string }[]).map((r) => ({ modalidade: r.modalidade, validoAte: r.valido_ate })),
     },
   };
 }

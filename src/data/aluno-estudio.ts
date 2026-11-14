@@ -15,6 +15,7 @@ export interface EstudioDoAluno {
   nome: string;
   faltaH: number;
   marcarH: number;
+  /** 0: a reposição vale até o fim do mês (decisão 100). */
   validadeDias: number;
   funcionamento: Funcionamento;
 }
@@ -219,6 +220,14 @@ export async function desfazerFaltaNoEstudio(aulaId: string, alunoId?: string): 
   const supabase = await criarClienteSupabase();
   const { error } = await supabase.rpc("desfazer_falta_estudio", { p_aula: aulaId, p_aluno: alunoId ?? null });
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível desfazer.") } : { ok: true };
+}
+
+/** Decisão 100: o professor passa o aluno para outra aula só neste dia. Devolve o texto da aula nova. */
+export async function trocarHorarioNoEstudio(aulaId: string, alunoId: string, destinoId: string): Promise<{ ok: true; aula: string } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("trocar_horario_estudio", { p_aula: aulaId, p_aluno: alunoId, p_destino: destinoId });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível trocar o horário.") };
+  return { ok: true, aula: data as string };
 }
 
 export async function marcarReposicaoNoEstudio(aulaId: string): Promise<Resposta> {
