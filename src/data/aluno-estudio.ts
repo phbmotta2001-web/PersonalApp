@@ -251,6 +251,26 @@ export async function aceitarConviteDoAluno(codigo: string): Promise<{ ok: true;
   return { ok: true, estudio: data as string };
 }
 
+// ─── A equipe cadastra um aluno (decisão 98) ─────────────────────────────────
+
+/** Professor ou coordenação cadastra um aluno (nome, WhatsApp e turmas do professor). Devolve o link do app. */
+export async function cadastrarAlunoPelaEquipe(
+  estudioId: string,
+  nome: string,
+  whatsapp: string,
+  turmas: string[],
+): Promise<{ ok: true; link: string } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("cadastrar_aluno_pela_equipe", {
+    p_estudio: estudioId,
+    p_nome: nome,
+    p_whatsapp: whatsapp,
+    p_turmas: turmas,
+  });
+  if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível cadastrar o aluno.") };
+  return { ok: true, link: `${await origemDoSite()}/estudio/aluno/${(data as { codigo: string }).codigo}` };
+}
+
 // ─── Link de alunos do estúdio (decisão 95) ───────────────────────────────────
 
 /** O link geral do estúdio para novos alunos se cadastrarem (novo = true troca por outro). */

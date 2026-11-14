@@ -10,9 +10,10 @@ import { exigirPersonal } from "@/data/exigir-personal";
 import { AusenciasDoEstudio } from "@/components/estudio/AusenciasDoEstudio";
 import { ReposicoesAbertas } from "@/components/estudio/ReposicoesAbertas";
 import { AgendarExperimental } from "@/components/estudio/AgendarExperimental";
+import { CadastrarAlunoDaEquipe } from "@/components/estudio/CadastrarAlunoDaEquipe";
 import { ausenciasDoEstudio, reposicoesAbertas } from "@/data/reposicao";
 import { usuarioAtual } from "@/lib/supabase/servidor";
-import { agoraEmBrasilia, diaDaSemana, instante, somarDias } from "@/lib/expediente";
+import { DIAS, agoraEmBrasilia, diaDaSemana, instante, minParaHora, somarDias } from "@/lib/expediente";
 
 export const metadata: Metadata = {
   title: "Estúdio",
@@ -74,6 +75,20 @@ async function Conteudo({
         estudioNome={estudio.nome}
         equipe={estudio.equipe.map((m) => ({ personalId: m.personalId, nome: m.nome }))}
         hoje={hoje}
+      />
+
+      {/* Decisão 98: o professor cadastra alunos (nas turmas dele, se quiser). */}
+      <CadastrarAlunoDaEquipe
+        estudioId={id}
+        estudioNome={estudio.nome}
+        turmas={estudio.turmas
+          .filter((t) => t.tipo === "turma" && (estudio.papel === "coordenacao" || t.professorId === eu))
+          .sort((a, b) => a.diaSemana - b.diaSemana || a.inicioMin - b.inicioMin)
+          .map((t) => ({
+            id: t.id,
+            nome: `${t.modalidade} · ${DIAS[t.diaSemana].curto} ${minParaHora(t.inicioMin)}`,
+            livres: t.vagas - t.alunos.length,
+          }))}
       />
 
       {estudio.papel === "coordenacao" && (
