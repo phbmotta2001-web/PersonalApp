@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { MarcarAvisosLidos } from "@/components/agenda/MarcarAvisosLidos";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
-import { Icone } from "@/components/Icone";
+import { Icone, type NomeIcone } from "@/components/Icone";
 import { listarAvisos, type Aviso } from "@/data/avisos";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { emBrasilia } from "@/lib/expediente";
@@ -25,6 +25,28 @@ export default function PaginaAvisos() {
       </Suspense>
     </div>
   );
+}
+
+/** Decisão 110: o mesmo ícone e a mesma cor do "Precisa de você" (e da landing) para cada tipo. */
+function iconeDoAviso(tipo: Aviso["tipo"]): { nome: NomeIcone; tom: string } {
+  switch (tipo) {
+    case "pediu_reposicao":
+    case "pediu_remarcacao":
+    case "cancelou_com_reposicao":
+      return { nome: "calendario", tom: "text-gold" };
+    case "cancelou_em_cima":
+    case "recusou_sugestao":
+    case "sugestao_expirou":
+      return { nome: "calendario", tom: "text-bad" };
+    case "marcou_reposicao":
+    case "remarcou":
+      return { nome: "calendario", tom: "text-brand" };
+    case "aceitou_sugestao":
+    case "avisou_pagamento":
+      return { nome: "certo", tom: "text-ok" };
+    case "respondeu_checkin":
+      return { nome: "conversa", tom: "text-info" };
+  }
 }
 
 /** O que o aluno fez, em português. */
@@ -93,7 +115,7 @@ async function Conteudo() {
         const quando = emBrasilia(a.criadoEm);
         const conteudo = (
           <>
-            <span className={`mt-1.5 size-2 shrink-0 rounded-full ${a.lido ? "bg-transparent" : "bg-brand"}`} aria-hidden="true" />
+            <Icone nome={iconeDoAviso(a.tipo).nome} className={`mt-0.5 size-[18px] shrink-0 ${iconeDoAviso(a.tipo).tom}`} />
             <span className="min-w-0 flex-1">
               <span className={`block text-[15px] ${a.lido ? "text-ink-2" : "font-semibold"}`}>{texto(a)}</span>
               <span className="block text-[13px] text-ink-3">
