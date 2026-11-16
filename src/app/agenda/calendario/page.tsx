@@ -43,8 +43,8 @@ export const metadata: Metadata = {
 
 // No calendário expandido dá para ver até 2 meses à frente (as aulas fixas existem por 8 semanas).
 const MESES_A_FRENTE = 2;
-// Cor de cada estúdio no calendário: o primeiro no roxo do estúdio, os outros em tons distintos.
-const CORES_DE_ESTUDIO = ["var(--estudio)", "#0f9b8e", "#d97a1f", "#2f6fdf", "#c2417a"];
+// Cor de cada estúdio no calendário: o primeiro no verde-petróleo do estúdio, os outros em tons distintos.
+const CORES_DE_ESTUDIO = ["var(--estudio)", "#7a4e9c", "#d97a1f", "#2f6fdf", "#c2417a"];
 const dataValida = (d: unknown): d is string => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
 
 export default function PaginaAgenda({ searchParams }: PageProps<"/agenda/calendario">) {
@@ -117,7 +117,7 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
 
   const agora = new Date();
   const aulasQueOcupam = aulas.filter((a) => SITUACOES_QUE_OCUPAM.includes(a.situacao as SituacaoAula));
-  // Turmas do estúdio (decisão 54): ocupam o horário do professor e aparecem em roxo.
+  // Turmas do estúdio (decisão 54): ocupam o horário do professor e aparecem em verde-petróleo.
   const turmas = turmasDaSemana.filter((a) => !a.cancelada);
   const semana = horariosLivres(faixas, bloqueios, duracao, 7, new Date(), [...aulasQueOcupam, ...turmas], inicioSemana);
   const doDia = semana.find((d) => d.data === dia) ?? semana[0];
@@ -464,7 +464,7 @@ function GradeDaSemana({
 }: {
   dias: { data: string; diaSemana: number; livres: number[]; trabalha: boolean }[];
   aulas: AulaDaSemana[];
-  /** Aulas de turma do estúdio, em roxo. */
+  /** Aulas de turma do estúdio, em verde-petróleo. */
   turmas: AulaDeTurma[];
   duracao: number;
   dia: string;

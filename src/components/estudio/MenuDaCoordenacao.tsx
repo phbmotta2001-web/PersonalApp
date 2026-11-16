@@ -4,7 +4,7 @@ import { Icone, type NomeIcone } from "../Icone";
 import type { Aba } from "./GestaoDoEstudio";
 
 // Decisão 62: o painel da coordenação é só do estúdio (administração, financeiro e agenda),
-// com o menu inteiro em roxo. No computador, uma coluna fixa à esquerda; no celular, uma faixa
+// com o menu inteiro em verde-petróleo. No computador, uma coluna fixa à esquerda; no celular, uma faixa
 // roxa em cima com o nome do estúdio e a barra de abas embaixo.
 export const ABAS_DA_COORDENACAO: { valor: Aba; rotulo: string; curto: string; icone: NomeIcone }[] = [
   { valor: "agenda", rotulo: "Agenda", curto: "Agenda", icone: "calendario" },

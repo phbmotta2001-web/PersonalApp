@@ -81,7 +81,7 @@ export async function ListaDeAlunos() {
         </Link>
       )}
       <Alunos alunos={alunos} origem={origem} detalhes={detalhes} />
-      {/* Alunos das turmas que ele dá no estúdio (decisão 54): em roxo, sempre abaixo dos particulares.
+      {/* Alunos das turmas que ele dá no estúdio (decisão 54): em verde-petróleo, sempre abaixo dos particulares.
           Decisão 82: começam recolhidos; o personal expande quando quiser. */}
       {doEstudio.map((g) => (
         <details key={g.estudio} className="group px-[18px] pb-6" aria-label={`Alunos do ${g.estudio}`}>

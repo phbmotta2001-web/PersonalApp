@@ -39,7 +39,7 @@ async function Conteudo({ params }: { params: PageProps<"/estudio/convite/[codig
       <p className="text-[15px] font-bold text-estudio">P-Bell Estúdio</p>
       <h1 className="text-[26px] leading-tight font-extrabold">Você foi convidado para a equipe do {convite.estudio}</h1>
       <p className="text-ink-2">
-        Suas turmas do estúdio vão aparecer em roxo na sua agenda, e você faz a chamada pelo celular. O estúdio vê só as turmas dele,
+        Suas turmas do estúdio vão aparecer em verde-petróleo na sua agenda, e você faz a chamada pelo celular. O estúdio vê só as turmas dele,
         nunca seus alunos particulares.
       </p>
       {id ? (
