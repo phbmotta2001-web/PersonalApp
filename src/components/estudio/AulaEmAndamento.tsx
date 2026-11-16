@@ -36,7 +36,7 @@ export function AulaEmAndamento({ aula }: { aula: AulaParaChamada }) {
   return (
     <section className="flex flex-col gap-3 rounded-[24px] bg-estudio p-5 text-white" aria-label="Aula em andamento">
       <div className="flex items-center gap-2">
-        <span className="size-2.5 animate-pulse rounded-full bg-white" aria-hidden="true" />
+        <span className="size-2.5 animate-pulse rounded-full bg-lime" aria-hidden="true" />
         <span className="text-[15px] font-extrabold tracking-[0.06em] uppercase">Aula em andamento</span>
       </div>
       <p className="font-display text-[22px] leading-tight font-extrabold">
@@ -72,7 +72,7 @@ export function AulaEmAndamento({ aula }: { aula: AulaParaChamada }) {
                   aria-label={`${a.nome}: presente`}
                   onClick={() => marcar(a.id, "presente")}
                   className={`flex h-11 items-center gap-1 rounded-[12px] border px-2.5 text-[14px] font-bold ${
-                    m === "presente" ? "border-transparent bg-ok text-white" : "border-line text-ink-2"
+                    m === "presente" ? "border-transparent bg-ok text-surface" : "border-line text-ink-2"
                   }`}
                 >
                   <span aria-hidden="true">✓</span> Presente

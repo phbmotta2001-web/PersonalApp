@@ -17,17 +17,18 @@
   --on-deep-2: #c9e4d6;
   --lime: #c8f06a;
   --lime-ink: #1b2a08;
-  --ok: #1a7247;
-  --ok-soft: #dcf2e5;
+  /* "Deu certo" (recebido, presente, pago): família do limão do sino (decisão 111). */
+  --ok: #3d6b10;
+  --ok-soft: #ddf6a0;
   --info: #1d5fb4;
   --info-soft: #dde9f8;
-  /* Estúdio (P-Bell Estúdio): turmas e alunos do estúdio aparecem em roxo. */
-  --estudio: #6a3fb5;
-  --estudio-soft: #ece4fa;
-  /* Painel da coordenação: menu roxo escuro (decisão 62). */
-  --estudio-fundo: #4b2a8a;
+  /* Estúdio (P-Bell Estúdio): turmas e alunos do estúdio em verde-petróleo (decisão 111; antes roxo). */
+  --estudio: #1f5f6b;
+  --estudio-soft: #dcecee;
+  /* Painel da coordenação: menu verde-petróleo escuro (decisões 62 e 111). */
+  --estudio-fundo: #17474f;
   --on-estudio: #ffffff;
-  --on-estudio-2: #ddd0f6;
+  --on-estudio-2: #c4e0e4;
   --bad: #b1261b;
   --gold: #7a5400;
   --gold-soft: #f7ebc8;
@@ -59,15 +60,15 @@
     --deep: #0f2d21;
     --on-deep: #f1f8f4;
     --on-deep-2: #a9d3be;
-    --ok: #7ddaa9;
-    --ok-soft: #113425;
+    --ok: #c8f06a;
+    --ok-soft: #26340f;
     --info: #8fbaf3;
     --info-soft: #14263f;
-    --estudio: #b89af0;
-    --estudio-soft: #261a3d;
-    --estudio-fundo: #2c1a4f;
-    --on-estudio: #f4effc;
-    --on-estudio-2: #c9b8ec;
+    --estudio: #7cc6d0;
+    --estudio-soft: #12292d;
+    --estudio-fundo: #133a40;
+    --on-estudio: #eefafb;
+    --on-estudio-2: #a9d3d9;
     --bad: #f38b7f;
     --gold: #e7be55;
     --gold-soft: #33280a;
@@ -76,6 +77,28 @@
     --bronze: #e09a70;
     --bronze-soft: #33190c;
     color-scheme: dark;
+  }
+}
+
+/* Área do aluno em azul-marinho (decisão 111): dentro dela, a cor da marca e o fundo escuro
+   viram azul. Vale para tudo que usa bg-brand, text-brand, bg-deep etc. nas telas do aluno. */
+.area-aluno {
+  display: contents;
+  --brand: #1f4f8a;
+  --brand-ink: #ffffff;
+  --brand-soft: #dde7f5;
+  --deep: #163a66;
+  --on-deep: #ffffff;
+  --on-deep-2: #c6d6ee;
+}
+@media (prefers-color-scheme: dark) {
+  .area-aluno {
+    --brand: #8fb4ea;
+    --brand-ink: #06101c;
+    --brand-soft: #16263d;
+    --deep: #12284a;
+    --on-deep: #f1f5fb;
+    --on-deep-2: #a9c1e4;
   }
 }
 

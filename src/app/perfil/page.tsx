@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 // convite: depois de completar o perfil, aparece "voltar ao convite".
 export default function PaginaPerfilAluno({ searchParams }: PageProps<"/perfil">) {
   return (
+    <div className="area-aluno">
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
       {/* O perfil depende de quem está logado, então é lido a cada visita. */}
       <h1 className="px-[18px] pt-5 text-[24px] font-extrabold">Perfil</h1>
@@ -24,6 +25,7 @@ export default function PaginaPerfilAluno({ searchParams }: PageProps<"/perfil">
       </Suspense>
       <div className="h-28" aria-hidden="true" />
       <BarraDoAluno />
+    </div>
     </div>
   );
 }
