@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Guia da coordenação · P-Bell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --cor: #1c5a42; --fundo: #123b2c; --suave: #e6efe9; --borda: #c3d6cb; --fundo-claro: #edf2ef; }
+body.estudio { --cor: #1f5f6b; --fundo: #17474f; --suave: #e2eef0; --borda: #bcd8dc; --fundo-claro: #ebf3f4; }
+body.aluno { --cor: #1f4f8a; --fundo: #163a66; --suave: #e4ecf7; --borda: #bfd0ea; --fundo-claro: #edf2f9; }
+.grande { font-size: 11.6pt; }
+.destaque { background: var(--fundo); color: #fff; border-radius: 14px; padding: 14px 16px; margin: 8px 0 10px; break-inside: avoid; }
+.destaque h3 { color: #c8f06a; margin: 0 0 6px; font-size: 13pt; }
+.destaque p { margin: 0 0 6px; }
+.destaque ul { margin: 0; }
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Figtree", system-ui, sans-serif; color: #10201a; font-size: 10.6pt; line-height: 1.45; }
+h1, h2, h3 { font-family: "Bricolage Grotesque", "Figtree", sans-serif; margin: 0; }
+.capa { background: var(--fundo); color: #fff; border-radius: 18px; padding: 26px 28px; margin-bottom: 18px; }
+.capa .marca { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.capa .marca img { width: 44px; height: 44px; border-radius: 11px; }
+.capa .marca span { font-family: "Bricolage Grotesque"; font-weight: 800; font-size: 18pt; }
+.capa .rotulo { color: #c8f06a; text-transform: uppercase; letter-spacing: .08em; font-size: 8.5pt; font-weight: 700; opacity: .8; }
+.capa h1 { font-size: 25pt; line-height: 1.1; font-weight: 800; margin: 4px 0 8px; }
+.capa p { margin: 0; font-size: 11pt; opacity: .92; }
+h2 { font-size: 15pt; font-weight: 800; color: var(--cor); margin: 16px 0 7px; break-after: avoid; }
+h2 .n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--cor); color: #fff; font-size: 11pt; margin-right: 8px; vertical-align: 2px; }
+h3 { font-size: 11.5pt; font-weight: 700; margin: 12px 0 4px; break-after: avoid; }
+p { margin: 0 0 7px; }
+ul, ol { margin: 0 0 8px; padding-left: 20px; }
+li { margin-bottom: 3px; }
+b { font-weight: 700; }
+.botao { display: inline-block; border: 1px solid var(--borda); background: var(--suave); color: var(--cor); border-radius: 6px; padding: 0 6px; font-weight: 700; font-size: 9.8pt; white-space: nowrap; }
+.caixa { border: 1px solid #d6dfda; border-radius: 14px; padding: 12px 14px; margin: 8px 0 10px; break-inside: avoid; }
+.dica { background: var(--fundo-claro); border-left: 4px solid var(--cor); border-radius: 10px; padding: 9px 12px; margin: 8px 0 10px; break-inside: avoid; }
+.dica b:first-child { color: var(--cor); }
+.atencao { background: #fbf4e6; border-left: 4px solid #7a5400; border-radius: 10px; padding: 9px 12px; margin: 8px 0 10px; break-inside: avoid; }
+.atencao b:first-child { color: #7a5400; }
+.duas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.duas .caixa { margin: 0; }
+.caixa h3 { margin-top: 0; }
+.passos { counter-reset: p; list-style: none; padding-left: 0; }
+.passos > li { counter-increment: p; position: relative; padding-left: 30px; margin-bottom: 6px; }
+.passos > li::before { content: counter(p); position: absolute; left: 0; top: 1px; width: 21px; height: 21px; border-radius: 50%; background: var(--cor); color: #fff; font-weight: 700; font-size: 9pt; display: grid; place-items: center; }
+.abas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 10px; }
+.abas.seis { grid-template-columns: repeat(3, 1fr); }
+.abas.cinco { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.abas.cinco .aba { padding: 8px 9px; }
+.aba { background: var(--fundo-claro); border-radius: 12px; padding: 9px 11px; break-inside: avoid; }
+.aba b { display: block; color: var(--cor); font-size: 11pt; }
+.aba span { font-size: 9.5pt; color: #3f5148; }
+.icones span { display: inline-block; margin-right: 10px; }
+.rodape { margin-top: 22px; padding-top: 10px; border-top: 1px solid #d6dfda; font-size: 9pt; color: #4b5a53; }
+.quebra { break-before: page; }
+</style></head><body class="estudio">
+<div class="capa">
+  <div class="marca"><img src="data:image/png;base64,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" alt=""><span>P-Bell</span></div>
+  <div class="rotulo">Guia da beta · Coordenação</div>
+  <h1>O estúdio inteiro num lugar só</h1>
+  <p>Agenda e turmas, professores, alunos, mensalidades e formulários, no computador ou no celular.</p>
+</div>
+
+<h2><span class="n">1</span>Entre e instale</h2>
+<p>A coordenação entra em <b>pbell.com.br</b> com o e-mail e a senha da conta do estúdio e cai direto na coordenação. No computador, use o navegador mesmo: as abas ficam num menu à esquerda. No celular, vale instalar o app:</p>
+
+<p>O P-Bell não fica na App Store nem no Google Play durante a beta: ele é instalado pelo navegador, em menos de um minuto, e depois abre com um toque, em tela cheia, como qualquer app.</p>
+<div class="duas">
+  <div class="caixa">
+    <h3>iPhone</h3>
+    <ol class="passos">
+      <li>Abra <b>pbell.com.br</b> no <b>Safari</b>. Em outro navegador não dá para instalar.</li>
+      <li>Toque no botão <span class="botao">Compartilhar</span> (o quadrado com a seta para cima, embaixo da tela).</li>
+      <li>Role a lista e toque em <span class="botao">Adicionar à Tela de Início</span>.</li>
+      <li>Toque em <span class="botao">Adicionar</span>. O ícone do P-Bell aparece junto dos seus apps.</li>
+      <li>Abra o P-Bell <b>pelo ícone</b> e entre com seu e-mail e senha.</li>
+    </ol>
+  </div>
+  <div class="caixa">
+    <h3>Android</h3>
+    <ol class="passos">
+      <li>Abra <b>pbell.com.br</b> no <b>Chrome</b>.</li>
+      <li>Se aparecer <span class="botao">Instalar o P-Bell</span>, toque nele.</li>
+      <li>Se não aparecer, toque no menu <span class="botao">⋮</span> (canto de cima) e depois em <span class="botao">Instalar app</span> ou <span class="botao">Adicionar à tela inicial</span>.</li>
+      <li>Confirme em <span class="botao">Instalar</span>. O ícone do P-Bell aparece junto dos seus apps.</li>
+      <li>Abra o P-Bell <b>pelo ícone</b> e entre com seu e-mail e senha.</li>
+    </ol>
+  </div>
+</div>
+<h3>Ligue as notificações</h3>
+<p>Na primeira vez que abrir o app instalado, aparece o quadro <span class="botao">Ligue as notificações</span>. Toque em <span class="botao">Ligar notificações</span> e depois em <b>Permitir</b>. É assim que chegam no celular os pedidos, as mudanças de aula e os avisos.</p>
+<div class="atencao"><b>No iPhone,</b> as notificações só funcionam com o app instalado e aberto pelo ícone (iOS 16.4 ou mais novo). Se você recusou sem querer, libere em <b>Ajustes do iPhone &gt; Notificações &gt; P-Bell</b>.</div>
+
+
+<h2><span class="n">2</span>As seis abas</h2>
+<div class="abas seis">
+  <div class="aba"><b>Agenda</b><span>Turmas e turnos do dia e da semana, faltas e férias da equipe.</span></div>
+  <div class="aba"><b>Professores</b><span>Equipe, convites e como cada um recebe.</span></div>
+  <div class="aba"><b>Alunos</b><span>Cadastro, turmas, fichas, atenção e comunicados.</span></div>
+  <div class="aba"><b>Financeiro</b><span>Resumo do mês, mensalidades, planos e Pix.</span></div>
+  <div class="aba"><b>Ajustes</b><span>Funcionamento, regras dos alunos e feriados.</span></div>
+  <div class="aba"><b>Formulários</b><span>ParQ e anamnese dos alunos.</span></div>
+</div>
+<div class="dica"><b>Regra de ouro:</b> tudo o que precisa de você (pedidos de troca de turma, experimentais concluídas, alunos que precisam de atenção) aparece <b>no alto da tela</b>.</div>
+
+<h2><span class="n">3</span>Primeira configuração (na ordem)</h2>
+<ol class="passos">
+  <li><b>Ajustes:</b> dias e horários de funcionamento, regras de faltas e reposições, trânsito livre e feriados.</li>
+  <li><b>Professores:</b> convide a equipe pelo link e defina como cada um recebe.</li>
+  <li><b>Agenda:</b> cadastre as turmas da semana e dê um professor a cada uma.</li>
+  <li><b>Financeiro:</b> chave Pix do estúdio, tabela de mensalidades, planos e taxa de matrícula.</li>
+  <li><b>Alunos:</b> cadastre os alunos (pelo link, um a um ou colando uma lista) e coloque cada um nas turmas.</li>
+  <li><b>Formulários:</b> confira o ParQ e a anamnese, que já vêm prontos.</li>
+</ol>
+
+<h2><span class="n">4</span>Ajustes</h2>
+<ul>
+  <li><b>Dias e horários de funcionamento:</b> as turmas e os turnos ficam dentro desse horário.</li>
+  <li><b>Faltas e reposições dos alunos:</b> com quantas horas de antecedência o aviso de falta gera reposição, até quando dá para marcar a reposição e por quanto tempo ela vale (por exemplo, até o fim do mês).</li>
+  <li><b>Valor da reposição:</b> quanto recebe o professor que dá uma aula de reposição (por hora ou por aluno presente).</li>
+  <li><b>Trânsito livre:</b> <i>ligado</i>, o aluno troca de horário e muda a quantidade de aulas sozinho. <i>Desligado</i>, cada mudança vira um pedido para você aprovar ou recusar.</li>
+  <li><b>Feriados:</b> escolha se o estúdio abre ou fecha nos feriados. Fechando, as aulas das turmas que caem no feriado são canceladas; as aulas extras continuam.</li>
+</ul>
+
+<h2><span class="n">5</span>Agenda</h2>
+<ul>
+  <li><b>Dia:</b> uma coluna por professor, com as aulas e a ocupação das turmas. <b>Semana:</b> os dias lado a lado, com a cor de cada professor.</li>
+  <li><span class="botao">Novo horário</span>: turma ou turno, modalidade, professor e vagas. Dá para criar vários dias e intervalos de uma vez ("das 6h às 10h", aulas seguidas da duração escolhida) ou uma <b>aula extra</b> numa data.</li>
+  <li><b>Editar</b> a grade: adicionar horários, remover e dar professor a horários sem professor.</li>
+  <li><b>Tocando numa aula:</b> mude só aquela data (exceção) ou daqui para frente (vira o padrão). Também dá para trocar o professor ou usar <span class="botao">Cancelar só esta aula</span>.</li>
+  <li><b>Fechar o estúdio num dia</b> (emenda de feriado, imprevisto): todas as aulas do dia são canceladas e alunos e professores são avisados.</li>
+  <li><b>Férias e faltas:</b> marque as de qualquer professor. As aulas que ficam sem professor podem ser oferecidas a toda a equipe ou a um professor específico. Quem confirmar primeiro fica com o horário.</li>
+</ul>
+
+<h2><span class="n">6</span>Professores</h2>
+<ul>
+  <li><span class="botao">Convidar professor</span> &gt; <span class="botao">Criar link de convite</span> &gt; <span class="botao">Copiar link</span> e mande pelo WhatsApp. O professor cria a conta e entra direto na equipe.</li>
+  <li><b>Como cada um recebe:</b> <i>por hora</i> (valor da hora × horas de aula dadas), <i>hora-aula + comissão</i> (valor por aula dada + valor por aluno presente) ou <i>percentual dos alunos</i> (uma % da mensalidade dos alunos das turmas dele).</li>
+  <li>O app calcula a <b>previsão de pagamento</b> de cada professor no mês.</li>
+</ul>
+
+<h2><span class="n">7</span>Alunos</h2>
+<h3>Cadastrar</h3>
+<ul>
+  <li><b>Link de alunos:</b> um link do estúdio para o aluno novo se cadastrar sozinho. Ele aparece na lista e você é avisado para escolher as turmas.</li>
+  <li><span class="botao">Cadastrar aluno</span>: um de cada vez.</li>
+  <li><span class="botao">Cadastrar alunos</span> em lista: cole um aluno por linha, como <i>Ana Souza, (21) 98888-1111</i>, e toque em <span class="botao">Cadastrar lista</span>.</li>
+</ul>
+<h3>Acompanhar</h3>
+<ul>
+  <li><b>Precisam de atenção:</b> no alto da aba, quem faltou às últimas aulas ou tem reposição vencendo, com a mensagem pronta para o WhatsApp.</li>
+  <li><b>Comunicados:</b> escreva um recado e envie para todos ou só para os alunos escolhidos. Ele aparece no app do aluno.</li>
+  <li><b>Ficha do aluno:</b> turmas, mensalidade e plano, limitações, objetivos, anotações da equipe, treino de cada dia e as respostas do ParQ e da anamnese.</li>
+  <li><b>Pedidos de mudança de turma</b> (com o trânsito livre desligado): <span class="botao">Aprovar</span> ou <span class="botao">Recusar</span>. Na turma cheia, o aluno entra na <b>lista de espera</b> e é avisado quando abre vaga (tem 24 h para entrar).</li>
+  <li><b>Saída do aluno:</b> tire o aluno do estúdio informando a data de saída.</li>
+</ul>
+<h3>Aulas experimentais</h3>
+<p>Agende uma experimental numa aula com vaga. O nome aparece em azul na chamada. Depois da aula, aparece o aviso <i>Aula experimental concluída</i> com três opções: <span class="botao">Cadastrar aluno</span>, <span class="botao">Entrar em contato</span> (mensagem pronta) ou <span class="botao">Descartar</span>. O app mostra as experimentais do mês por professor e quantas viraram matrícula.</p>
+
+<h2><span class="n">8</span>Financeiro</h2>
+<ul>
+  <li><b>Resumo do mês</b> no alto: alunos novos, recebido, atrasos, experimentais e frequência.</li>
+  <li><b>Pix do estúdio</b> e <b>tabela de mensalidades:</b> valor pelo número de turmas por semana do aluno, planos mensal, trimestral e semestral, e taxa de matrícula.</li>
+  <li><b>Começar a cobrar:</b> na ficha do aluno, escolha o plano. O vencimento começa no dia da matrícula, e um aluno pode ter um valor próprio, diferente da tabela.</li>
+  <li><b>Mensalidades:</b> são geradas 7 dias antes do vencimento. A lista separa quem está <b>Devendo</b> e quem <b>vence em até 7 dias</b>.</li>
+  <li><span class="botao">Cobrar no WhatsApp</span> abre a mensagem pronta com o Pix copia e cola. Quando o dinheiro cair, toque em <span class="botao">Recebido</span>. O aluno também pode avisar no app que já pagou.</li>
+  <li>Planos de mais de um mês mostram <b>até quando vão</b> e renovam sozinhos.</li>
+  <li><b>Meses anteriores:</b> professores por mês e receita × professores.</li>
+</ul>
+<div class="atencao"><b>Importante:</b> o P-Bell não recebe nem repassa dinheiro. O aluno paga direto no Pix do estúdio, e a coordenação confirma no app.</div>
+
+<h2><span class="n">9</span>Formulários: ParQ e anamnese</h2>
+<ul>
+  <li>Já vêm prontos e você pode editar as perguntas.</li>
+  <li>Todo aluno novo recebe os dois para preencher no app.</li>
+  <li>Dá para enviar a todos os alunos ou só aos escolhidos.</li>
+  <li>As respostas ficam na ficha do aluno. Um <b>"sim" no ParQ</b> aparece em destaque.</li>
+</ul>
+
+<h2><span class="n">10</span>O que o aluno faz pelo app</h2>
+<ul>
+  <li>Vê as próximas aulas, o treino de cada dia e os comunicados.</li>
+  <li>Avisa falta (dentro do prazo, ganha reposição), marca reposição ou entra na lista de espera.</li>
+  <li>Troca de horário ou pede a troca, conforme o trânsito livre.</li>
+  <li>Paga a mensalidade pelo Pix do estúdio, avisa que pagou e vê até quando vai o plano.</li>
+  <li>Responde o ParQ e a anamnese.</li>
+</ul>
+<p>Para entrar, o aluno usa o link de alunos do estúdio ou o link que chega quando você ou um professor cadastram ele. A instalação é a mesma da seção 1.</p>
+
+<div class="dica"><b>É uma beta:</b> pode aparecer algum detalhe estranho. Se algo não funcionar ou ficar confuso, escreva para <b>app.pbell@gmail.com</b>. Sua opinião define o que melhora primeiro.</div>
+<div class="rodape">P-Bell · Guia da beta para a coordenação · novembro de 2026</div>
+</body></html>

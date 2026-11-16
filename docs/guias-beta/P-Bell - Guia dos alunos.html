@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Guia dos alunos · P-Bell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --cor: #1c5a42; --fundo: #123b2c; --suave: #e6efe9; --borda: #c3d6cb; --fundo-claro: #edf2ef; }
+body.estudio { --cor: #1f5f6b; --fundo: #17474f; --suave: #e2eef0; --borda: #bcd8dc; --fundo-claro: #ebf3f4; }
+body.aluno { --cor: #1f4f8a; --fundo: #163a66; --suave: #e4ecf7; --borda: #bfd0ea; --fundo-claro: #edf2f9; }
+.grande { font-size: 11.6pt; }
+.destaque { background: var(--fundo); color: #fff; border-radius: 14px; padding: 14px 16px; margin: 8px 0 10px; break-inside: avoid; }
+.destaque h3 { color: #c8f06a; margin: 0 0 6px; font-size: 13pt; }
+.destaque p { margin: 0 0 6px; }
+.destaque ul { margin: 0; }
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Figtree", system-ui, sans-serif; color: #10201a; font-size: 10.6pt; line-height: 1.45; }
+h1, h2, h3 { font-family: "Bricolage Grotesque", "Figtree", sans-serif; margin: 0; }
+.capa { background: var(--fundo); color: #fff; border-radius: 18px; padding: 26px 28px; margin-bottom: 18px; }
+.capa .marca { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.capa .marca img { width: 44px; height: 44px; border-radius: 11px; }
+.capa .marca span { font-family: "Bricolage Grotesque"; font-weight: 800; font-size: 18pt; }
+.capa .rotulo { color: #c8f06a; text-transform: uppercase; letter-spacing: .08em; font-size: 8.5pt; font-weight: 700; opacity: .8; }
+.capa h1 { font-size: 25pt; line-height: 1.1; font-weight: 800; margin: 4px 0 8px; }
+.capa p { margin: 0; font-size: 11pt; opacity: .92; }
+h2 { font-size: 15pt; font-weight: 800; color: var(--cor); margin: 16px 0 7px; break-after: avoid; }
+h2 .n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--cor); color: #fff; font-size: 11pt; margin-right: 8px; vertical-align: 2px; }
+h3 { font-size: 11.5pt; font-weight: 700; margin: 12px 0 4px; break-after: avoid; }
+p { margin: 0 0 7px; }
+ul, ol { margin: 0 0 8px; padding-left: 20px; }
+li { margin-bottom: 3px; }
+b { font-weight: 700; }
+.botao { display: inline-block; border: 1px solid var(--borda); background: var(--suave); color: var(--cor); border-radius: 6px; padding: 0 6px; font-weight: 700; font-size: 9.8pt; white-space: nowrap; }
+.caixa { border: 1px solid #d6dfda; border-radius: 14px; padding: 12px 14px; margin: 8px 0 10px; break-inside: avoid; }
+.dica { background: var(--fundo-claro); border-left: 4px solid var(--cor); border-radius: 10px; padding: 9px 12px; margin: 8px 0 10px; break-inside: avoid; }
+.dica b:first-child { color: var(--cor); }
+.atencao { background: #fbf4e6; border-left: 4px solid #7a5400; border-radius: 10px; padding: 9px 12px; margin: 8px 0 10px; break-inside: avoid; }
+.atencao b:first-child { color: #7a5400; }
+.duas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.duas .caixa { margin: 0; }
+.caixa h3 { margin-top: 0; }
+.passos { counter-reset: p; list-style: none; padding-left: 0; }
+.passos > li { counter-increment: p; position: relative; padding-left: 30px; margin-bottom: 6px; }
+.passos > li::before { content: counter(p); position: absolute; left: 0; top: 1px; width: 21px; height: 21px; border-radius: 50%; background: var(--cor); color: #fff; font-weight: 700; font-size: 9pt; display: grid; place-items: center; }
+.abas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 6px 0 10px; }
+.abas.seis { grid-template-columns: repeat(3, 1fr); }
+.abas.cinco { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.abas.cinco .aba { padding: 8px 9px; }
+.aba { background: var(--fundo-claro); border-radius: 12px; padding: 9px 11px; break-inside: avoid; }
+.aba b { display: block; color: var(--cor); font-size: 11pt; }
+.aba span { font-size: 9.5pt; color: #3f5148; }
+.icones span { display: inline-block; margin-right: 10px; }
+.rodape { margin-top: 22px; padding-top: 10px; border-top: 1px solid #d6dfda; font-size: 9pt; color: #4b5a53; }
+.quebra { break-before: page; }
+</style></head><body class="aluno">
+<div class="capa">
+  <div class="marca"><img src="data:image/png;base64,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" alt=""><span>P-Bell</span></div>
+  <div class="rotulo">Guia da beta · Alunos</div>
+  <h1>Suas aulas com o seu personal, no celular</h1>
+  <p>Aulas, treino e mensalidade num lugar só. São 3 passos e leva uns 2 minutos.</p>
+</div>
+
+<h2><span class="n">1</span>Crie sua conta pelo convite</h2>
+<ol class="passos">
+  <li>Abra o <b>link de convite</b> que o seu personal mandou pelo WhatsApp.</li>
+  <li>Preencha seus dados, crie uma senha e marque a caixa dos <b>Termos de Uso e da Política de Privacidade</b>. Se pedir, confirme o e-mail pelo link que chega na sua caixa de entrada.</li>
+  <li>Responda as perguntas de saúde, o <b>ParQ</b> e a <b>anamnese</b>. Elas ajudam o seu personal a montar o treino com segurança.</li>
+</ol>
+
+<h2><span class="n">2</span>Instale o app no celular</h2>
+
+<p>O P-Bell não fica na App Store nem no Google Play durante a beta: ele é instalado pelo navegador, em menos de um minuto, e depois abre com um toque, em tela cheia, como qualquer app.</p>
+<div class="duas">
+  <div class="caixa">
+    <h3>iPhone</h3>
+    <ol class="passos">
+      <li>Abra <b>pbell.com.br</b> no <b>Safari</b>. Em outro navegador não dá para instalar.</li>
+      <li>Toque no botão <span class="botao">Compartilhar</span> (o quadrado com a seta para cima, embaixo da tela).</li>
+      <li>Role a lista e toque em <span class="botao">Adicionar à Tela de Início</span>.</li>
+      <li>Toque em <span class="botao">Adicionar</span>. O ícone do P-Bell aparece junto dos seus apps.</li>
+      <li>Abra o P-Bell <b>pelo ícone</b> e entre com seu e-mail e senha.</li>
+    </ol>
+  </div>
+  <div class="caixa">
+    <h3>Android</h3>
+    <ol class="passos">
+      <li>Abra <b>pbell.com.br</b> no <b>Chrome</b>.</li>
+      <li>Se aparecer <span class="botao">Instalar o P-Bell</span>, toque nele.</li>
+      <li>Se não aparecer, toque no menu <span class="botao">⋮</span> (canto de cima) e depois em <span class="botao">Instalar app</span> ou <span class="botao">Adicionar à tela inicial</span>.</li>
+      <li>Confirme em <span class="botao">Instalar</span>. O ícone do P-Bell aparece junto dos seus apps.</li>
+      <li>Abra o P-Bell <b>pelo ícone</b> e entre com seu e-mail e senha.</li>
+    </ol>
+  </div>
+</div>
+
+
+
+<h2><span class="n">3</span>Ligue as notificações</h2>
+<div class="destaque">
+  <h3>Esse passo é o mais importante</h3>
+  <p>Sem as notificações, você só fica sabendo das coisas quando abre o app. Com elas ligadas, o celular avisa na hora quando:</p>
+  <ul>
+    <li>o seu personal muda ou cancela uma aula;</li>
+    <li>ele responde um pedido seu de remarcação ou reposição;</li>
+    <li>ele pede alguma coisa para você, como uma avaliação física ou um questionário.</li>
+  </ul>
+</div>
+<p class="grande">Abra o P-Bell <b>pelo ícone</b>, toque em <span class="botao">Ligar notificações</span> e depois em <b>Permitir</b>. Lembretes sem pressa não viram notificação: eles ficam só dentro do app.</p>
+<div class="atencao"><b>No iPhone,</b> as notificações só funcionam com o app instalado e aberto pelo ícone (iOS 16.4 ou mais novo). Se você tocou em "Não permitir" sem querer, libere em <b>Ajustes do iPhone &gt; Notificações &gt; P-Bell</b>. No Android, libere em <b>Configurações &gt; Apps &gt; P-Bell &gt; Notificações</b>.</div>
+
+<h2><span class="n">4</span>O que você faz pelo app</h2>
+<div class="abas" style="grid-template-columns: repeat(4, 1fr)">
+  <div class="aba"><b>Início</b><span>Próxima aula, treino do dia e o que precisa de você.</span></div>
+  <div class="aba"><b>Aulas</b><span>Cancelar, remarcar e marcar reposição.</span></div>
+  <div class="aba"><b>Pagamentos</b><span>Mensalidade com o Pix do seu personal.</span></div>
+  <div class="aba"><b>Perfil</b><span>Seus dados e informações de saúde.</span></div>
+</div>
+<ul>
+  <li>Tudo que precisa de você, como uma mensalidade para pagar ou um pedido do personal, aparece <b>no alto do Início</b>.</li>
+  <li>Para cancelar ou remarcar, siga as regras do seu personal. Cancelando com antecedência, você ganha uma reposição.</li>
+  <li>Para pagar, copie o Pix ou use o QR Code, pague no seu banco e toque em <span class="botao">Já paguei</span>. O dinheiro vai direto para o seu personal.</li>
+</ul>
+
+<div class="dica"><b>É uma beta:</b> se algo não funcionar ou ficar confuso, fale com o seu personal ou escreva para <b>app.pbell@gmail.com</b>.</div>
+<div class="rodape">P-Bell · Guia da beta para alunos · novembro de 2026</div>
+</body></html>
