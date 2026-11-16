@@ -16,6 +16,8 @@ export function FormCadastroProfessor({ codigo, termos = false }: { codigo: stri
   const router = useRouter();
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
+  // Decisão 109: sem marcar os termos, não cria a conta.
+  const [aceite, setAceite] = useState(!termos);
   const [erro, setErro] = useState<string | null>(null);
   const [enviadoPara, setEnviadoPara] = useState<string | null>(null);
   const [enviando, iniciar] = useTransition();
@@ -41,7 +43,7 @@ export function FormCadastroProfessor({ codigo, termos = false }: { codigo: stri
       onSubmit={(e) => {
         e.preventDefault();
         setTentou(true);
-        if (problemas.length > 0) return;
+        if (problemas.length > 0 || !aceite) return;
         iniciar(async () => {
           try {
             const r = await cadastrarProfessorDoEstudio(dados, codigo);
@@ -90,7 +92,7 @@ export function FormCadastroProfessor({ codigo, termos = false }: { codigo: stri
         </span>
       </label>
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
-      {termos && <AceiteDosTermos />}
+      {termos && <AceiteDosTermos marcado={aceite} mudar={setAceite} profissional={true} faltou={tentou && !aceite} />}
       <button type="submit" disabled={enviando} className={ESTILO_BOTAO_PRINCIPAL}>
         {enviando ? "Criando conta…" : "Criar conta e entrar na equipe"}
       </button>

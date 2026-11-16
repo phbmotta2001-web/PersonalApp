@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { TERMOS_PUBLICADOS } from "@/lib/recursos";
 import { configSupabase } from "@/lib/supabase/config";
+import { VERSAO_TERMOS } from "@/lib/versao-termos";
+
+// Áreas que pedem o aceite dos termos (decisão 109).
+const AREAS_DO_APP = ["/agenda", "/aluno", "/estudio", "/perfil", "/conta", "/equipe"];
 
 // Roda antes de cada página: renova o login do Supabase quando ele está perto de
 // vencer e grava o cookie novo. Não decide quem pode ver o quê — isso é feito nas
@@ -41,6 +46,24 @@ export async function proxy(request: NextRequest) {
     const empresa = data?.claims?.user_metadata?.conta === "empresa";
     destino.pathname = !data?.claims ? "/entrar" : empresa ? "/estudio" : tipo === "personal" ? "/agenda" : "/aluno";
     destino.search = "";
+    const redirecionar = NextResponse.redirect(destino);
+    for (const cookie of resposta.cookies.getAll()) redirecionar.cookies.set(cookie);
+    return redirecionar;
+  }
+
+  // Decisão 109: quem ainda não aceitou a versão atual dos Termos e da Política passa pela tela
+  // de aceite antes das áreas do app (só ao abrir páginas; ações e envios seguem normais).
+  const caminho = request.nextUrl.pathname;
+  if (
+    data?.claims &&
+    TERMOS_PUBLICADOS &&
+    request.method === "GET" &&
+    AREAS_DO_APP.some((a) => caminho === a || caminho.startsWith(a + "/")) &&
+    data.claims.user_metadata?.termos_versao !== VERSAO_TERMOS
+  ) {
+    const destino = request.nextUrl.clone();
+    destino.pathname = "/aceitar-termos";
+    destino.search = `?voltar=${encodeURIComponent(caminho + request.nextUrl.search)}`;
     const redirecionar = NextResponse.redirect(destino);
     for (const cookie of resposta.cookies.getAll()) redirecionar.cookies.set(cookie);
     return redirecionar;

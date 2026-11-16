@@ -1,13 +1,11 @@
-// ╔══════════════════════════════════════════════════════════════════════════╗
-// ║  RASCUNHO: Política de Privacidade e Termos de Uso, à espera da revisão    ║
-// ║  jurídica. As páginas só aparecem com TERMOS_PUBLICADOS=true (recursos.ts). ║
-// ╚══════════════════════════════════════════════════════════════════════════╝
+// Política de Privacidade e Termos de Uso, publicados em 16/11/2026 (decisão 109), antes da
+// revisão jurídica, que ainda vai acontecer.
 //
-// Ao mudar o texto, mude também a VERSÃO: ela fica guardada no cadastro de quem aceitou.
-// Trechos entre colchetes ainda precisam ser preenchidos antes de publicar.
+// Ao mudar o texto, mude também a VERSÃO (em versao-termos.ts): ela fica guardada na conta de
+// quem aceitou, e quem aceitou uma versão anterior precisa aceitar de novo para entrar.
 
-export const VERSAO_TERMOS = "termos-v1-rascunho";
-export const ATUALIZADO_EM = "[data de publicação]";
+export { VERSAO_TERMOS } from "./versao-termos";
+export const ATUALIZADO_EM = "16 de novembro de 2026";
 export const CONTATO = "app.pbell@gmail.com";
 const RESPONSAVEL = "Pedro Henrique Baptista Motta";
 
@@ -21,14 +19,16 @@ export const POLITICA: Secao[] = [
   {
     titulo: "Quem somos",
     blocos: [
-      `O P-Bell é um aplicativo para personal trainers organizarem agenda, alunos e mensalidades, e para os alunos acompanharem aulas e pagamentos. O responsável pelo P-Bell é ${RESPONSAVEL} [documento e endereço: definir o que aparece].`,
+      `O P-Bell é um aplicativo para personal trainers, estúdios e academias organizarem agenda, turmas, alunos e mensalidades, e para os alunos acompanharem aulas, treinos e pagamentos. O responsável pelo P-Bell é ${RESPONSAVEL}.`,
       `Fale com a gente sobre privacidade em ${CONTATO}.`,
     ],
   },
   {
     titulo: "Quem decide o quê",
     blocos: [
-      "Cada personal decide quais dados dos seus alunos usa e para quê, e responde por isso. O P-Bell guarda e organiza esses dados seguindo o uso do app. Os dados da sua conta no P-Bell, como e-mail e senha, são responsabilidade do P-Bell.",
+      "Cada personal, estúdio ou academia que usa o P-Bell é o controlador dos dados dos seus alunos (LGPD, art. 5º, VI): decide quais dados coleta, para quê e com que base legal, e responde por isso perante os alunos e as autoridades.",
+      "O P-Bell atua como operador desses dados (art. 5º, VII): só os guarda e organiza para o app funcionar, seguindo o uso que o personal, o estúdio ou a academia faz do app. O P-Bell não usa esses dados para fins próprios.",
+      "Os dados da sua conta no P-Bell, como e-mail e senha, e os registros técnicos do serviço são responsabilidade do P-Bell.",
     ],
   },
   {
@@ -38,16 +38,18 @@ export const POLITICA: Secao[] = [
         tabela: {
           cabecalho: ["De quem", "Dados"],
           linhas: [
-            ["Personal", "Nome completo, e-mail, senha (guardada de forma embaralhada, que não pode ser revertida), WhatsApp e, se informado, CREF. Também horários de trabalho, bloqueios, regras, valores, chave Pix e cidade, e os modelos de questionário."],
+            ["Personal", "Nome completo, e-mail, senha (guardada de forma embaralhada, que não pode ser revertida), WhatsApp e, se informado, CREF. Também horários de trabalho, bloqueios, regras, valores, chave Pix e cidade, e os modelos de questionário e de formulário."],
+            ["Estúdio ou academia", "Nome, tipo, horários de funcionamento, turmas, planos e valores, chave Pix, comunicados e a equipe: nome e WhatsApp dos profissionais, papéis e o que cada um recebe."],
+            ["Aluno do estúdio", "Nome, WhatsApp, data de nascimento, turmas, presenças e faltas, reposições, mensalidades e as anotações da ficha feitas pela equipe."],
             ["Aluno com conta", "Nome completo, data de nascimento, e-mail, senha embaralhada, objetivo e nível. Se informados: gênero, WhatsApp, CEP, endereço, bairro e cidade."],
-            ["Dados de saúde do aluno", "Restrições e limitações (ou a declaração de que não tem), peso, altura, outras medidas e o histórico dessas alterações. Respostas aos questionários de acompanhamento, que podem falar de treino, sono e bem-estar."],
+            ["Dados de saúde do aluno", "Restrições e limitações (ou a declaração de que não tem), peso, altura, outras medidas e o histórico dessas alterações. Avaliações físicas (peso, % de gordura e medidas). Respostas ao ParQ, à anamnese e aos questionários de acompanhamento, que podem falar de saúde, treino, sono e bem-estar. O treino de cada dia."],
             ["Aluno sem app", "O que o personal cadastrar: nome, data de nascimento, WhatsApp e observações. Em caso de menor de idade, também nome e WhatsApp do responsável e a data em que o personal confirmou a autorização dele."],
             ["Uso do serviço", "Aulas, faltas, remarcações, reposições, pausas, matrículas e cobranças (valor, vencimento e situação). O registro dos aceites, com data e versão do texto."],
             ["Técnicos", "Cookie de sessão, a inscrição para notificações do aparelho e registros técnicos dos nossos fornecedores."],
           ],
         },
       },
-      "O P-Bell não recebe dados de cartão nem de conta bancária. O Pix é pago direto ao personal, fora do app. O aluno só avisa que pagou, e o personal confirma.",
+      "O P-Bell não recebe dados de cartão nem de conta bancária. O Pix é pago direto ao personal ou ao estúdio, fora do app. O aluno só avisa que pagou, e quem recebe confirma.",
     ],
   },
   {
@@ -73,7 +75,9 @@ export const POLITICA: Secao[] = [
     blocos: [
       {
         itens: [
-          "Seu personal: vê seu perfil, seus dados de saúde, suas aulas, cobranças e respostas enquanto vocês tiverem vínculo. Ele não vê sua senha.",
+          "Seu personal: vê seu perfil, seus dados de saúde, avaliações, aulas, cobranças e respostas enquanto vocês tiverem vínculo. Ele não vê sua senha.",
+          "O estúdio ou a academia onde você treina: a coordenação e os professores da equipe veem os seus dados no estúdio (ficha, saúde, avaliações, respostas, turmas, presença e mensalidades), conforme o papel de cada um.",
+          "Seu estúdio: se você é professor, a coordenação vê seus dados na equipe, suas aulas e o que você recebe.",
           "Seus alunos: veem seu nome, seu WhatsApp, seu CREF, se informado, e sua chave Pix nas cobranças.",
           "Outros usuários: não veem seus dados.",
           "Fornecedores: veja a próxima seção.",
@@ -111,7 +115,7 @@ export const POLITICA: Secao[] = [
             ["Aluno exclui a conta", "Perfil, dados de saúde e autorizações são apagados. O personal mantém o nome usado no convite e os registros de aulas e cobranças, sem ligação com a conta."],
             ["Personal exclui a conta", "A conta, horários, convites, vínculos, aulas e cobranças dele são apagados. As contas dos alunos continuam."],
             ["Notificações enviadas", "Apagadas depois de 30 dias."],
-            ["Conta sem uso, aulas e cobranças antigas", "[definir prazo]"],
+            ["Contas, aulas e cobranças", "Ficam guardadas enquanto a conta existir. Você pode pedir a exclusão a qualquer momento."],
           ],
         },
       },
@@ -121,7 +125,7 @@ export const POLITICA: Secao[] = [
   {
     titulo: "Crianças e adolescentes",
     blocos: [
-      "Só maiores de 18 anos criam conta. Um aluno menor de idade só entra no P-Bell cadastrado pelo personal, com a autorização de um responsável, que o personal se compromete a obter. O responsável pode pedir a correção ou a exclusão desses dados ao personal ou pelo nosso contato.",
+      "Só maiores de 18 anos criam conta. Um aluno menor de idade só entra no P-Bell cadastrado pelo personal ou pelo estúdio, com a autorização de um responsável, que quem cadastra se compromete a obter. O responsável pode pedir a correção ou a exclusão desses dados ao personal, ao estúdio ou pelo nosso contato.",
     ],
   },
   {
@@ -131,8 +135,8 @@ export const POLITICA: Secao[] = [
       {
         itens: [
           "No app: editar seu perfil, retirar a autorização de saúde, desligar notificações e excluir sua conta.",
-          `Pelo contato (${CONTATO}): pedidos de cópia dos dados e os demais. Respondemos em até [prazo].`,
-          "Com o personal: dados que só ele cadastrou, como os de aluno sem app, também podem ser tratados diretamente com ele.",
+          `Pelo contato (${CONTATO}): pedidos de cópia dos dados e os demais. Respondemos em até 15 dias.`,
+          "Com o personal ou o estúdio: como controladores, eles respondem pelos dados que cadastraram e pelos pedidos sobre eles.",
         ],
       },
       "Nome completo e data de nascimento só mudam pelo nosso suporte.",
@@ -162,7 +166,7 @@ export const TERMOS: Secao[] = [
   {
     titulo: "O que é o P-Bell",
     blocos: [
-      `O P-Bell é uma ferramenta de organização para personal trainers e seus alunos: agenda, reposições, pausas, cobranças, avisos e questionários. É oferecido por ${RESPONSAVEL} [documento: definir o que aparece]. Ao criar uma conta, você aceita estes termos e a Política de Privacidade.`,
+      `O P-Bell é uma ferramenta de organização para personal trainers, estúdios, academias e seus alunos: agenda, turmas, reposições, pausas, cobranças, avisos, treinos, avaliações e formulários. É oferecido por ${RESPONSAVEL}. Para usar o P-Bell, você precisa aceitar estes termos e a Política de Privacidade.`,
     ],
   },
   {
@@ -172,7 +176,8 @@ export const TERMOS: Secao[] = [
         itens: [
           "Não presta serviço de treino, não prescreve exercícios e não dá orientação de saúde.",
           "Não contrata nem indica personais, e não confere formação nem registro profissional.",
-          "Não participa do combinado entre personal e aluno, não recebe nem repassa os pagamentos e não cobra inadimplentes.",
+          "Não participa do combinado entre personal, estúdio e aluno, não recebe nem repassa os pagamentos e não cobra inadimplentes.",
+          "Não confere, não usa e não decide sobre os dados que os usuários cadastram.",
         ],
       },
     ],
@@ -196,15 +201,32 @@ export const TERMOS: Secao[] = [
     ],
   },
   {
-    titulo: "Compromissos do personal",
+    titulo: "Dados dos alunos: de quem é a responsabilidade",
+    blocos: [
+      "O personal, o estúdio ou a academia é o controlador dos dados que cadastra ou recebe dos seus alunos e profissionais (LGPD, art. 5º, VI) e responde por eles. Isso inclui:",
+      {
+        itens: [
+          "ter base legal para cada dado e, quando a lei exigir, o consentimento do aluno, ou do responsável se for menor de idade, inclusive para os dados de saúde;",
+          "informar os alunos sobre como os dados são usados;",
+          "usar os dados só para os treinos, as aulas, as avaliações e as cobranças, em sigilo, também depois do fim do vínculo;",
+          "manter os dados corretos e atender os pedidos dos alunos sobre os próprios dados;",
+          "controlar quem da sua equipe tem acesso e responder pelo que os profissionais fizerem com os dados.",
+        ],
+      },
+      "O P-Bell é operador desses dados (art. 5º, VII): só os guarda e organiza para o app funcionar. Na medida em que a lei permitir, o P-Bell não responde pelo uso que o personal, o estúdio, a academia ou os seus profissionais fizerem dos dados, nem pela falta de autorização para cadastrá-los. Quem causar um dano por uso indevido de dados se compromete a ressarcir o P-Bell pelo que ele tiver de pagar ou gastar por causa disso.",
+      "Cada usuário responde pela verdade dos dados que informa sobre si mesmo, inclusive os de saúde.",
+    ],
+  },
+  {
+    titulo: "Compromissos do personal, do estúdio e da academia",
     blocos: [
       {
         itens: [
           "Atuar de acordo com as leis e as regras da profissão, inclusive quanto a registro e supervisão. Se informar um CREF, ele deve estar ativo.",
-          "Responder pelos treinos, pelas orientações, pelos valores cobrados e pela relação com cada aluno.",
-          "Usar os dados dos alunos só para planejar e acompanhar os treinos, em sigilo, sem compartilhá-los com terceiros, também depois do fim do vínculo.",
+          "Responder pelos treinos, pelas orientações, pelas avaliações, pelos valores cobrados e pela relação com cada aluno.",
           "Cadastrar aluno sem app só com autorização dele e, se for menor de idade, do responsável.",
           "Manter corretos os dados de cobrança e a chave Pix, que é de sua responsabilidade.",
+          "No estúdio ou na academia: convidar para a equipe só profissionais de confiança e retirar o acesso de quem sair.",
         ],
       },
     ],
@@ -216,7 +238,8 @@ export const TERMOS: Secao[] = [
         itens: [
           "Manter atualizadas suas restrições e limitações de saúde, porque seu personal depende delas para treinar você com segurança.",
           "Consultar um profissional de saúde quando necessário. O P-Bell não avalia se você pode treinar.",
-          "Combinar diretamente com o personal os pagamentos, as regras de cancelamento e as reposições.",
+          "Combinar diretamente com o personal ou o estúdio os pagamentos, as regras de cancelamento e as reposições.",
+          "Saber que seus dados de saúde, avaliações e respostas ficam visíveis para o seu personal ou para a equipe do estúdio onde você treina, que decidem como usá-los e respondem por isso.",
         ],
       },
     ],
@@ -242,7 +265,7 @@ export const TERMOS: Secao[] = [
   {
     titulo: "Limites de responsabilidade",
     blocos: [
-      "Nos limites da lei, o P-Bell não responde por lesões ou danos ligados aos treinos, por dívidas ou desacordos entre personal e aluno, por erros em dados inseridos pelos usuários, nem por falhas de internet, aparelhos ou serviços de terceiros. Estes termos não retiram direitos garantidos pelo Código de Defesa do Consumidor.",
+      "Nos limites da lei, o P-Bell não responde por lesões ou danos ligados aos treinos, por dívidas ou desacordos entre personal, estúdio e aluno, por erros em dados inseridos pelos usuários, pelo uso que personais, estúdios, academias e seus profissionais fizerem dos dados dos alunos, por acessos feitos com a sua senha, nem por falhas de internet, aparelhos ou serviços de terceiros. Estes termos não retiram direitos garantidos pelo Código de Defesa do Consumidor.",
     ],
   },
   {

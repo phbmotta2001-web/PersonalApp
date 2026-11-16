@@ -44,6 +44,8 @@ export function FormCadastro({ voltar: voltarPadrao, termos = false }: { voltar?
   const voltar = destinoSeguro(useSearchParams().get("voltar") ?? voltarPadrao);
   const [dados, setDados] = useState(VAZIO);
   const [tentou, setTentou] = useState(false);
+  // Decisão 109: sem marcar os termos, não cria a conta.
+  const [aceite, setAceite] = useState(!termos);
   const [erro, setErro] = useState<string | null>(null);
   const [enviadoPara, setEnviadoPara] = useState<string | null>(null);
   const [enviando, iniciarEnvio] = useTransition();
@@ -57,7 +59,7 @@ export function FormCadastro({ voltar: voltarPadrao, termos = false }: { voltar?
   function enviar(e: React.FormEvent) {
     e.preventDefault();
     setTentou(true);
-    if (problemas.length > 0) return;
+    if (problemas.length > 0 || !aceite) return;
     iniciarEnvio(async () => {
       try {
         const r = await cadastrar(dados, voltar);
@@ -208,7 +210,7 @@ export function FormCadastro({ voltar: voltarPadrao, termos = false }: { voltar?
 
       <Aviso>{erro ?? (tentou && problemas.length > 0 ? frase(problemas) : null)}</Aviso>
 
-      {termos && <AceiteDosTermos />}
+      {termos && <AceiteDosTermos marcado={aceite} mudar={setAceite} profissional={false} faltou={tentou && !aceite} />}
       <button type="submit" disabled={enviando} className={ESTILO_BOTAO_PRINCIPAL}>
         {enviando ? "Criando conta…" : "Criar conta"}
       </button>
