@@ -30,6 +30,9 @@ function traduzirErro(mensagem: string | undefined): string {
   if (m.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
   if (m.includes("email not confirmed"))
     return "Confirme seu e-mail antes de entrar. Procure a mensagem do P-Bell na sua caixa de entrada (e no spam).";
+  // Proteção contra senhas vazadas do Supabase: a senha apareceu em algum vazamento da internet.
+  if (m.includes("known to be weak") || m.includes("easy to guess") || m.includes("pwned"))
+    return "Essa senha já apareceu em vazamentos de dados na internet e não é segura. Escolha outra.";
   if (m.includes("password")) return "Essa senha não foi aceita. Use pelo menos 8 caracteres, misturando letras e números.";
   if (m.includes("rate limit") || m.includes("too many") || m.includes("security purposes"))
     return "Muitas tentativas em pouco tempo. Espere alguns minutos e tente de novo.";
