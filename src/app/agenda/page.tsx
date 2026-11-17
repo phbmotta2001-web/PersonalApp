@@ -9,6 +9,11 @@ import { AulaEmAndamento } from "@/components/estudio/AulaEmAndamento";
 import { EstudioNoInicio } from "@/components/estudio/EstudioNoInicio";
 import { InicioDoSoEstudio } from "@/components/estudio/InicioDoSoEstudio";
 import { InstalarApp } from "@/components/InstalarApp";
+import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
+import { avaliacoesDoVinculo } from "@/data/avaliacoes";
+import { lerFichaDoAluno } from "@/data/convites";
+import { treinoDoVinculo } from "@/data/treino";
+import { rotuloNivel } from "@/lib/aluno";
 import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
 import { financeiroDoMes, listarCobrancas } from "@/data/cobrancas";
@@ -96,7 +101,11 @@ async function Conteudo() {
   const vindouras = aulas.filter(
     (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
   );
-  const [proxima, ...resto] = vindouras;
+  // Decisão 113: a aula particular que está acontecendo agora vira um painel grande no alto,
+  // com o perfil do aluno e o treino do dia; o cartão "próxima aula" passa para a seguinte.
+  const aoVivo = vindouras.find((a) => Date.parse(a.inicio) <= agora.getTime());
+  const painel = aoVivo ? await painelDaAula(aoVivo) : null;
+  const [proxima, ...resto] = aoVivo ? vindouras.filter((a) => a !== aoVivo) : vindouras;
   const deHoje = resto.filter((a) => emBrasilia(a.inicio).data === hoje);
   const aulasHoje = vindouras.filter((a) => emBrasilia(a.inicio).data === hoje).length;
   const depois = deHoje.length > 0 ? deHoje : resto.slice(0, 3);
@@ -201,6 +210,7 @@ async function Conteudo() {
       </header>
 
       {/* Decisão 108: tudo o que precisa do professor fica em cima, antes de qualquer outra coisa. */}
+      {painel && <PainelDaAula d={painel} />}
       {emAndamento && <AulaEmAndamento aula={emAndamento} />}
       {temPendencia && precisaDeVoce}
       {paraDecidir.length > 0 && <PedidosDeFrequencia lista={paraDecidir} coordenacao />}
@@ -431,4 +441,23 @@ function Pendencia({ href, icone, tom, children }: { href: string; icone: NomeIc
       </Link>
     </li>
   );
+}
+
+// Decisão 113: o que aparece no painel da aula em andamento (aluno avulso, sem ficha: só o nome).
+async function painelDaAula(a: { inicio: string; fim: string; local: string | null; vinculoId: string | null; nome: string }): Promise<DadosDoPainel> {
+  const base: DadosDoPainel = { quem: "personal", nome: a.nome, inicio: a.inicio, fim: a.fim, local: a.local, treino: null };
+  if (!a.vinculoId) return base;
+  const [ficha, treino, avaliacoes] = await Promise.all([lerFichaDoAluno(a.vinculoId), treinoDoVinculo(a.vinculoId), avaliacoesDoVinculo(a.vinculoId)]);
+  const dia = diaDaSemana(emBrasilia(a.inicio).data);
+  return {
+    ...base,
+    nome: ficha?.nomeCompleto ?? a.nome,
+    idade: ficha?.idade ?? null,
+    objetivo: ficha?.objetivo || null,
+    nivel: ficha?.nivel ? rotuloNivel(ficha.nivel) : null,
+    restricoes: ficha?.restricoes ?? null,
+    ultimaAvaliacao: avaliacoes.at(-1) ?? null,
+    treino: treino[dia]?.trim() || null,
+    link: `/agenda/alunos/${a.vinculoId}`,
+  };
 }

@@ -5,6 +5,10 @@ import { BarraDoAluno } from "@/components/aluno/BarraDoAluno";
 import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Avatar, corPorId } from "@/components/Avatar";
 import { InstalarApp } from "@/components/InstalarApp";
+import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
+import { avaliacoesDoVinculo } from "@/data/avaliacoes";
+import { treinoDoVinculo } from "@/data/treino";
+import { rotuloNivel } from "@/lib/aluno";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
 import { agendaDoAlunoNoEstudio, meusEstudiosComoAluno, minhaFilaDeEspera, minhasReposicoesNoEstudio, pedidosDeFrequencia } from "@/data/aluno-estudio";
@@ -19,12 +23,12 @@ import { pedidoDeAvaliacao } from "@/data/avaliacoes";
 import { cobrancasDoAluno } from "@/data/cobrancas";
 import { listarMeusPersonais } from "@/data/convites";
 import { exigirAluno } from "@/data/exigir-aluno";
-import { matriculasSuspensas, proximasAulasDoAluno } from "@/data/matriculas";
+import { aulaAgoraDoAluno, matriculasSuspensas, proximasAulasDoAluno } from "@/data/matriculas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
 import { faltaNoPerfil, perfilCompleto } from "@/lib/aluno";
 import { situacaoDaCobranca, textoDoVencimento } from "@/lib/cobranca";
 import { linkWhatsapp } from "@/lib/convite";
-import { agoraEmBrasilia, dataCurta, emBrasilia, somarDias } from "@/lib/expediente";
+import { agoraEmBrasilia, dataCurta, diaDaSemana, emBrasilia, somarDias } from "@/lib/expediente";
 import { juntarComE } from "@/lib/formato";
 import { centavosParaReais, textoDaAula } from "@/lib/matricula";
 
@@ -49,7 +53,7 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados] = await Promise.all([
+  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados, aoVivo] = await Promise.all([
     listarMeusPersonais(),
     matriculasSuspensas(),
     meusEstudiosComoAluno(),
@@ -57,6 +61,7 @@ async function Conteudo() {
     pedidosDeFrequencia(),
     meusFormulariosPendentes(),
     meusComunicados(),
+    aulaAgoraDoAluno(),
   ]);
   const meusPedidos = pedidos.filter((p) => p.meu);
   const estudios = await Promise.all(
@@ -85,6 +90,24 @@ async function Conteudo() {
       return { p, aulas, cobrancas, questionarios, avaliacao };
     }),
   );
+  // Decisão 113: durante a aula, um painel grande com o perfil do aluno e o treino do dia.
+  let painel: DadosDoPainel | null = null;
+  if (aoVivo) {
+    const [treino, avaliacoes] = await Promise.all([treinoDoVinculo(aoVivo.vinculoId), avaliacoesDoVinculo(aoVivo.vinculoId)]);
+    const dia = diaDaSemana(emBrasilia(aoVivo.inicio).data);
+    painel = {
+      quem: "aluno",
+      nome: personais.find((p) => p.vinculoId === aoVivo.vinculoId)?.nome ?? "seu personal",
+      inicio: aoVivo.inicio,
+      fim: aoVivo.fim,
+      local: aoVivo.local,
+      objetivo: conta.perfil.objetivo || null,
+      nivel: conta.perfil.nivel ? rotuloNivel(conta.perfil.nivel) : null,
+      ultimaAvaliacao: avaliacoes.at(-1) ?? null,
+      treino: treino[dia]?.trim() || null,
+      link: `/aluno/personal/${aoVivo.vinculoId}`,
+    };
+  }
   const nomeDe = (vinculo: string | null) => personais.find((p) => p.vinculoId === vinculo)?.nome.split(" ")[0] ?? "seu personal";
 
   const aulas = porPersonal.flatMap((x) => x.aulas).sort((a, b) => a.inicio.localeCompare(b.inicio));
@@ -115,6 +138,9 @@ async function Conteudo() {
         <p className="text-[14px] text-ink-3">Minha área</p>
         <h1 className="text-[24px] font-extrabold">Olá, {conta.perfil.nomeCompleto.split(" ")[0]}</h1>
       </header>
+
+      {/* Decisão 113: a aula acontecendo agora vem antes de tudo (como no Início do professor). */}
+      {painel && <PainelDaAula d={painel} />}
 
       {personais
         .filter((p) => suspensas[p.vinculoId])

@@ -192,6 +192,25 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
 }
 
 /** Próximas aulas do aluno logado com um personal (pelo vínculo). */
+/** Decisão 113: a aula particular do aluno que está acontecendo agora (ou nenhuma). */
+export async function aulaAgoraDoAluno(): Promise<{ id: string; inicio: string; fim: string; local: string | null; vinculoId: string } | null> {
+  const { supabase, id } = await usuarioAtual();
+  if (!id) return null;
+  const agora = new Date().toISOString();
+  const { data } = await supabase
+    .from("aulas")
+    .select("id, inicio, fim, local, vinculo_id")
+    .eq("aluno_id", id)
+    .lte("inicio", agora)
+    .gt("fim", agora)
+    .in("situacao", ["agendada", "confirmada"])
+    .not("vinculo_id", "is", null)
+    .order("inicio")
+    .limit(1);
+  const a = data?.[0];
+  return a ? { id: a.id, inicio: a.inicio, fim: a.fim, local: a.local, vinculoId: a.vinculo_id as string } : null;
+}
+
 export async function proximasAulasDoAluno(vinculoId: string, quantas = 6): Promise<AulaDaAgenda[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];
