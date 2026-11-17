@@ -6,6 +6,7 @@ import { AtivarNotificacoes } from "@/components/AtivarNotificacoes";
 import { Avatar, corPorId } from "@/components/Avatar";
 import { InstalarApp } from "@/components/InstalarApp";
 import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
+import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { treinoDoVinculo } from "@/data/treino";
 import { rotuloNivel } from "@/lib/aluno";
@@ -140,6 +141,8 @@ async function Conteudo() {
       </header>
 
       {/* Decisão 113: a aula acontecendo agora vem antes de tudo (como no Início do professor). */}
+      {/* Atualiza sozinho quando a aula começa ou termina. */}
+      <AtualizarNaHora momentos={[aoVivo?.fim, proxima?.inicio]} />
       {painel && <PainelDaAula d={painel} />}
 
       {personais

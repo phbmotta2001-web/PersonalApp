@@ -10,6 +10,7 @@ import { EstudioNoInicio } from "@/components/estudio/EstudioNoInicio";
 import { InicioDoSoEstudio } from "@/components/estudio/InicioDoSoEstudio";
 import { InstalarApp } from "@/components/InstalarApp";
 import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
+import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { lerFichaDoAluno } from "@/data/convites";
 import { treinoDoVinculo } from "@/data/treino";
@@ -210,6 +211,8 @@ async function Conteudo() {
       </header>
 
       {/* Decisão 108: tudo o que precisa do professor fica em cima, antes de qualquer outra coisa. */}
+      {/* Atualiza sozinho quando a aula particular (ou a turma do estúdio) começa ou termina. */}
+      <AtualizarNaHora momentos={[aoVivo?.fim, proxima?.inicio, ...turmasHoje.flatMap((t) => [t.inicio, t.fim])]} />
       {painel && <PainelDaAula d={painel} />}
       {emAndamento && <AulaEmAndamento aula={emAndamento} />}
       {temPendencia && precisaDeVoce}
