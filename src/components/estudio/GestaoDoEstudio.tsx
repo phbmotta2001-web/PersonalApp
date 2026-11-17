@@ -13,7 +13,7 @@ import {
   type EstudioCompleto,
   type TurmaDoEstudio,
 } from "@/data/estudio";
-import { marcarMensalidade, type FinanceiroDoMes, type MesDeAlunos, type ResumoDoProfessor, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
+import { marcarMensalidade, salvarCorProfessor, type FinanceiroDoMes, type MesDeAlunos, type ResumoDoProfessor, type MesDoEstudio, type PagamentoDoAluno } from "@/data/estudio-financeiro";
 import { textoDoVencimento } from "@/lib/cobranca";
 import { centavosParaReais } from "@/lib/matricula";
 import { pixCopiaECola, type TipoChavePix } from "@/lib/pix";
@@ -21,6 +21,7 @@ import { linkWhatsapp } from "@/lib/convite";
 import { juntarComE } from "@/lib/formato";
 import { dataCompleta, fimDoPlano, NOME_DO_PLANO } from "@/lib/plano";
 import { DIAS, minParaHora } from "@/lib/expediente";
+import { corDoProfessor, indiceDaCor, TOTAL_DE_CORES } from "@/lib/cores-professor";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { ConviteDoAlunoEstudio } from "./ConviteDoAlunoEstudio";
 import { LinkDeAlunos } from "./LinkDeAlunos";
@@ -112,8 +113,17 @@ function NumerosDoProfessor({ estudio, personalId, resumo }: { estudio: EstudioC
   const ocupadas = turmas.reduce((s, t) => s + Math.min(t.alunos.length, t.vagas), 0);
   const pct = vagas ? Math.round((ocupadas / vagas) * 100) : 0;
   const faltas = resumo?.faltas ?? 0;
+  // Alunos diferentes nas turmas do professor (decisão 112): quem faz duas turmas com ele conta uma vez.
+  const alunos = new Set(turmas.flatMap((t) => t.alunos)).size;
   return (
-    <span className="grid basis-full grid-cols-3 gap-1.5 text-[12.5px]">
+    <span className="grid basis-full grid-cols-2 gap-1.5 text-[12.5px] sm:grid-cols-4">
+      <span className="flex flex-col rounded-[10px] bg-surface-2 px-2 py-1.5">
+        <span className="text-ink-3">Alunos</span>
+        <b className="text-[15px]">{alunos}</b>
+        <span className="text-ink-3">
+          em {turmas.length} {turmas.length === 1 ? "turma" : "turmas"}
+        </span>
+      </span>
       <span className="flex flex-col rounded-[10px] bg-surface-2 px-2 py-1.5">
         <span className="text-ink-3">Faltas no mês</span>
         <b className={`text-[15px] ${faltas > 0 ? "text-bad" : ""}`}>{faltas}</b>
@@ -140,6 +150,61 @@ function NumerosDoProfessor({ estudio, personalId, resumo }: { estudio: EstudioC
   );
 }
 
+// Bolinha com a cor do professor na agenda; tocando, abre as cores para escolher (decisão 112).
+function CorNaAgenda({ estudio, personalId, nome, atualizar }: { estudio: EstudioCompleto; personalId: string; nome: string; atualizar: () => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  const atual = indiceDaCor(estudio.equipe, personalId);
+  const [escolhida, setEscolhida] = useState(atual);
+  const escolher = (cor: number) => {
+    setEscolhida(cor);
+    setErro(null);
+    iniciar(async () => {
+      const r = await salvarCorProfessor(estudio.id, personalId, cor);
+      if (!r.ok) {
+        setEscolhida(atual);
+        return setErro(r.erro);
+      }
+      setAberto(false);
+      atualizar();
+    });
+  };
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setAberto((a) => !a)}
+        aria-expanded={aberto}
+        aria-label={`Cor de ${nome} na agenda`}
+        className="grid size-8 shrink-0 place-items-center rounded-full border border-line"
+      >
+        <span className="size-5 rounded-full" style={{ background: corDoProfessor(escolhida).forte }} />
+      </button>
+      {aberto && (
+        <span className="order-last flex basis-full flex-col gap-1.5">
+          <span className="text-[13px] text-ink-3">Cor de {nome.split(" ")[0]} na agenda</span>
+          <span className="flex flex-wrap gap-2">
+            {Array.from({ length: TOTAL_DE_CORES }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={ocupado}
+                onClick={() => escolher(i)}
+                aria-label={`Cor ${i + 1}`}
+                aria-pressed={escolhida === i}
+                className={`size-8 rounded-full border-2 ${escolhida === i ? "border-ink" : "border-transparent"}`}
+                style={{ background: corDoProfessor(i).forte }}
+              />
+            ))}
+          </span>
+          <Aviso>{erro}</Aviso>
+        </span>
+      )}
+    </>
+  );
+}
+
 function Equipe({ estudio, resumo, atualizar }: { estudio: EstudioCompleto; resumo: ResumoDoProfessor[]; atualizar: () => void }) {
   const [link, setLink] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -153,6 +218,7 @@ function Equipe({ estudio, resumo, atualizar }: { estudio: EstudioCompleto; resu
       <ul className="flex flex-col divide-y divide-line rounded-[20px] border border-line bg-surface px-4">
         {estudio.equipe.map((m) => (
           <li key={m.personalId} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-3">
+            <CorNaAgenda estudio={estudio} personalId={m.personalId} nome={m.nome} atualizar={atualizar} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="font-semibold">{m.nome}</span>
               <ValorDoProfessor estudio={estudio} membro={m} />

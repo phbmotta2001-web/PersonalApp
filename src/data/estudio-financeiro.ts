@@ -50,6 +50,14 @@ export async function salvarValorProfessor(estudioId: string, personalId: string
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar o valor.") } : { ok: true };
 }
 
+/** Cor do professor na agenda (decisão 112): 0 a 11, ou vazio para a cor automática. */
+export async function salvarCorProfessor(estudioId: string, personalId: string, cor: number | null): Promise<Resposta> {
+  if (cor !== null && (!Number.isInteger(cor) || cor < 0 || cor > 11)) return { ok: false, erro: "Escolha uma das cores." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_cor_professor", { p_estudio: estudioId, p_personal: personalId, p_cor: cor });
+  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar a cor.") } : { ok: true };
+}
+
 /** Tabela de mensalidades: vezes na semana → centavos (vezes sem valor deixam de ser oferecidas). */
 export async function salvarPrecosEstudio(
   estudioId: string,

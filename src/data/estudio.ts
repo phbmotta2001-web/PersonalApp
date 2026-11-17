@@ -97,6 +97,8 @@ export interface MembroDaEquipe {
   papel: PapelNoEstudio;
   /** Valor próprio do professor (vazio: usa o padrão do estúdio). */
   valores: ValoresDePagamento;
+  /** Cor na agenda escolhida pela coordenação (0 a 11; vazio: automática). Decisão 112. */
+  cor: number | null;
 }
 
 export type TipoDeEstudio = "estudio" | "academia";
@@ -227,7 +229,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
     supabase.from("turma_alunos").select("turma_id, estudio_aluno_id"),
     supabase
       .from("estudio_membros")
-      .select("personal_id, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual")
+      .select("personal_id, valor_hora_centavos, valor_aula_centavos, valor_por_aluno_centavos, percentual, cor")
       .eq("estudio_id", estudioId),
     supabase.from("estudio_precos").select("vezes, meses, valor_centavos").eq("estudio_id", estudioId),
     supabase.from("estudio_funcionamento").select("dia_semana, inicio_min, fim_min").eq("estudio_id", estudioId),
@@ -284,6 +286,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       nome: m.nome,
       papel: m.papel as PapelNoEstudio,
       valores: valoresDe((membros ?? []).find((x) => x.personal_id === m.personal_id)),
+      cor: (membros ?? []).find((x) => x.personal_id === m.personal_id)?.cor ?? null,
     })),
     turmas: (turmas ?? []).map((t) => ({
       id: t.id,
