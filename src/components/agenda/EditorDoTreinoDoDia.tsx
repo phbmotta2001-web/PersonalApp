@@ -38,12 +38,15 @@ export function EditorDoTreinoDoDia({
   dia,
   focoInicial,
   exerciciosIniciais,
+  outrosDias = [],
   voltar,
 }: {
   vinculoId: string;
   dia: number;
   focoInicial: string;
   exerciciosIniciais: Exercicio[];
+  /** Os outros dias de aula do aluno, para usar o mesmo treino neles. */
+  outrosDias?: { dia: number; nome: string; temTreino: boolean }[];
   voltar: string;
 }) {
   const router = useRouter();
@@ -51,8 +54,13 @@ export function EditorDoTreinoDoDia({
   const [linhas, setLinhas] = useState<Linha[]>(() => (exerciciosIniciais.length ? exerciciosIniciais.map(paraLinha) : [linhaVazia()]));
   const [aviso, setAviso] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [confirmarApagar, setConfirmarApagar] = useState(false);
+  // Dias que recebem uma cópia deste treino ao salvar.
+  const [copiarPara, setCopiarPara] = useState<number[]>([]);
   const [ocupado, iniciar] = useTransition();
   const temTreino = focoInicial.trim() !== "" || exerciciosIniciais.length > 0;
+
+  const nomeDe = (d: number) => (outrosDias.find((o) => o.dia === d)?.nome ?? "").toLowerCase();
+  const juntar = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} e ${xs.at(-1)}`);
 
   const mudar = (chave: number, parte: Partial<Linha>) => {
     setAviso(null);
@@ -86,9 +94,19 @@ export function EditorDoTreinoDoDia({
     }));
     if (ex.some((e) => e.cargaKg != null && Number.isNaN(e.cargaKg))) return setAviso({ tipo: "erro", texto: "Confira as cargas (só números, como 40 ou 12,5)." });
     if (!foco.trim() && ex.length === 0) return setAviso({ tipo: "erro", texto: "Escreva o que será trabalhado ou adicione um exercício." });
-    enviar(foco, ex, () => {
+    iniciar(async () => {
+      const r = await salvarTreinoDoDia(vinculoId, dia, foco, ex);
+      if (!r.ok) return setAviso({ tipo: "erro", texto: r.erro });
+      // A cópia vai sem os ids: cada dia fica com os próprios exercícios.
+      const copia = ex.map((e) => ({ ...e, id: undefined }));
+      for (const d of copiarPara) {
+        const c = await salvarTreinoDoDia(vinculoId, d, foco, copia);
+        if (!c.ok) return setAviso({ tipo: "erro", texto: `Salvo aqui, mas não em ${nomeDe(d)}. Tente de novo.` });
+      }
+      const nomes = copiarPara.map(nomeDe);
+      setCopiarPara([]);
       router.refresh();
-      setAviso({ tipo: "ok", texto: "Treino salvo." });
+      setAviso({ tipo: "ok", texto: nomes.length ? `Treino salvo aqui e em ${juntar(nomes)}.` : "Treino salvo." });
     });
   };
 
@@ -202,6 +220,36 @@ export function EditorDoTreinoDoDia({
           + Adicionar exercício
         </button>
       </section>
+
+      {outrosDias.length > 0 && (
+        <section className="flex flex-col gap-2" aria-label="Usar este treino em outros dias">
+          <h2 className="text-[14px] font-bold text-ink-2">Usar o mesmo treino também em</h2>
+          <div className="flex flex-wrap gap-2">
+            {outrosDias.map((o) => {
+              const ativo = copiarPara.includes(o.dia);
+              return (
+                <button
+                  key={o.dia}
+                  type="button"
+                  aria-pressed={ativo}
+                  onClick={() => {
+                    setAviso(null);
+                    setCopiarPara((xs) => (ativo ? xs.filter((x) => x !== o.dia) : [...xs, o.dia].sort((a, b) => a - b)));
+                  }}
+                  className={`min-h-10 rounded-full border px-3.5 text-[14px] font-semibold ${
+                    ativo ? "border-ink bg-ink text-app" : "border-line bg-surface text-ink-2"
+                  }`}
+                >
+                  {o.nome}
+                </button>
+              );
+            })}
+          </div>
+          {copiarPara.some((d) => outrosDias.find((o) => o.dia === d)?.temTreino) && (
+            <p className="text-[13px] text-ink-3">O treino que já estava nesses dias será substituído.</p>
+          )}
+        </section>
+      )}
 
       <Aviso tipo={aviso?.tipo ?? "erro"}>{aviso?.texto}</Aviso>
       <button

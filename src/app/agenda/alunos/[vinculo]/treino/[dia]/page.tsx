@@ -35,6 +35,11 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
   const diaDeAula = matricula?.horarios.some((h) => h.dia === dia) ?? false;
   const temTreino = dia in treino.focos || dia in treino.exercicios;
   const nomeDoDia = DIAS.find((d) => d.valor === dia)?.nome;
+  // Os outros dias de aula, para copiar este treino neles.
+  const outrosDias = [...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]
+    .filter((d) => d !== dia)
+    .sort((a, b) => a - b)
+    .map((d) => ({ dia: d, nome: DIAS.find((x) => x.valor === d)?.nome ?? "", temTreino: d in treino.focos || d in treino.exercicios }));
 
   if (!aluno || !nomeDoDia || (!diaDeAula && !temTreino))
     return (
@@ -61,6 +66,7 @@ async function Conteudo({ params }: { params: PageProps<"/agenda/alunos/[vinculo
           dia={dia}
           focoInicial={treino.focos[dia] ?? ""}
           exerciciosIniciais={treino.exercicios[dia] ?? []}
+          outrosDias={outrosDias}
           voltar={ficha}
         />
       </div>
