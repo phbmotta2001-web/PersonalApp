@@ -15,12 +15,14 @@ import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
-import { treinoDoVinculo } from "@/data/treino";
+import { evolucaoDoTreino, treinoCompleto } from "@/data/treino";
+import { EvolucaoDasCargas } from "@/components/agenda/EvolucaoDasCargas";
+import { TreinoDaFicha } from "@/components/agenda/TreinoDaFicha";
 import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
 import { avaliacoesDoVinculo, pedidoDeAvaliacao } from "@/data/avaliacoes";
 import { lerMatricula, matriculasSuspensas, pedidosRecusadosDoAluno, proximasAulasDoAluno } from "@/data/matriculas";
 import { linkWhatsapp } from "@/lib/convite";
-import { agoraEmBrasilia, DIAS } from "@/lib/expediente";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { resumoDaModalidade, resumoDosHorarios } from "@/lib/matricula";
 import { formatarWhatsapp } from "@/lib/personal";
 
@@ -63,7 +65,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, avaliacoes, pedidoAvaliacao] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, evolucao, avaliacoes, pedidoAvaliacao] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -73,7 +75,8 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     pixParaAluno(vinculo),
     checkinsPendentesDoAluno(vinculo),
     matriculasSuspensas(),
-    treinoDoVinculo(vinculo),
+    treinoCompleto(vinculo),
+    evolucaoDoTreino(vinculo),
     avaliacoesDoVinculo(vinculo),
     pedidoDeAvaliacao(vinculo),
   ]);
@@ -168,20 +171,9 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           </section>
         )}
 
-        {/* Decisão 81: o treino de cada dia, escrito pelo personal. */}
-        {Object.keys(treino).length > 0 && (
-          <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Seu treino">
-            <h2 className="text-[17px] font-bold">Seu treino</h2>
-            <ul className="flex flex-col gap-1.5">
-              {DIAS.filter((d) => treino[d.valor]).map((d) => (
-                <li key={d.valor} className="flex gap-3 text-[15px]">
-                  <span className="w-20 shrink-0 font-bold">{d.nome}</span>
-                  <span className="whitespace-pre-line text-ink-2">{treino[d.valor]}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* Decisão 114: o treino de cada dia (o que trabalha e os exercícios) e a evolução nas aulas. */}
+        <TreinoDaFicha dias={[]} treino={treino} base={`/aluno/personal/${vinculo}/treino`} quem="aluno" />
+        <EvolucaoDasCargas pontos={evolucao} />
 
         {/* Decisões 105 e 107: a evolução; o aluno também registra, e vê o pedido do personal. */}
         {!pedidoAvaliacao?.pedidaEm && <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />}

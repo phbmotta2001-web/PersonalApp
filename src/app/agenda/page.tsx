@@ -13,7 +13,7 @@ import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
 import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { lerFichaDoAluno } from "@/data/convites";
-import { treinoDoVinculo } from "@/data/treino";
+import { registrosDaAula, treinoCompleto, treinoDoVinculo } from "@/data/treino";
 import { rotuloNivel } from "@/lib/aluno";
 import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
@@ -107,6 +107,10 @@ async function Conteudo() {
   const aoVivo = vindouras.find((a) => Date.parse(a.inicio) <= agora.getTime());
   const painel = aoVivo ? await painelDaAula(aoVivo) : null;
   const [proxima, ...resto] = aoVivo ? vindouras.filter((a) => a !== aoVivo) : vindouras;
+  // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
+  const focoDaProxima = proxima?.vinculoId
+    ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
+    : null;
   const deHoje = resto.filter((a) => emBrasilia(a.inicio).data === hoje);
   const aulasHoje = vindouras.filter((a) => emBrasilia(a.inicio).data === hoje).length;
   const depois = deHoje.length > 0 ? deHoje : resto.slice(0, 3);
@@ -249,6 +253,11 @@ async function Conteudo() {
                   .filter(Boolean)
                   .join(" · ") || proxima.nome}
               </p>
+              {focoDaProxima && (
+                <p className="mt-2 inline-flex max-w-full rounded-full bg-on-deep/12 px-3 py-1 text-[14px] font-semibold">
+                  <span className="truncate">Treino: {focoDaProxima}</span>
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Link
@@ -447,10 +456,15 @@ function Pendencia({ href, icone, tom, children }: { href: string; icone: NomeIc
 }
 
 // Decisão 113: o que aparece no painel da aula em andamento (aluno avulso, sem ficha: só o nome).
-async function painelDaAula(a: { inicio: string; fim: string; local: string | null; vinculoId: string | null; nome: string }): Promise<DadosDoPainel> {
-  const base: DadosDoPainel = { quem: "personal", nome: a.nome, inicio: a.inicio, fim: a.fim, local: a.local, treino: null };
+async function painelDaAula(a: { id: string; inicio: string; fim: string; local: string | null; vinculoId: string | null; nome: string }): Promise<DadosDoPainel> {
+  const base: DadosDoPainel = { quem: "personal", nome: a.nome, inicio: a.inicio, fim: a.fim, local: a.local, aulaId: a.id, foco: null, exercicios: [], registros: [] };
   if (!a.vinculoId) return base;
-  const [ficha, treino, avaliacoes] = await Promise.all([lerFichaDoAluno(a.vinculoId), treinoDoVinculo(a.vinculoId), avaliacoesDoVinculo(a.vinculoId)]);
+  const [ficha, treino, avaliacoes, registros] = await Promise.all([
+    lerFichaDoAluno(a.vinculoId),
+    treinoCompleto(a.vinculoId),
+    avaliacoesDoVinculo(a.vinculoId),
+    registrosDaAula(a.id),
+  ]);
   const dia = diaDaSemana(emBrasilia(a.inicio).data);
   return {
     ...base,
@@ -460,7 +474,9 @@ async function painelDaAula(a: { inicio: string; fim: string; local: string | nu
     nivel: ficha?.nivel ? rotuloNivel(ficha.nivel) : null,
     restricoes: ficha?.restricoes ?? null,
     ultimaAvaliacao: avaliacoes.at(-1) ?? null,
-    treino: treino[dia]?.trim() || null,
+    foco: treino.focos[dia] ?? null,
+    exercicios: treino.exercicios[dia] ?? [],
+    registros,
     link: `/agenda/alunos/${a.vinculoId}`,
   };
 }

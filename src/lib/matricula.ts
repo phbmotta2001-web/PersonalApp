@@ -72,6 +72,8 @@ export interface Matricula {
   suspenderSeAtrasar: boolean;
   valorCentavos: number | null;
   valorForaDoPadrao: boolean;
+  /** Decisão 114: valor da aula combinado (a mensalidade sai dele). Vazio: mensalidade digitada ou pela tabela. */
+  valorAulaCentavos: number | null;
   diaVencimento: number | null;
   inicio: string;
   fim: string | null;

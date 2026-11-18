@@ -8,7 +8,7 @@ import { InstalarApp } from "@/components/InstalarApp";
 import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
 import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
-import { treinoDoVinculo } from "@/data/treino";
+import { registrosDaAula, treinoCompleto, treinoDoVinculo } from "@/data/treino";
 import { rotuloNivel } from "@/lib/aluno";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
@@ -94,7 +94,11 @@ async function Conteudo() {
   // Decisão 113: durante a aula, um painel grande com o perfil do aluno e o treino do dia.
   let painel: DadosDoPainel | null = null;
   if (aoVivo) {
-    const [treino, avaliacoes] = await Promise.all([treinoDoVinculo(aoVivo.vinculoId), avaliacoesDoVinculo(aoVivo.vinculoId)]);
+    const [treino, avaliacoes, registros] = await Promise.all([
+      treinoCompleto(aoVivo.vinculoId),
+      avaliacoesDoVinculo(aoVivo.vinculoId),
+      registrosDaAula(aoVivo.id),
+    ]);
     const dia = diaDaSemana(emBrasilia(aoVivo.inicio).data);
     painel = {
       quem: "aluno",
@@ -105,7 +109,10 @@ async function Conteudo() {
       objetivo: conta.perfil.objetivo || null,
       nivel: conta.perfil.nivel ? rotuloNivel(conta.perfil.nivel) : null,
       ultimaAvaliacao: avaliacoes.at(-1) ?? null,
-      treino: treino[dia]?.trim() || null,
+      aulaId: aoVivo.id,
+      foco: treino.focos[dia] ?? null,
+      exercicios: treino.exercicios[dia] ?? [],
+      registros,
       link: `/aluno/personal/${aoVivo.vinculoId}`,
     };
   }
@@ -113,6 +120,10 @@ async function Conteudo() {
 
   const aulas = porPersonal.flatMap((x) => x.aulas).sort((a, b) => a.inicio.localeCompare(b.inicio));
   const proxima = aulas.find((a) => a.situacao === "agendada" || a.situacao === "confirmada");
+  // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
+  const focoDaProxima = proxima?.vinculoId
+    ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
+    : null;
   const sugestoes = aulas.filter((a) => a.situacao === "pendente" && a.propostaPor === "personal");
   // Mensalidades em aberto que vencem em até 7 dias (ou já venceram).
   const cobrancas = porPersonal
@@ -316,6 +327,11 @@ async function Conteudo() {
                     com {nomeDe(proxima.vinculoId)}
                     {proxima.local ? ` · ${proxima.local}` : ""}
                   </p>
+                  {focoDaProxima && (
+                    <p className="mt-2 inline-flex max-w-full rounded-full bg-on-deep/12 px-3 py-1 text-[14px] font-semibold">
+                      <span className="truncate">Treino: {focoDaProxima}</span>
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Link

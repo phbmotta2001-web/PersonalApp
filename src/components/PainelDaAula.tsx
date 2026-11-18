@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Icone } from "@/components/Icone";
 import type { AvaliacaoFisica } from "@/lib/avaliacao";
 import { dataCurta, emBrasilia } from "@/lib/expediente";
+import type { Exercicio, RegistroDoExercicio } from "@/lib/treino";
+import { TreinoAoVivo } from "./TreinoAoVivo";
 
 // Decisão 113: durante a aula particular, um painel grande no alto do Início, com o perfil do
 // aluno e o treino do dia. O personal vê o aluno; o aluno vê o próprio treino e a aula.
@@ -19,7 +21,11 @@ export interface DadosDoPainel {
   /** Só para o personal: restrições e limitações declaradas. */
   restricoes?: string | null;
   ultimaAvaliacao?: AvaliacaoFisica | null;
-  treino: string | null;
+  /** Decisão 114: a aula (para registrar o treino), o que se trabalha no dia e os exercícios. */
+  aulaId?: string;
+  foco: string | null;
+  exercicios: Exercicio[];
+  registros: RegistroDoExercicio[];
   /** Personal: a ficha do aluno. Aluno: a página do personal (treino da semana). */
   link?: string;
 }
@@ -89,12 +95,15 @@ export function PainelDaAula({ d }: { d: DadosDoPainel }) {
         <p className="flex items-center gap-2 text-[14px] font-extrabold tracking-[0.04em] text-brand uppercase">
           <Icone nome="estrela" className="size-4" /> Treino de hoje
         </p>
-        {d.treino ? (
-          <p className="text-[18px] leading-relaxed whitespace-pre-line">{d.treino}</p>
+        {d.foco && <p className="font-display text-[22px] leading-tight font-extrabold">{d.foco}</p>}
+        {d.exercicios.length > 0 && d.aulaId ? (
+          <TreinoAoVivo aulaId={d.aulaId} exercicios={d.exercicios} registros={d.registros} />
         ) : (
-          <p className="text-[15px] text-ink-3">
-            {d.quem === "personal" ? "Nenhum treino escrito para este dia. Dá para escrever na ficha." : "Seu personal ainda não escreveu o treino de hoje."}
-          </p>
+          !d.foco && (
+            <p className="text-[15px] text-ink-3">
+              {d.quem === "personal" ? "Nenhum treino montado para este dia. Dá para montar na ficha." : "Seu personal ainda não montou o treino de hoje."}
+            </p>
+          )
         )}
       </div>
 

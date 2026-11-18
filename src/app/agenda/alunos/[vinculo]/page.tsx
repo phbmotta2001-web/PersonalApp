@@ -5,7 +5,8 @@ import { ConvidarParaConta } from "@/components/agenda/ConvidarParaConta";
 import { PausasDoAluno } from "@/components/agenda/PausasDoAluno";
 import { EncerrarVinculo } from "@/components/agenda/EncerrarVinculo";
 import { SuspensaoAutomatica } from "@/components/agenda/SuspensaoAutomatica";
-import { TreinoDoAluno } from "@/components/agenda/TreinoDoAluno";
+import { EvolucaoDasCargas } from "@/components/agenda/EvolucaoDasCargas";
+import { TreinoDaFicha } from "@/components/agenda/TreinoDaFicha";
 import { Avatar } from "@/components/Avatar";
 import { BotaoVoltar } from "@/components/BotaoVoltar";
 import { Cabecalho, Carregando } from "@/components/Formulario";
@@ -16,7 +17,7 @@ import { listarCobrancas } from "@/data/cobrancas";
 import { listarPausas } from "@/data/pausas";
 import { lerFichaDoAluno } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
-import { treinoDoVinculo } from "@/data/treino";
+import { evolucaoDoTreino, treinoCompleto } from "@/data/treino";
 import { lerMatricula, matriculasSuspensas, proximaAulaPorAluno } from "@/data/matriculas";
 import { rotuloGenero, rotuloNivel } from "@/lib/aluno";
 import { resumoDoMes } from "@/lib/aula";
@@ -53,7 +54,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
   const hojeBr = agoraEmBrasilia().data;
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, avaliacoes, formularios, pedidoAvaliacao] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, evolucao, avaliacoes, formularios, pedidoAvaliacao] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -64,7 +65,8 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     origemDoSite(),
     listarPausas(vinculo, hojeBr),
     lerRegras(),
-    treinoDoVinculo(vinculo),
+    treinoCompleto(vinculo),
+    evolucaoDoTreino(vinculo),
     avaliacoesDoVinculo(vinculo),
     formulariosDoVinculo(vinculo),
     pedidoDeAvaliacao(vinculo),
@@ -128,8 +130,9 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         </div>
       </section>
 
-      {/* Decisão 81: o treino de cada dia, só por texto; o aluno vê no app. */}
-      <TreinoDoAluno vinculoId={vinculo} dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} inicial={treino} />
+      {/* Decisão 114: o treino de cada dia de aula (o que trabalha e os exercícios) e a evolução nas aulas. */}
+      <TreinoDaFicha dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} treino={treino} base={`/agenda/alunos/${vinculo}/treino`} quem="personal" />
+      <EvolucaoDasCargas pontos={evolucao} />
 
       {/* Decisão 105: ParQ e anamnese (aluno com o app) e a avaliação física. */}
       {!a.semConta && <FormulariosDaFicha vinculoId={vinculo} nome={a.nomeCompleto} whatsapp={a.whatsapp} lista={formularios} />}
@@ -199,7 +202,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
               matricula.modalidade !== "online" && `Aulas de ${matricula.duracao} min`,
               matricula.modalidade !== "online" && matricula.local,
               matricula.valorCentavos != null &&
-                `${centavosParaReais(matricula.valorCentavos)} ${matricula.cicloMeses === 1 ? "por mês" : `a cada ${matricula.cicloMeses} meses`}${matricula.valorForaDoPadrao ? " (fora do padrão)" : ""}`,
+                `${centavosParaReais(matricula.valorCentavos)} ${matricula.cicloMeses === 1 ? "por mês" : `a cada ${matricula.cicloMeses} meses`}${matricula.valorAulaCentavos != null ? ` (${centavosParaReais(matricula.valorAulaCentavos)} por aula)` : matricula.valorForaDoPadrao ? " (fora do padrão)" : ""}`,
               matricula.diaVencimento != null && `vence dia ${matricula.diaVencimento}`,
             ]
               .filter(Boolean)

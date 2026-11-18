@@ -28,6 +28,7 @@ interface LinhaMatricula {
   local: string | null;
   valor_centavos: number | null;
   valor_fora_do_padrao: boolean;
+  valor_aula_centavos: number | null;
   dia_vencimento: number | null;
   inicio: string;
   fim: string | null;
@@ -37,7 +38,7 @@ interface LinhaMatricula {
 }
 
 const CAMPOS_MATRICULA =
-  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, dia_vencimento, inicio, fim, horarios_desde, suspender_se_atrasar, matricula_horarios (dia_semana, inicio_min)";
+  "id, vinculo_id, modalidade, intervalo_semanas, ciclo_meses, duracao_min, local, valor_centavos, valor_fora_do_padrao, valor_aula_centavos, dia_vencimento, inicio, fim, horarios_desde, suspender_se_atrasar, matricula_horarios (dia_semana, inicio_min)";
 
 const paraMatricula = (l: LinhaMatricula): Matricula => ({
   id: l.id,
@@ -50,6 +51,7 @@ const paraMatricula = (l: LinhaMatricula): Matricula => ({
   local: l.local,
   valorCentavos: l.valor_centavos,
   valorForaDoPadrao: l.valor_fora_do_padrao,
+  valorAulaCentavos: l.valor_aula_centavos ?? null,
   diaVencimento: l.dia_vencimento,
   inicio: l.inicio,
   fim: l.fim,
@@ -127,6 +129,13 @@ export async function salvarMatricula(vinculoId: string, dados: DadosMatricula, 
     },
   });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível salvar a matrícula.") } : { ok: true };
+}
+
+/** Decisão 114: guarda (ou desfaz, com null) o valor da aula combinado na matrícula ativa. */
+export async function salvarValorDaAula(vinculoId: string, centavos: number | null): Promise<Resposta> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("salvar_valor_aula_matricula", { p_vinculo: vinculoId, p_valor: centavos });
+  return error ? { ok: false, erro: "A matrícula foi salva, mas não o valor da aula. Tente salvar de novo." } : { ok: true };
 }
 
 export async function encerrarMatricula(matriculaId: string): Promise<Resposta> {

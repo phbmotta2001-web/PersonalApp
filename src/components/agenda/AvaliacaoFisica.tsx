@@ -228,7 +228,7 @@ function Resumo({ lista, indicadores }: { lista: Avaliacao[]; indicadores: Indic
 }
 
 /** Linha simples com os valores ao longo do tempo (o primeiro e o último em destaque). */
-function Grafico({ pontos, unidade }: { pontos: { data: string; valor: number }[]; unidade: string }) {
+export function Grafico({ pontos, unidade }: { pontos: { data: string; valor: number }[]; unidade: string }) {
   const L = 320;
   const A = 120;
   const m = { x: 14, topo: 18, base: 22 };

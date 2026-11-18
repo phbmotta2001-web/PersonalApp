@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { encerrarMatricula, salvarMatricula } from "@/data/matriculas";
+import { encerrarMatricula, salvarMatricula, salvarValorDaAula } from "@/data/matriculas";
 import { DIAS, DURACOES, minParaHora, nomeDoDia, opcoesDeHora, somarDias, type Duracao, type Faixa } from "@/lib/expediente";
 import { frase, juntarComE } from "@/lib/formato";
 import {
   centavosParaCampo,
   centavosParaReais,
   choquesComOutros,
+  reaisParaCentavos,
   diaDoMes,
   foraDoExpediente,
   INTERVALO_MAXIMO,
@@ -80,6 +81,9 @@ export function FormMatricula({
   const [temFim, setTemFim] = useState(!!atual?.fim);
   // Alterando aulas a cada N semanas: início do ciclo (sem mexer, segue o ciclo atual).
   const [inicioCiclo, setInicioCiclo] = useState<string | null>(null);
+  // Decisão 114: valor fora do padrão pode ser a mensalidade inteira ou o valor de cada aula.
+  const [porAula, setPorAula] = useState(atual?.valorAulaCentavos != null);
+  const [valorAula, setValorAula] = useState(centavosParaCampo(atual?.valorAulaCentavos ?? null));
   const [tentou, setTentou] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [encerrando, setEncerrando] = useState(false);
@@ -109,6 +113,11 @@ export function FormMatricula({
   const daTabela = mensalidadeDaTabela(tabela, vezes, dados.intervaloSemanas);
   const noMes = String(Math.round(aulasNoMes(vezes, dados.intervaloSemanas) * 10) / 10).replace(".", ",");
   const tabelaVazia = Object.keys(tabela).length === 0;
+  // Valor por aula: a mensalidade é a aula × as aulas do mês (× os meses do plano).
+  const usaPorAula = dados.valorForaDoPadrao && porAula && !online;
+  const aulaCentavos = usaPorAula ? reaisParaCentavos(valorAula) : null;
+  const aulaValida = aulaCentavos != null && !Number.isNaN(aulaCentavos) && aulaCentavos >= 100 && aulaCentavos <= 1_000_000;
+  const mensalPorAula = aulaValida && vezes > 0 ? Math.round(aulaCentavos * aulasNoMes(vezes, dados.intervaloSemanas)) * ciclo : null;
 
   const mudar = (parte: Partial<DadosMatricula>) => {
     setErro(null);
@@ -130,11 +139,20 @@ export function FormMatricula({
   function salvar(e: React.FormEvent) {
     e.preventDefault();
     setTentou(true);
+    if (usaPorAula && (!aulaValida || mensalPorAula == null)) {
+      setErro(vezes === 0 ? "Marque os dias de aula para calcular a mensalidade." : "Confira o valor da aula (pelo menos R$ 1,00).");
+      return;
+    }
     if (problemas.length > 0 || choques.length > 0) return;
+    const enviar = usaPorAula ? { ...dados, valor: centavosParaCampo(mensalPorAula) } : dados;
     iniciar(async () => {
       try {
-        const r = await salvarMatricula(vinculoId, dados, mudaCiclo ? (inicioCiclo ?? cicloAtual) : undefined);
+        const r = await salvarMatricula(vinculoId, enviar, mudaCiclo ? (inicioCiclo ?? cicloAtual) : undefined);
         if (!r.ok) return setErro(r.erro);
+        if (usaPorAula || atual?.valorAulaCentavos != null) {
+          const v = await salvarValorDaAula(vinculoId, usaPorAula ? aulaCentavos : null);
+          if (!v.ok) return setErro(v.erro);
+        }
         router.replace(`/agenda/alunos/${vinculoId}`);
         router.refresh();
       } catch {
@@ -301,6 +319,47 @@ export function FormMatricula({
         )}
         {dados.valorForaDoPadrao ? (
           <>
+            {!online && (
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Como combinar o valor">
+                <Chip ativo={!porAula} onClick={() => setPorAula(false)}>
+                  Mensalidade
+                </Chip>
+                <Chip ativo={porAula} onClick={() => setPorAula(true)}>
+                  Valor por aula
+                </Chip>
+              </div>
+            )}
+            {usaPorAula ? (
+              <>
+                <label htmlFor="mat-valor-aula" className="sr-only">
+                  Valor de cada aula
+                </label>
+                <div className="relative">
+                  <span className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-ink-3">R$</span>
+                  <input
+                    id="mat-valor-aula"
+                    inputMode="decimal"
+                    placeholder="0,00 por aula"
+                    value={valorAula}
+                    onChange={(e) => {
+                      setErro(null);
+                      setValorAula(e.target.value);
+                    }}
+                    className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
+                  />
+                </div>
+                {mensalPorAula != null ? (
+                  <p className="text-[14px] text-ink-2">
+                    Mensalidade: <strong className="tabular-nums">{centavosParaReais(mensalPorAula)}</strong>
+                    {ciclo === 1 ? " por mês" : ` a cada ${ciclo} meses`} ({noMes} aula{noMes === "1" ? "" : "s"} no mês
+                    {noMes.includes(",") && ", média"})
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-ink-3">{vezes === 0 ? "Marque os dias para ver a mensalidade." : "Digite o valor de cada aula."}</p>
+                )}
+              </>
+            ) : (
+            <>
             <label htmlFor="mat-valor" className="sr-only">
               Valor mensal
             </label>
@@ -315,6 +374,8 @@ export function FormMatricula({
                 className={`${ESTILO_CAIXA} pl-10 tabular-nums`}
               />
             </div>
+            </>
+            )}
             {(online ? !tabelaOnlineVazia : !tabelaVazia) && (
               <button
                 type="button"
