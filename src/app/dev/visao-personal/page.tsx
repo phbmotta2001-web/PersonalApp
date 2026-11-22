@@ -162,7 +162,7 @@ async function Pedidos() {
 
 function textoRestricoes(v: Visao): string {
   const quando = v.restricoes_confirmadas_em
-    ? ` (confirmado em ${new Date(v.restricoes_confirmadas_em).toLocaleDateString("pt-BR")})`
+    ? ` (confirmado em ${new Date(v.restricoes_confirmadas_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })})`
     : "";
   if (v.restricoes) return v.restricoes + quando;
   if (v.sem_restricoes) return "Declarou não ter restrições" + quando;

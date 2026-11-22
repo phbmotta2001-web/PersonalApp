@@ -99,7 +99,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
           <div className="min-w-0 flex-1">
             <p className="text-[17px] font-extrabold">{p.nome}</p>
             <p className="text-[14px] text-on-deep-2">
-              Seu personal desde {new Date(p.aceitoEm).toLocaleDateString("pt-BR")}
+              Seu personal desde {new Date(p.aceitoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
               {p.cref && ` · CREF ${p.cref}`}
             </p>
           </div>
@@ -138,7 +138,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
             </p>
             <p className="text-[14px] text-ink-2">
               Sua matrícula venceu sem pagamento e está suspensa desde{" "}
-              {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR")}. Enquanto isso, você não consegue
+              {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}. Enquanto isso, você não consegue
               cancelar, remarcar nem marcar aulas, nem responder questionários.
             </p>
             <p className="text-[14px] font-semibold">

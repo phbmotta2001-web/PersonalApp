@@ -90,8 +90,10 @@ export const MAX_HORARIOS = 7;
 
 /** "250", "250,5", "1.250,00", "R$ 250" → centavos; "" → null; inválido → NaN. */
 export function reaisParaCentavos(texto: string): number | null {
-  const t = texto.replace(/R\$|\s/g, "");
+  let t = texto.replace(/R\$|\s/g, "");
   if (!t) return null;
+  // Teclado em inglês: "150.50" é 150 reais e 50 centavos.
+  if (/^\d+\.\d{1,2}$/.test(t)) t = t.replace(".", ",");
   if (!/^\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+(,\d{1,2})?$/.test(t)) return NaN;
   const [inteiro, decimais = ""] = t.replace(/\./g, "").split(",");
   return Number(inteiro) * 100 + Number(decimais.padEnd(2, "0"));

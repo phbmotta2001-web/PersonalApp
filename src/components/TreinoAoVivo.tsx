@@ -18,6 +18,8 @@ const numeroDasRepeticoes = (r: string | null) => {
   const m = (r ?? "").match(/\d+/);
   return m ? m[0] : "";
 };
+// Guarda quando a linha mudou aqui (fora do render, para o lint do React).
+const marcarMudanca = (m: Map<string, number>, id: string) => m.set(id, Date.now());
 const textoDaCarga = (n: number | null) => (n == null ? "" : String(n).replace(".", ","));
 
 function estadoInicial(exercicios: Exercicio[], registros: RegistroDoExercicio[]): Record<string, Estado> {
@@ -42,6 +44,8 @@ export function TreinoAoVivo({ aulaId, exercicios, registros }: { aulaId: string
   const [erro, setErro] = useState<string | null>(null);
   // Linha sendo editada: não é sobrescrita pela atualização automática.
   const editando = useRef<string | null>(null);
+  // Linhas mudadas aqui há pouco: a atualização automática pode trazer o valor de antes de salvar.
+  const mudouEm = useRef(new Map<string, number>());
   const feitos = lista.filter((e) => estado[e.id!]?.feito).length;
 
   // A cada 8 s, traz o que a outra pessoa marcou.
@@ -53,6 +57,7 @@ export function TreinoAoVivo({ aulaId, exercicios, registros }: { aulaId: string
         const prox = { ...atual };
         for (const r of novos) {
           if (r.exercicioId === editando.current || !prox[r.exercicioId]) continue;
+          if (Date.now() - (mudouEm.current.get(r.exercicioId) ?? 0) < 10_000) continue;
           prox[r.exercicioId] = {
             feito: r.feito,
             carga: textoDaCarga(r.cargaKg),
@@ -71,13 +76,16 @@ export function TreinoAoVivo({ aulaId, exercicios, registros }: { aulaId: string
     if ((carga != null && Number.isNaN(carga)) || (reps != null && (Number.isNaN(reps) || !Number.isInteger(reps)))) {
       return setErro("Use só números na carga e nas repetições (como 40 ou 12,5).");
     }
+    marcarMudanca(mudouEm.current, id);
     const r = await registrarExercicio(aulaId, id, s.feito, carga, reps);
+    marcarMudanca(mudouEm.current, id);
     setErro(r.ok ? null : r.erro);
   };
 
   const mudar = (id: string, parte: Partial<Estado>, gravar = false) => {
     const s = { ...estado[id], ...parte };
-    setEstado({ ...estado, [id]: s });
+    marcarMudanca(mudouEm.current, id);
+    setEstado((atual) => ({ ...atual, [id]: s }));
     if (gravar) void salvar(id, s);
   };
 

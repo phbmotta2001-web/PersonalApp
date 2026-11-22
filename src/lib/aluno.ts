@@ -1,3 +1,5 @@
+import { agoraEmBrasilia } from "./expediente";
+
 // Perfil do aluno: o que ele tem e quais valores são aceitos.
 // Usado nas telas e no servidor. O banco (supabase/migrations) repete estas regras.
 //
@@ -122,8 +124,10 @@ export function idadeEm(dataNascimento: string, hoje = new Date()): number | nul
   const nascimento = new Date(ano, mes - 1, dia);
   if (nascimento.getFullYear() !== ano || nascimento.getMonth() !== mes - 1 || nascimento.getDate() !== dia)
     return null; // data que não existe, como 31/02
-  let idade = hoje.getFullYear() - ano;
-  if (hoje.getMonth() < mes - 1 || (hoje.getMonth() === mes - 1 && hoje.getDate() < dia)) idade--;
+  // O dia de hoje no horário de Brasília (o servidor roda em outro fuso).
+  const [ha, hm, hd] = agoraEmBrasilia(hoje).data.split("-").map(Number);
+  let idade = ha - ano;
+  if (hm < mes || (hm === mes && hd < dia)) idade--;
   return idade;
 }
 

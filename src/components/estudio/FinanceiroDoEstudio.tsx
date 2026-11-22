@@ -28,6 +28,7 @@ import { centavosParaCampo, centavosParaReais, reaisParaCentavos } from "@/lib/m
 import { pixCopiaECola, TIPOS_CHAVE_PIX, type TipoChavePix } from "@/lib/pix";
 import { VEZES_POR_SEMANA } from "@/lib/precos";
 import { dataCompleta, fimDoPlano } from "@/lib/plano";
+import { agoraEmBrasilia } from "@/lib/expediente";
 import { Chip } from "../Chip";
 import { TransitoLivreDoEstudio } from "./TransitoLivre";
 import { Aviso, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
@@ -465,8 +466,8 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
   const daTabela = vezes ? (estudio.config.precosPlano[plano]?.[vezes] ?? estudio.config.precos[vezes] ?? null) : null;
   const [valor, setValor] = useState(aluno.valorMensal);
   // Aluno que ainda não é cobrado: vence no dia em que começa (até o dia 28, que existe em todo mês).
-  const [dia, setDia] = useState(aluno.diaVencimento ?? Math.min(28, new Date().getDate()));
-  const mesAtual = new Date().toISOString().slice(0, 7);
+  const [dia, setDia] = useState(aluno.diaVencimento ?? Math.min(28, Number(agoraEmBrasilia().data.slice(8, 10))));
+  const mesAtual = agoraEmBrasilia().data.slice(0, 7);
   const [inicio, setInicio] = useState((aluno.planoInicio ?? `${mesAtual}-01`).slice(0, 7));
   const taxaDoEstudio = estudio.config.taxaMatricula;
   // Aluno que ainda não é cobrado: a taxa já vem marcada (se o estúdio cobra).
@@ -497,7 +498,7 @@ export function MensalidadeDoAluno({ estudio, aluno }: { estudio: EstudioComplet
       )}
       {plano > 1 && /^\d{4}-\d{2}$/.test(inicio) && (
         <p className="text-[13px] font-semibold text-ink-2">
-          O plano atual vai até {dataCompleta(fimDoPlano(plano, `${inicio}-01`, new Date().toISOString().slice(0, 10))!)}{" "}
+          O plano atual vai até {dataCompleta(fimDoPlano(plano, `${inicio}-01`, agoraEmBrasilia().data)!)}{" "}
           (renova sozinho)
         </p>
       )}

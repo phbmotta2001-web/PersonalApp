@@ -97,7 +97,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         <h2 className={`mt-1 text-[20px] font-extrabold ${atrasado ? "text-bad" : ""}`}>{a.nomeCompleto}</h2>
         {suspensaDesde ? (
           <p className="text-[13px] font-bold text-bad">
-            Matrícula suspensa desde {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR")} · marque a
+            Matrícula suspensa desde {new Date(`${suspensaDesde}T12:00:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} · marque a
             mensalidade como paga para liberar
           </p>
         ) : (
@@ -105,8 +105,8 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
         )}
         <p className="text-[14px] text-ink-3">
           {a.semConta
-            ? `${a.idade} anos${a.semConta.menor ? " (menor)" : ""} · não usa o app · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR")}`
-            : `${a.idade} anos · ${rotuloGenero(a.genero)} · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR")}`}
+            ? `${a.idade} anos${a.semConta.menor ? " (menor)" : ""} · não usa o app · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+            : `${a.idade} anos · ${rotuloGenero(a.genero)} · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
         </p>
       </div>
 
@@ -124,7 +124,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
           {a.restricoes && <p className="mt-1 whitespace-pre-line text-ink">{a.restricoes}</p>}
           {a.restricoesDeclaradasEm && (
             <p className="mt-1 text-[13px] opacity-80">
-              Declaração de {new Date(a.restricoesDeclaradasEm).toLocaleDateString("pt-BR")}
+              Declaração de {new Date(a.restricoesDeclaradasEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
             </p>
           )}
         </div>
@@ -209,7 +209,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
               .join(" · ")}
           </p>
           <p className="text-[13px] text-ink-3">
-            Desde {new Date(`${matricula.inicio}T12:00:00`).toLocaleDateString("pt-BR")}
+            Desde {new Date(`${matricula.inicio}T12:00:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}
             {fimDoPlanoAtual && ` · ${fimDoPlanoAtual === matricula.fim ? "termina em" : "plano atual até"} ${dataCompleta(fimDoPlanoAtual)}`}
           </p>
           <SuspensaoAutomatica vinculoId={vinculo} ligada={matricula.suspenderSeAtrasar} />
@@ -288,7 +288,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
 
       {a.semConta ? (
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2.5 rounded-[20px] border border-line bg-surface p-4 text-[15px]">
-        <Linha nome="Nascimento" valor={new Date(`${a.semConta.dataNascimento}T12:00:00`).toLocaleDateString("pt-BR")} />
+        <Linha nome="Nascimento" valor={new Date(`${a.semConta.dataNascimento}T12:00:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} />
         <Linha nome="WhatsApp do aluno" valor={a.semConta.whatsapp ? formatarWhatsapp(a.semConta.whatsapp) : null} />
         {a.semConta.menor && (
           <Linha

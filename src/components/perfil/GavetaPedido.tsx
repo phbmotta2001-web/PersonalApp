@@ -225,7 +225,7 @@ export function GavetaPedido({
             {restricoes || "Você declarou não ter restrições ou limitações."}
           </p>
           <p className="mt-1 text-[13px] text-ink-3">
-            Declaração de {new Date(declaradasEm).toLocaleDateString("pt-BR")} ·{" "}
+            Declaração de {new Date(declaradasEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} ·{" "}
             <Link href="/perfil" className="font-semibold text-brand">
               Atualizar no perfil
             </Link>

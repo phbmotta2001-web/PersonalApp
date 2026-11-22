@@ -390,7 +390,7 @@ export function FormPerfilAluno({ conta, voltar }: { conta: ContaAluno; voltar?:
                 </div>
                 <p className="text-[13px] text-ink-3">
                   {declaradasEm
-                    ? `Declaração atualizada em ${new Date(declaradasEm).toLocaleDateString("pt-BR")}.`
+                    ? `Declaração atualizada em ${new Date(declaradasEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.`
                     : "Obrigatório para enviar pedidos."}
                 </p>
               </fieldset>
