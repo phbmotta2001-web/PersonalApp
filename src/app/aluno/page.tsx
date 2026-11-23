@@ -8,7 +8,8 @@ import { InstalarApp } from "@/components/InstalarApp";
 import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
 import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
-import { registrosDaAula, treinoCompleto, treinoDoVinculo } from "@/data/treino";
+import { meusRelatorios, treinoCompleto, treinoDaAula, treinoDoVinculo } from "@/data/treino";
+import { nomeDoMes } from "@/lib/relatorio";
 import { rotuloNivel } from "@/lib/aluno";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
@@ -54,7 +55,7 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados, aoVivo] = await Promise.all([
+  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados, aoVivo, relatorios] = await Promise.all([
     listarMeusPersonais(),
     matriculasSuspensas(),
     meusEstudiosComoAluno(),
@@ -63,7 +64,10 @@ async function Conteudo() {
     meusFormulariosPendentes(),
     meusComunicados(),
     aulaAgoraDoAluno(),
+    meusRelatorios(),
   ]);
+  // Decisão 117: relatório do mês que o personal enviou e o aluno ainda não abriu (sem notificação no celular).
+  const relatoriosNovos = relatorios.filter((r) => !r.vistoEm);
   const meusPedidos = pedidos.filter((p) => p.meu);
   const estudios = await Promise.all(
     estudiosDoAluno.map(async (e) => {
@@ -94,12 +98,13 @@ async function Conteudo() {
   // Decisão 113: durante a aula, um painel grande com o perfil do aluno e o treino do dia.
   let painel: DadosDoPainel | null = null;
   if (aoVivo) {
-    const [treino, avaliacoes, registros] = await Promise.all([
+    const [treino, avaliacoes, daAula] = await Promise.all([
       treinoCompleto(aoVivo.vinculoId),
       avaliacoesDoVinculo(aoVivo.vinculoId),
-      registrosDaAula(aoVivo.id),
+      treinoDaAula(aoVivo.id),
     ]);
-    const dia = diaDaSemana(emBrasilia(aoVivo.inicio).data);
+    // Decisão 117: o treino que o personal escolheu para a aula (o padrão é o do dia da semana).
+    const dia = daAula.dia ?? diaDaSemana(emBrasilia(aoVivo.inicio).data);
     painel = {
       quem: "aluno",
       nome: personais.find((p) => p.vinculoId === aoVivo.vinculoId)?.nome ?? "seu personal",
@@ -112,14 +117,16 @@ async function Conteudo() {
       aulaId: aoVivo.id,
       foco: treino.focos[dia] ?? null,
       exercicios: treino.exercicios[dia] ?? [],
-      registros,
+      registros: daAula.registros,
+      dia,
+      diaGuardado: daAula.dia,
       link: `/aluno/personal/${aoVivo.vinculoId}`,
     };
   }
   const nomeDe = (vinculo: string | null) => personais.find((p) => p.vinculoId === vinculo)?.nome.split(" ")[0] ?? "seu personal";
 
   const aulas = porPersonal.flatMap((x) => x.aulas).sort((a, b) => a.inicio.localeCompare(b.inicio));
-  const proxima = aulas.find((a) => a.situacao === "agendada" || a.situacao === "confirmada");
+  const proxima = aulas.find((a) => (a.situacao === "agendada" || a.situacao === "confirmada") && a.id !== aoVivo?.id);
   // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
   const focoDaProxima = proxima?.vinculoId
     ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
@@ -153,7 +160,10 @@ async function Conteudo() {
 
       {/* Decisão 113: a aula acontecendo agora vem antes de tudo (como no Início do professor). */}
       {/* Atualiza sozinho quando a aula começa ou termina. */}
-      <AtualizarNaHora momentos={[aoVivo?.fim, proxima?.inicio]} />
+      <AtualizarNaHora
+        momentos={[aoVivo?.fim, proxima?.inicio]}
+        aCada={!aoVivo && proxima && Date.parse(proxima.inicio) - agora.getTime() < 2 * 3_600_000 ? 60_000 : undefined}
+      />
       {painel && <PainelDaAula d={painel} />}
 
       {personais
@@ -177,6 +187,24 @@ async function Conteudo() {
         ))}
 
       {/* Decisão 108: tudo o que precisa do aluno fica em cima, antes de qualquer outra coisa. */}
+      {relatoriosNovos.map((r) => (
+        <Link
+          key={"rel" + r.vinculoId + r.mes}
+          href={`/aluno/personal/${r.vinculoId}/relatorio/${r.mes}`}
+          className="relatorio-brilho flex items-center gap-3 rounded-[22px] bg-gradient-to-br from-brand to-deep p-4 text-on-deep shadow-lg"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-lime text-lime-ink">
+            <Icone nome="estrela" className="size-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-[21px] leading-tight font-extrabold">Relatório do mês</span>
+            <span className="block text-[14px] text-on-deep-2">
+              {nomeDoMes(r.mes, true).replace(/^./, (c) => c.toUpperCase())} · enviado por {nomeDe(r.vinculoId)}
+            </span>
+          </span>
+          <span className="rounded-[12px] bg-lime px-3 py-2 text-[14px] font-extrabold text-lime-ink">Ver</span>
+        </Link>
+      ))}
       {sugestoes.map((a) => (
         <Link
           key={a.id}

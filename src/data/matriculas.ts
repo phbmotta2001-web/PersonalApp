@@ -166,6 +166,9 @@ export interface AulaDaAgenda {
   porFeriado: boolean;
   /** O aluno recusou (ou deixou expirar) o pedido do personal para remarcar: falta decidir. */
   recusaRemarcacao: boolean;
+  /** Decisão 117: o personal começou o treino antes do horário / encerrou antes do fim. */
+  treinoIniciado?: boolean;
+  treinoEncerrado?: boolean;
 }
 
 /** Aulas do personal logado entre dois instantes (ISO), com o nome de cada aluno. */
@@ -175,7 +178,7 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
   const [{ data }, alunos] = await Promise.all([
     supabase
       .from("aulas")
-      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta, por_feriado, recusa_remarcacao_em")
+      .select("id, inicio, fim, local, situacao, origem, vinculo_id, nome_avulso, proposta_por, aula_original_id, resposta, por_feriado, recusa_remarcacao_em, treino_iniciado_em, treino_encerrado_em")
       .eq("personal_id", id)
       .lt("inicio", ate)
       .gt("fim", de)
@@ -197,6 +200,8 @@ export async function listarAulas(de: string, ate: string): Promise<AulaDaAgenda
     resposta: a.resposta,
     porFeriado: a.por_feriado,
     recusaRemarcacao: a.recusa_remarcacao_em != null,
+    treinoIniciado: a.treino_iniciado_em != null,
+    treinoEncerrado: a.treino_encerrado_em != null,
   }));
 }
 
@@ -210,7 +215,10 @@ export async function aulaAgoraDoAluno(): Promise<{ id: string; inicio: string; 
     .from("aulas")
     .select("id, inicio, fim, local, vinculo_id")
     .eq("aluno_id", id)
-    .lte("inicio", agora)
+    // Decisão 117: a aula que já começou, ou cujo treino o personal começou antes do horário,
+    // e que o personal ainda não encerrou.
+    .or(`inicio.lte.${agora},treino_iniciado_em.not.is.null`)
+    .is("treino_encerrado_em", null)
     .gt("fim", agora)
     .in("situacao", ["agendada", "confirmada"])
     .not("vinculo_id", "is", null)

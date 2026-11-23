@@ -263,6 +263,28 @@ input[type="checkbox"]:checked {
   100% { transform: none; }
 }
 
+/* Decisão 117: botão "Relatório do mês" no Início do aluno, com um brilho que passa. */
+.relatorio-brilho {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.relatorio-brilho::after {
+  content: "";
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.65), transparent);
+  transform: skewX(-18deg);
+  animation: pbell-brilho 2.6s ease-in-out 0.6s infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+@keyframes pbell-brilho {
+  0% { left: -60%; }
+  55%, 100% { left: 130%; }
+}
+
 /* Confete de comemoração (pagamento recebido). */
 .pbell-confete {
   position: fixed;

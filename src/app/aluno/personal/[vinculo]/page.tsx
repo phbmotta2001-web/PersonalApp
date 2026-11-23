@@ -15,7 +15,8 @@ import { regrasParaAluno } from "@/data/aluno-aulas";
 import { reposicoesDisponiveis } from "@/data/aulas";
 import { cobrancasDoAluno, pixDaCobranca, pixParaAluno } from "@/data/cobrancas";
 import { checkinsPendentesDoAluno } from "@/data/questionarios";
-import { evolucaoDoTreino, treinoCompleto } from "@/data/treino";
+import { evolucaoDoTreino, meusRelatorios, treinoCompleto } from "@/data/treino";
+import { nomeDoMes } from "@/lib/relatorio";
 import { EvolucaoDasCargas } from "@/components/agenda/EvolucaoDasCargas";
 import { TreinoDaFicha } from "@/components/agenda/TreinoDaFicha";
 import { AvaliacaoFisica } from "@/components/agenda/AvaliacaoFisica";
@@ -65,7 +66,7 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     );
 
   const primeiro = p.nome.split(" ")[0];
-  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, evolucao, avaliacoes, pedidoAvaliacao] = await Promise.all([
+  const [matricula, aulas, reposicoes, regras, recusados, cobrancas, pixDoPersonal, questionarios, suspensas, treino, evolucao, avaliacoes, pedidoAvaliacao, relatorios] = await Promise.all([
     lerMatricula(vinculo),
     proximasAulasDoAluno(vinculo),
     reposicoesDisponiveis(vinculo),
@@ -79,7 +80,9 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
     evolucaoDoTreino(vinculo),
     avaliacoesDoVinculo(vinculo),
     pedidoDeAvaliacao(vinculo),
+    meusRelatorios(),
   ]);
+  const meusRelatoriosAqui = relatorios.filter((r) => r.vinculoId === vinculo);
   const suspensaDesde = suspensas[vinculo];
   const hoje = agoraEmBrasilia().data;
   const pixPorCobranca = Object.fromEntries(
@@ -174,6 +177,23 @@ async function Conteudo({ params }: { params: PageProps<"/aluno/personal/[vincul
         {/* Decisão 114: o treino de cada dia (o que trabalha e os exercícios) e a evolução nas aulas. */}
         <TreinoDaFicha dias={[]} treino={treino} base={`/aluno/personal/${vinculo}/treino`} quem="aluno" />
         <EvolucaoDasCargas pontos={evolucao} />
+        {/* Decisão 117: os relatórios do mês que o personal enviou. */}
+        {meusRelatoriosAqui.length > 0 && (
+          <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Relatórios do mês">
+            <h3 className="text-[16px] font-bold">Relatórios do mês</h3>
+            <ul className="flex flex-col divide-y divide-line">
+              {meusRelatoriosAqui.map((r) => (
+                <li key={r.mes}>
+                  <Link href={`/aluno/personal/${vinculo}/relatorio/${r.mes}`} className="flex items-center gap-2 py-2.5 text-[15px] font-semibold">
+                    <Icone nome="estrela" className="size-4 text-brand" />
+                    <span className="flex-1 first-letter:uppercase">{nomeDoMes(r.mes)}</span>
+                    <span className="text-ink-3" aria-hidden="true">›</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Decisões 105 e 107: a evolução; o aluno também registra, e vê o pedido do personal. */}
         {!pedidoAvaliacao?.pedidaEm && <AvaliacaoFisica vinculoId={vinculo} lista={avaliacoes} hoje={hoje} quem="aluno" pedido={pedidoAvaliacao} />}

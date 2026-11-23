@@ -24,9 +24,15 @@ export function EvolucaoDasCargas({ pontos }: { pontos: PontoDeTreino[] }) {
   if (lista.length === 0) return null;
   const g = grupos.get(escolhido ?? "") ?? lista[0][1];
   const porCarga = g.pontos.some((p) => p.cargaKg != null);
+  // Decisão 117: a unidade do registro mais recente (kg, lb ou placas) e segundos nas isometrias.
+  const ultimo = g.pontos[g.pontos.length - 1];
+  const sufixo = porCarga ? ` ${ultimo.unidade}` : ultimo.medida === "segundos" ? " s" : " rep.";
+  const sufixoLongo = porCarga ? ` ${ultimo.unidade}` : ultimo.medida === "segundos" ? " segundos" : " repetições";
+  const deOutraUnidade = (p: PontoDeTreino) => porCarga && p.unidade !== ultimo.unidade;
   // Um ponto por dia: o maior valor do dia.
   const porDia = new Map<string, number>();
   for (const p of g.pontos) {
+    if (deOutraUnidade(p)) continue;
     const v = porCarga ? p.cargaKg : p.repeticoes;
     if (v == null) continue;
     porDia.set(p.data, Math.max(v, porDia.get(p.data) ?? -Infinity));
@@ -52,16 +58,16 @@ export function EvolucaoDasCargas({ pontos }: { pontos: PontoDeTreino[] }) {
         ))}
       </div>
       {serie.length >= 2 ? (
-        <Grafico pontos={serie} unidade={porCarga ? " kg" : " rep."} />
+        <Grafico pontos={serie} unidade={sufixo} />
       ) : (
         <p className="text-[14px] text-ink-3">
           {serie.length === 1
-            ? `${serie[0].valor.toLocaleString("pt-BR")}${porCarga ? " kg" : " repetições"} no último treino. O gráfico aparece a partir do segundo registro.`
+            ? `${serie[0].valor.toLocaleString("pt-BR")}${sufixoLongo} no último treino. O gráfico aparece a partir do segundo registro.`
             : "Ainda sem carga ou repetições registradas."}
         </p>
       )}
       <p className="text-[13px] text-ink-3">
-        {porCarga ? "Maior carga" : "Repetições"} registrada em cada aula · {g.pontos.length} {g.pontos.length === 1 ? "registro" : "registros"}
+        {porCarga ? "Maior carga" : ultimo.medida === "segundos" ? "Maior tempo" : "Repetições"} registrada em cada aula · {g.pontos.length} {g.pontos.length === 1 ? "registro" : "registros"}
       </p>
     </section>
   );

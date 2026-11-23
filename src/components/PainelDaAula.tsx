@@ -3,6 +3,7 @@ import { Icone } from "@/components/Icone";
 import type { AvaliacaoFisica } from "@/lib/avaliacao";
 import { dataCurta, emBrasilia } from "@/lib/expediente";
 import type { Exercicio, RegistroDoExercicio } from "@/lib/treino";
+import { EncerrarTreino, TrocarTreino } from "./ControlesDoTreino";
 import { TreinoAoVivo } from "./TreinoAoVivo";
 
 // Decisão 113: durante a aula particular, um painel grande no alto do Início, com o perfil do
@@ -26,6 +27,12 @@ export interface DadosDoPainel {
   foco: string | null;
   exercicios: Exercicio[];
   registros: RegistroDoExercicio[];
+  /** Decisão 117: o dia do treino usado na aula, o do dia da semana e os dias com treino (para trocar). */
+  dia?: number;
+  diaPadrao?: number;
+  /** O que está guardado na aula (vazio = o do dia da semana). */
+  diaGuardado?: number | null;
+  diasComTreino?: { dia: number; foco: string | null }[];
   /** Personal: a ficha do aluno. Aluno: a página do personal (treino da semana). */
   link?: string;
 }
@@ -96,8 +103,11 @@ export function PainelDaAula({ d }: { d: DadosDoPainel }) {
           <Icone nome="estrela" className="size-4" /> Treino de hoje
         </p>
         {d.foco && <p className="font-display text-[22px] leading-tight font-extrabold">{d.foco}</p>}
+        {d.quem === "personal" && d.aulaId && d.dia != null && d.diaPadrao != null && d.diasComTreino && (
+          <TrocarTreino aulaId={d.aulaId} dias={d.diasComTreino} escolhido={d.dia} padrao={d.diaPadrao} />
+        )}
         {d.exercicios.length > 0 && d.aulaId ? (
-          <TreinoAoVivo aulaId={d.aulaId} exercicios={d.exercicios} registros={d.registros} />
+          <TreinoAoVivo key={d.dia ?? -1} aulaId={d.aulaId} exercicios={d.exercicios} registros={d.registros} dia={d.diaGuardado ?? null} />
         ) : (
           !d.foco && (
             <p className="text-[15px] text-ink-3">
@@ -107,6 +117,7 @@ export function PainelDaAula({ d }: { d: DadosDoPainel }) {
         )}
       </div>
 
+      <div className={d.quem === "personal" && d.aulaId ? "grid grid-cols-2 gap-2" : "contents"}>
       {d.link && (
         <Link
           href={d.link}
@@ -115,6 +126,8 @@ export function PainelDaAula({ d }: { d: DadosDoPainel }) {
           {d.quem === "personal" ? "Abrir a ficha" : "Ver o treino da semana"}
         </Link>
       )}
+      {d.quem === "personal" && d.aulaId && <EncerrarTreino aulaId={d.aulaId} />}
+      </div>
     </section>
   );
 }

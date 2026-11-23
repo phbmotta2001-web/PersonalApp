@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { salvarTreinoDoDia } from "@/data/treino";
-import { DESCANSOS, lerNumero, type Exercicio } from "@/lib/treino";
+import { DESCANSOS, lerNumero, UNIDADES, type Exercicio, type MedidaDaSerie, type Unidade } from "@/lib/treino";
 import { Aviso, ESTILO_CAIXA } from "../Formulario";
 
 // Decisão 114: o personal monta o treino de um dia: o que será trabalhado (aparece no "próximo
 // treino") e os exercícios, um por linha, com séries, repetições, carga e descanso.
+// Decisão 117: carga em kg, lb ou placas; repetições ou segundos (isometria); observação.
 
 interface Linha {
   chave: number;
@@ -17,6 +18,9 @@ interface Linha {
   repeticoes: string;
   carga: string;
   descanso: string;
+  unidade: Unidade;
+  medida: MedidaDaSerie;
+  obs: string;
 }
 
 let proximaChave = 1;
@@ -28,8 +32,13 @@ const paraLinha = (e: Exercicio): Linha => ({
   repeticoes: e.repeticoes ?? "",
   carga: e.cargaKg != null ? String(e.cargaKg).replace(".", ",") : "",
   descanso: e.descansoSeg != null ? String(e.descansoSeg) : "",
+  unidade: e.unidade,
+  medida: e.medida,
+  obs: e.obs ?? "",
 });
-const linhaVazia = (): Linha => ({ chave: proximaChave++, nome: "", series: "3", repeticoes: "", carga: "", descanso: "60" });
+const linhaVazia = (): Linha => ({ chave: proximaChave++, nome: "", series: "3", repeticoes: "", carga: "", descanso: "60", unidade: "kg", medida: "reps", obs: "" });
+// Escolha pequena dentro do rótulo do campo (kg/lb/placas, repetições/segundos).
+const ESCOLHA = "-my-1 rounded-[6px] bg-transparent py-0.5 text-[12.5px] font-bold text-brand outline-none";
 
 const CAMPO = "min-h-11 rounded-[10px] border border-line bg-surface px-2.5 text-[15px] text-ink outline-none focus:border-brand";
 
@@ -82,7 +91,7 @@ export function EditorDoTreinoDoDia({
 
   const salvar = () => {
     // Linhas totalmente vazias são ignoradas.
-    const usadas = linhas.filter((l) => l.nome.trim() || l.repeticoes.trim() || l.carga.trim());
+    const usadas = linhas.filter((l) => l.nome.trim() || l.repeticoes.trim() || l.carga.trim() || l.obs.trim());
     if (usadas.some((l) => !l.nome.trim())) return setAviso({ tipo: "erro", texto: "Escreva o nome de cada exercício." });
     const ex: Exercicio[] = usadas.map((l) => ({
       id: l.id,
@@ -91,6 +100,9 @@ export function EditorDoTreinoDoDia({
       repeticoes: l.repeticoes.trim() || null,
       cargaKg: lerNumero(l.carga),
       descansoSeg: l.descanso ? Number(l.descanso) : null,
+      unidade: l.unidade,
+      medida: l.medida,
+      obs: l.obs.trim() || null,
     }));
     if (ex.some((e) => e.cargaKg != null && Number.isNaN(e.cargaKg))) return setAviso({ tipo: "erro", texto: "Confira as cargas (só números, como 40 ou 12,5)." });
     if (!foco.trim() && ex.length === 0) return setAviso({ tipo: "erro", texto: "Escreva o que será trabalhado ou adicione um exercício." });
@@ -163,26 +175,50 @@ export function EditorDoTreinoDoDia({
                     ))}
                   </select>
                 </label>
-                <label className="flex flex-col gap-0.5 text-[12.5px] font-semibold text-ink-3">
-                  Repetições
+                <div className="flex flex-col gap-0.5 text-[12.5px] font-semibold text-ink-3">
+                  <select
+                    aria-label={`Repetições ou segundos no exercício ${i + 1}`}
+                    value={l.medida}
+                    onChange={(e) => mudar(l.chave, { medida: e.target.value as MedidaDaSerie })}
+                    className={`${ESCOLHA} self-start`}
+                  >
+                    <option value="reps">Repetições ▾</option>
+                    <option value="segundos">Segundos ▾</option>
+                  </select>
                   <input
+                    aria-label={l.medida === "segundos" ? "Segundos" : "Repetições"}
                     value={l.repeticoes}
                     maxLength={20}
                     onChange={(e) => mudar(l.chave, { repeticoes: e.target.value })}
-                    placeholder="10 ou 8-12"
+                    placeholder={l.medida === "segundos" ? "30" : "10 ou 8-12"}
                     className={CAMPO}
                   />
-                </label>
-                <label className="flex flex-col gap-0.5 text-[12.5px] font-semibold text-ink-3">
-                  Carga (kg)
+                </div>
+                <div className="flex flex-col gap-0.5 text-[12.5px] font-semibold text-ink-3">
+                  <span className="flex items-center gap-1">
+                    Carga
+                    <select
+                      aria-label={`Unidade da carga no exercício ${i + 1}`}
+                      value={l.unidade}
+                      onChange={(e) => mudar(l.chave, { unidade: e.target.value as Unidade })}
+                      className={ESCOLHA}
+                    >
+                      {UNIDADES.map((u) => (
+                        <option key={u.valor} value={u.valor}>
+                          ({u.rotulo}) ▾
+                        </option>
+                      ))}
+                    </select>
+                  </span>
                   <input
+                    aria-label="Carga"
                     value={l.carga}
                     inputMode="decimal"
                     onChange={(e) => mudar(l.chave, { carga: e.target.value })}
                     placeholder="—"
                     className={`${CAMPO} tabular-nums`}
                   />
-                </label>
+                </div>
                 <label className="flex flex-col gap-0.5 text-[12.5px] font-semibold text-ink-3">
                   Descanso
                   <select value={l.descanso} onChange={(e) => mudar(l.chave, { descanso: e.target.value })} className={CAMPO}>
@@ -195,6 +231,14 @@ export function EditorDoTreinoDoDia({
                   </select>
                 </label>
               </div>
+              <input
+                aria-label={`Observações do exercício ${i + 1}`}
+                value={l.obs}
+                maxLength={200}
+                onChange={(e) => mudar(l.chave, { obs: e.target.value })}
+                placeholder="Observações (ex.: banco no 3º furo, pegada fechada)"
+                className={`${CAMPO} text-[14px]`}
+              />
               {linhas.length > 1 && (
                 <div className="flex gap-3 text-[13px] font-semibold text-ink-3">
                   {i > 0 && (

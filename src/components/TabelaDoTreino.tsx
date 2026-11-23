@@ -1,4 +1,4 @@
-import { kg, rotuloDescanso, type Exercicio } from "@/lib/treino";
+import { rotuloDescanso, textoDaCarga, type Exercicio } from "@/lib/treino";
 
 /** Decisão 114: os exercícios de um dia, só para ler (séries, repetições, carga e descanso). */
 export function TabelaDoTreino({ exercicios }: { exercicios: Exercicio[] }) {
@@ -10,12 +10,13 @@ export function TabelaDoTreino({ exercicios }: { exercicios: Exercicio[] }) {
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-bold">{e.nome}</span>
             <span className="mt-1 grid grid-cols-3 gap-1.5 text-[13px]">
-              <Dado rotulo="Séries × rep.">
+              <Dado rotulo={e.medida === "segundos" ? "Séries × seg." : "Séries × rep."}>
                 {e.series && e.repeticoes ? `${e.series} × ${e.repeticoes}` : e.series ? `${e.series}` : e.repeticoes || "—"}
               </Dado>
-              <Dado rotulo="Carga">{kg(e.cargaKg) || "—"}</Dado>
+              <Dado rotulo="Carga">{textoDaCarga(e.cargaKg, e.unidade) || "—"}</Dado>
               <Dado rotulo="Descanso">{rotuloDescanso(e.descansoSeg) || "—"}</Dado>
             </span>
+            {e.obs && <span className="mt-1.5 block text-[13.5px] text-ink-2">{e.obs}</span>}
           </span>
         </li>
       ))}

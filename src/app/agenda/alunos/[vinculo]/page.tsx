@@ -133,6 +133,15 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
       {/* Decisão 114: o treino de cada dia de aula (o que trabalha e os exercícios) e a evolução nas aulas. */}
       <TreinoDaFicha dias={[...new Set(matricula?.horarios.map((h) => h.dia) ?? [])]} treino={treino} base={`/agenda/alunos/${vinculo}/treino`} quem="personal" />
       <EvolucaoDasCargas pontos={evolucao} />
+      {/* Decisão 117: relatório do mês (gráficos, total levantado e medidas), para ver e enviar ao aluno. */}
+      <Link
+        href={`/agenda/alunos/${vinculo}/relatorio`}
+        className="flex min-h-12 items-center gap-3 rounded-[16px] border border-line bg-surface px-4 text-[15.5px] font-bold"
+      >
+        <Icone nome="estrela" className="size-5 text-brand" />
+        <span className="flex-1">Relatório do mês</span>
+        <span className="text-ink-3" aria-hidden="true">›</span>
+      </Link>
 
       {/* Decisão 105: ParQ e anamnese (aluno com o app) e a avaliação física. */}
       {!a.semConta && <FormulariosDaFicha vinculoId={vinculo} nome={a.nomeCompleto} whatsapp={a.whatsapp} lista={formularios} />}

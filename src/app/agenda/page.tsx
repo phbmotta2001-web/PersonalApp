@@ -13,7 +13,10 @@ import { PainelDaAula, type DadosDoPainel } from "@/components/PainelDaAula";
 import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { lerFichaDoAluno } from "@/data/convites";
-import { registrosDaAula, treinoCompleto, treinoDoVinculo } from "@/data/treino";
+import { relatoriosDoMes, treinoCompleto, treinoDaAula, treinoDoVinculo } from "@/data/treino";
+import { mesAnterior, nomeDoMes as nomeDoMesDoRelatorio } from "@/lib/relatorio";
+import { IniciarTreino } from "@/components/ControlesDoTreino";
+import { diasComTreino } from "@/lib/treino";
 import { rotuloNivel } from "@/lib/aluno";
 import { aulasParaDecidir, pedidosPendentes, reposicoesPorAluno } from "@/data/aulas";
 import { contarAvisosNaoLidos } from "@/data/avisos";
@@ -92,7 +95,14 @@ async function Conteudo() {
     aulasDeTurmaParaMim(instante(hoje, 0).toISOString(), instante(somarDias(hoje, 1), 0).toISOString()),
     matriculasAtivasPorAluno(),
   ]);
-  const [concluidas, pedidosDeTurma] = await Promise.all([experimentaisConcluidas(), pedidosDeFrequencia()]);
+  // Decisão 117: nos 7 primeiros dias do mês, os relatórios do mês que acabou ainda não enviados.
+  const mesDoRelatorio = mesAnterior(hoje.slice(0, 7));
+  const [concluidas, pedidosDeTurma, relatorios] = await Promise.all([
+    experimentaisConcluidas(),
+    pedidosDeFrequencia(),
+    Number(hoje.slice(8, 10)) <= 7 ? relatoriosDoMes(mesDoRelatorio) : Promise.resolve([]),
+  ]);
+  const relatoriosPorEnviar = relatorios.filter((r) => r.aulas > 0 && !r.enviadoEm).length;
   const paraDecidir = pedidosDeTurma.filter((p) => !p.meu);
   // Decisão 88: aluno que aceitou o convite nos últimos 30 dias e ainda não está na agenda.
   const recemChegados = alunos.filter(
@@ -100,17 +110,20 @@ async function Conteudo() {
   );
   const emAndamento = await aulaEmAndamento(turmasHoje, agora);
   const vindouras = aulas.filter(
-    (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime(),
+    (a) => (a.situacao === "agendada" || a.situacao === "confirmada") && Date.parse(a.fim) > agora.getTime() && !a.treinoEncerrado,
   );
   // Decisão 113: a aula particular que está acontecendo agora vira um painel grande no alto,
   // com o perfil do aluno e o treino do dia; o cartão "próxima aula" passa para a seguinte.
-  const aoVivo = vindouras.find((a) => Date.parse(a.inicio) <= agora.getTime());
+  // Decisão 117: o personal pode começar o treino antes da hora.
+  const aoVivo = vindouras.find((a) => Date.parse(a.inicio) <= agora.getTime() || a.treinoIniciado);
   const painel = aoVivo ? await painelDaAula(aoVivo) : null;
   const [proxima, ...resto] = aoVivo ? vindouras.filter((a) => a !== aoVivo) : vindouras;
   // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
   const focoDaProxima = proxima?.vinculoId
     ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
     : null;
+  // Decisão 117: aula particular com aluno que começa em até 2 horas pode começar antes.
+  const podeIniciar = !!proxima?.vinculoId && Date.parse(proxima.inicio) - agora.getTime() < 2 * 3_600_000;
   const deHoje = resto.filter((a) => emBrasilia(a.inicio).data === hoje);
   const aulasHoje = vindouras.filter((a) => emBrasilia(a.inicio).data === hoje).length;
   const depois = deHoje.length > 0 ? deHoje : resto.slice(0, 3);
@@ -144,7 +157,7 @@ async function Conteudo() {
     return textoDaAula(inicio, null);
   };
 
-  const temPendencia = pedidos.length + decidir.length + avisaram.length + atrasadas.length + recemChegados.length > 0;
+  const temPendencia = pedidos.length + decidir.length + avisaram.length + atrasadas.length + recemChegados.length + relatoriosPorEnviar > 0;
   const precisaDeVoce = (
       <section className={`${temPendencia ? "border-2 border-gold" : "order-1 border border-line lg:order-none"} flex flex-col gap-1 rounded-[20px] bg-surface px-4 py-3`} aria-label="Precisa de você">
         <h2 className="pb-1 text-[16px] font-semibold">Precisa de você</h2>
@@ -175,6 +188,12 @@ async function Conteudo() {
                 <strong>{c.nome.split(" ")[0]}</strong> avisou que pagou {centavosParaReais(c.valorCentavos)}: confirme o recebimento em Financeiro
               </Pendencia>
             ))}
+            {relatoriosPorEnviar > 0 && (
+              <Pendencia href={`/agenda/relatorios?mes=${mesDoRelatorio}`} icone="estrela" tom="text-brand">
+                <strong>Relatórios de {nomeDoMesDoRelatorio(mesDoRelatorio, true)}</strong> prontos: {relatoriosPorEnviar}{" "}
+                {relatoriosPorEnviar === 1 ? "aluno" : "alunos"} para ver e enviar
+              </Pendencia>
+            )}
             {atrasadas.slice(0, 3).map((c) => (
               <Pendencia key={c.id} href={`/agenda/cobrancas/${c.id}`} icone="dinheiro" tom="text-bad">
                 <strong>{c.nome.split(" ")[0]}</strong> · {centavosParaReais(c.valorCentavos)} em atraso
@@ -260,6 +279,7 @@ async function Conteudo() {
               )}
             </div>
             <div className="grid grid-cols-2 gap-2">
+              {podeIniciar && <IniciarTreino aulaId={proxima.id} />}
               <Link
                 href={`/agenda/aula/${proxima.id}`}
                 className="flex min-h-12 items-center justify-center rounded-[14px] bg-on-deep text-[14.5px] font-bold text-deep"
@@ -459,13 +479,15 @@ function Pendencia({ href, icone, tom, children }: { href: string; icone: NomeIc
 async function painelDaAula(a: { id: string; inicio: string; fim: string; local: string | null; vinculoId: string | null; nome: string }): Promise<DadosDoPainel> {
   const base: DadosDoPainel = { quem: "personal", nome: a.nome, inicio: a.inicio, fim: a.fim, local: a.local, aulaId: a.id, foco: null, exercicios: [], registros: [] };
   if (!a.vinculoId) return base;
-  const [ficha, treino, avaliacoes, registros] = await Promise.all([
+  const [ficha, treino, avaliacoes, daAula] = await Promise.all([
     lerFichaDoAluno(a.vinculoId),
     treinoCompleto(a.vinculoId),
     avaliacoesDoVinculo(a.vinculoId),
-    registrosDaAula(a.id),
+    treinoDaAula(a.id),
   ]);
-  const dia = diaDaSemana(emBrasilia(a.inicio).data);
+  // Decisão 117: o treino do dia da semana, a não ser que o personal tenha trocado.
+  const diaPadrao = diaDaSemana(emBrasilia(a.inicio).data);
+  const dia = daAula.dia ?? diaPadrao;
   return {
     ...base,
     nome: ficha?.nomeCompleto ?? a.nome,
@@ -476,7 +498,11 @@ async function painelDaAula(a: { id: string; inicio: string; fim: string; local:
     ultimaAvaliacao: avaliacoes.at(-1) ?? null,
     foco: treino.focos[dia] ?? null,
     exercicios: treino.exercicios[dia] ?? [],
-    registros,
+    registros: daAula.registros,
+    dia,
+    diaPadrao,
+    diaGuardado: daAula.dia,
+    diasComTreino: diasComTreino(treino).map((d) => ({ dia: d, foco: treino.focos[d] ?? null })),
     link: `/agenda/alunos/${a.vinculoId}`,
   };
 }

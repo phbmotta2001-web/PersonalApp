@@ -6,9 +6,18 @@ import { useEffect } from "react";
 // Decisão 113: o Início se atualiza sozinho quando uma aula começa ou termina, para o painel
 // "Aula em andamento" aparecer e sumir sem o usuário puxar a tela. Também atualiza quando o
 // app volta para a frente depois de um desses momentos (o celular pausa a página em segundo plano).
-export function AtualizarNaHora({ momentos }: { momentos: (string | null | undefined)[] }) {
+// Decisão 117: com "aCada", também atualiza de tempo em tempo (o aluno vê quando o personal começa o treino antes).
+export function AtualizarNaHora({ momentos, aCada }: { momentos: (string | null | undefined)[]; aCada?: number }) {
   const router = useRouter();
   const chave = momentos.filter(Boolean).join("|");
+
+  useEffect(() => {
+    if (!aCada) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") router.refresh();
+    }, aCada);
+    return () => window.clearInterval(t);
+  }, [aCada, router]);
 
   useEffect(() => {
     const desde = Date.now();
