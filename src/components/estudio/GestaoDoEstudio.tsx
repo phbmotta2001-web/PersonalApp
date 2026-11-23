@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
   convidarProfessor,
-  encerrarAlunoEstudio,
+  removerAlunoEstudio,
   importarAlunos,
   matricularExperimental,
   removerDaEquipe,
@@ -478,6 +478,7 @@ function Alunos({
                     {!a.comApp && <ConviteDoAlunoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
                     <TurmasDoAluno alunoId={a.id} turmas={estudio.turmas.filter((t) => t.tipo === "turma")} escolhidas={a.turmas} atualizar={atualizar} />
                     {estudio.config.tipo === "estudio" && <MensalidadeDoAluno estudio={estudio} aluno={a} />}
+                    <RemoverAluno alunoId={a.id} nome={a.nome} comApp={a.comApp} atualizar={atualizar} />
                   </div>
                 )}
               </li>
@@ -682,21 +683,60 @@ function TurmasDoAluno({
         </ul>
       )}
       <Aviso>{erro}</Aviso>
+    </div>
+  );
+}
+
+/** Decisão 115: botão vermelho no fim da ficha para remover o aluno do estúdio. */
+function RemoverAluno({ alunoId, nome, comApp, atualizar }: { alunoId: string; nome: string; comApp: boolean; atualizar: () => void }) {
+  const [confirmar, setConfirmar] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [ocupado, iniciar] = useTransition();
+  const primeiro = nome.split(" ")[0];
+
+  if (!confirmar)
+    return (
       <button
         type="button"
-        disabled={ocupado}
-        onClick={() => {
-          if (!confirm("Tirar este aluno do estúdio?")) return;
-          iniciar(async () => {
-            const r = await encerrarAlunoEstudio(alunoId);
-            if (!r.ok) return setErro(r.erro);
-            atualizar();
-          });
-        }}
-        className="self-start text-[14px] font-bold text-ink-3"
+        onClick={() => setConfirmar(true)}
+        className="mt-1 min-h-12 rounded-[13px] bg-bad px-4 text-[15px] font-bold text-white sm:self-start"
       >
-        Tirar do estúdio
+        Remover aluno
       </button>
+    );
+
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[14px] border border-bad/40 bg-surface p-3">
+      <p className="text-[15px] font-bold">Remover {primeiro} do estúdio?</p>
+      <p className="text-[14px] text-ink-2">
+        {comApp
+          ? `${primeiro} usa o app: sai das turmas, da fila e das reposições marcadas e deixa de ver o estúdio no app. O histórico de aulas e pagamentos continua guardado.`
+          : `${primeiro} não usa o app: o cadastro é apagado, com a frequência e as mensalidades. Não dá para desfazer.`}
+      </p>
+      <Aviso>{erro}</Aviso>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() =>
+            iniciar(async () => {
+              try {
+                const r = await removerAlunoEstudio(alunoId);
+                if (!r.ok) return setErro(r.erro);
+                atualizar();
+              } catch {
+                setErro("Não foi possível remover agora. Confira sua internet.");
+              }
+            })
+          }
+          className="min-h-11 rounded-[12px] bg-bad font-bold text-white disabled:opacity-60"
+        >
+          {ocupado ? "Removendo…" : "Remover"}
+        </button>
+        <button type="button" disabled={ocupado} onClick={() => setConfirmar(false)} className="min-h-11 rounded-[12px] border border-line font-bold">
+          Voltar
+        </button>
+      </div>
     </div>
   );
 }

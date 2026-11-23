@@ -746,10 +746,15 @@ export async function salvarTurmasDoAluno(alunoId: string, turmas: string[]): Pr
   return error ? { ok: false, erro: doBanco(error.message, "Não foi possível salvar as turmas.") } : { ok: true };
 }
 
-export async function encerrarAlunoEstudio(alunoId: string): Promise<Resposta> {
+/**
+ * Decisão 115: remove o aluno do estúdio. Sem conta no app, ele é apagado; com o app, sai das
+ * turmas e perde a aba do estúdio, mas o histórico fica.
+ */
+export async function removerAlunoEstudio(alunoId: string): Promise<{ ok: true; como: "excluido" | "encerrado" } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("encerrar_aluno_estudio", { p_aluno: alunoId });
-  return error ? { ok: false, erro: doBanco(error.message, "Não foi possível encerrar o aluno.") } : { ok: true };
+  const { data, error } = await supabase.rpc("remover_aluno_estudio", { p_aluno: alunoId });
+  if (error) return { ok: false, erro: doBanco(error.message, "Não foi possível remover o aluno.") };
+  return { ok: true, como: data === "excluido" ? "excluido" : "encerrado" };
 }
 
 export async function fazerChamada(aulaId: string, marcas: { aluno: string; situacao: "presente" | "falta" }[]): Promise<Resposta> {
