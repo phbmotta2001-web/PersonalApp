@@ -9,6 +9,7 @@ import { aniversariantesDoMes } from "@/data/convites";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { soNoEstudio } from "@/data/so-estudio";
 import { lerExpediente, listarBloqueios } from "@/data/expediente";
+import { BloquearHorario } from "@/components/agenda/BloquearHorario";
 import { aulasDeTurmaParaMim, type AulaDeTurma } from "@/data/estudio";
 import { lerRegraDeFeriados } from "@/data/feriados";
 import { listarAulas, matriculasSuspensas } from "@/data/matriculas";
@@ -323,9 +324,10 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
             </Link>
           )}
           {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).length > 0 && (
-            <p className="rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold">
-              Bloqueado: {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).join(", ")}
-            </p>
+            <Link href="/agenda/bloqueios" className="flex items-center gap-2 rounded-[12px] bg-gold-soft px-3 py-2 text-[13px] text-gold">
+              <span className="flex-1">Bloqueado: {doDia.bloqueios.filter((b) => !b.startsWith("Feriado: ")).join(", ")}</span>
+              <span className="font-semibold">desfazer ›</span>
+            </Link>
           )}
           {faixas.length === 0 && !soEstudio && (
             <p className="text-[14px] text-ink-3">
@@ -370,9 +372,12 @@ async function Conteudo({ searchParams }: { searchParams: PageProps<"/agenda/cal
                         )}
                       </Link>
                     ) : l.tipo === "livre" ? (
-                      <Link href={novaAula(l.min)} className="flex min-h-9 items-center gap-1.5 text-[14px] text-ink-3">
-                        livre <span className="font-semibold text-brand">· marcar aula</span>
-                      </Link>
+                      <span className="flex items-center gap-1">
+                        <Link href={novaAula(l.min)} className="flex min-h-9 flex-1 items-center gap-1.5 text-[14px] text-ink-3">
+                          livre <span className="font-semibold text-brand">· marcar aula</span>
+                        </Link>
+                        <BloquearHorario dia={dia} min={l.min} duracao={duracao} />
+                      </span>
                     ) : l.tipo === "pausa" && a ? (
                       <Link
                         href={novaAula(l.min)}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { Icone, type NomeIcone } from "../Icone";
+import { useTecladoAberto } from "../useTecladoAberto";
 
 // Decisão de 22/10/2026: cinco abas (a Agenda vem logo depois do Início, mais perto do polegar).
 const ABAS: { href: string; rotulo: string; icone: NomeIcone }[] = [
@@ -31,11 +32,12 @@ function BarraNoCaminho({ soEstudio }: { soEstudio: boolean }) {
 }
 
 function Barra({ caminho, soEstudio }: { caminho: string; soEstudio: boolean }) {
+  const teclado = useTecladoAberto();
   const abas = soEstudio ? ABAS.filter((a) => DO_ESTUDIO.includes(a.href)) : ABAS;
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-20 border-t lg:hidden border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className={`${teclado ? "hidden" : ""} fixed inset-x-0 bottom-0 z-20 border-t lg:hidden border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur`}
     >
       <ul className="mx-auto grid max-w-md" style={{ gridTemplateColumns: `repeat(${abas.length}, minmax(0, 1fr))` }}>
         {abas.map((a) => {

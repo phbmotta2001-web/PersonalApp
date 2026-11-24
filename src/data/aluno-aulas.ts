@@ -75,3 +75,31 @@ export async function alunoDesistirPedido(aulaId: string): Promise<{ ok: true } 
   const { error } = await supabase.rpc("aluno_desistir_pedido", { p_aula: aulaId });
   return error ? { ok: false, erro: erroDoBanco(error.message, "Não foi possível desistir. Tente de novo.") } : { ok: true };
 }
+
+// ─── Decisão 118: regras do personal no primeiro acesso ────────────────────
+
+export interface RegrasPendentes {
+  vinculoId: string;
+  cancelamentoH: number;
+  reposicaoH: number;
+  pausaDias: number;
+}
+
+/** Regras dos personais que o aluno ainda não confirmou (vazio se a migração 75 ainda não rodou). */
+export async function regrasPendentes(): Promise<RegrasPendentes[]> {
+  const supabase = await criarClienteSupabase();
+  const { data, error } = await supabase.rpc("regras_pendentes");
+  if (error || !Array.isArray(data)) return [];
+  return (data as { vinculo_id: string; cancelamento_h: number; reposicao_h: number; pausa_dias: number }[]).map((r) => ({
+    vinculoId: r.vinculo_id,
+    cancelamentoH: r.cancelamento_h,
+    reposicaoH: r.reposicao_h,
+    pausaDias: r.pausa_dias,
+  }));
+}
+
+export async function confirmarRegras(vinculoId: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.rpc("confirmar_regras", { p_vinculo: vinculoId });
+  return error ? { ok: false, erro: "Não foi possível confirmar. Tente de novo." } : { ok: true };
+}

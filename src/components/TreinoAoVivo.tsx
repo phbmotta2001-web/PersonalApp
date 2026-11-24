@@ -21,6 +21,12 @@ interface Estado {
 
 const texto = (n: number | null) => (n == null ? "" : String(n).replace(".", ","));
 const primeiroNumero = (r: string | null) => (r ?? "").match(/\d+/)?.[0] ?? "";
+/** Decisão 118: mudou em relação ao treino montado ("40" e "40,0" contam como iguais). */
+const mudou = (feito: string, previsto: string) => {
+  const a = lerNumero(feito);
+  const b = lerNumero(previsto);
+  return a !== b && !(a != null && b != null && Number.isNaN(a) && Number.isNaN(b));
+};
 // Guarda quando a linha mudou aqui (fora do render, para o lint do React).
 const marcarMudanca = (m: Map<string, number>, id: string) => m.set(id, Date.now());
 
@@ -186,6 +192,7 @@ export function TreinoAoVivo({
                       rotulo={`Carga da ${k + 1}ª série (${unidadeCurta})`}
                       sufixo={unidadeCurta}
                       valor={l.carga}
+                      alterado={mudou(l.carga, texto(e.cargaKg))}
                       decimal
                       aoFocar={() => (editando.current = id)}
                       aoMudar={(v) => mudarSerie(id, k, { carga: v })}
@@ -198,6 +205,7 @@ export function TreinoAoVivo({
                       rotulo={`${e.medida === "segundos" ? "Segundos" : "Repetições"} da ${k + 1}ª série`}
                       sufixo={medida}
                       valor={l.reps}
+                      alterado={mudou(l.reps, primeiroNumero(e.repeticoes))}
                       aoFocar={() => (editando.current = id)}
                       aoMudar={(v) => mudarSerie(id, k, { reps: v })}
                       aoSair={() => {
@@ -269,6 +277,7 @@ function Campo({
   rotulo,
   sufixo,
   valor,
+  alterado,
   decimal,
   aoFocar,
   aoMudar,
@@ -277,6 +286,8 @@ function Campo({
   rotulo: string;
   sufixo: string;
   valor: string;
+  /** Diferente do que estava no treino (carga ou repetições mudaram). */
+  alterado?: boolean;
   decimal?: boolean;
   aoFocar: () => void;
   aoMudar: (v: string) => void;
@@ -291,7 +302,9 @@ function Campo({
         onFocus={aoFocar}
         onChange={(ev) => aoMudar(ev.target.value)}
         onBlur={aoSair}
-        className="min-h-12 w-full rounded-[12px] border border-line bg-surface pr-12 pl-3 text-[18px] font-bold text-ink tabular-nums outline-none focus:border-brand"
+        className={`min-h-12 w-full rounded-[12px] border pr-12 pl-3 text-[18px] font-bold text-ink tabular-nums outline-none transition-colors focus:border-brand ${
+          alterado ? "border-gold/50 bg-gold-soft" : "border-line bg-surface"
+        }`}
       />
       <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[13px] font-semibold text-ink-3">{sufixo}</span>
     </label>

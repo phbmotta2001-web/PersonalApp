@@ -117,7 +117,10 @@ async function Conteudo() {
   // Decisão 117: o personal pode começar o treino antes da hora.
   const aoVivo = vindouras.find((a) => Date.parse(a.inicio) <= agora.getTime() || a.treinoIniciado);
   const painel = aoVivo ? await painelDaAula(aoVivo) : null;
-  const [proxima, ...resto] = aoVivo ? vindouras.filter((a) => a !== aoVivo) : vindouras;
+  const seguintes = aoVivo ? vindouras.filter((a) => a !== aoVivo) : vindouras;
+  // Decisão 118: o cartão grande mostra só a próxima aula de hoje; sem mais aulas hoje, "bom descanso".
+  const proxima = seguintes[0] && emBrasilia(seguintes[0].inicio).data === hoje ? seguintes[0] : undefined;
+  const resto = proxima ? seguintes.slice(1) : seguintes;
   // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
   const focoDaProxima = proxima?.vinculoId
     ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
@@ -126,7 +129,8 @@ async function Conteudo() {
   const podeIniciar = !!proxima?.vinculoId && Date.parse(proxima.inicio) - agora.getTime() < 2 * 3_600_000;
   const deHoje = resto.filter((a) => emBrasilia(a.inicio).data === hoje);
   const aulasHoje = vindouras.filter((a) => emBrasilia(a.inicio).data === hoje).length;
-  const depois = deHoje.length > 0 ? deHoje : resto.slice(0, 3);
+  // Embaixo: o resto de hoje e as próximas dos dias seguintes (pelo menos 3).
+  const depois = resto.slice(0, Math.max(3, deHoje.length));
   const avisaram = cobrancas.filter((c) => c.situacao === "aberta" && c.alunoAvisouEm);
   const atrasadas = cobrancas.filter((c) => c.situacao === "aberta" && !c.alunoAvisouEm && situacaoDaCobranca(c, hoje) === "atrasada");
   const nomeDoMes = new Date(`${hoje}T12:00:00Z`).toLocaleDateString("pt-BR", { month: "short", timeZone: "UTC" }).replace(".", "");
@@ -235,7 +239,7 @@ async function Conteudo() {
 
       {/* Decisão 108: tudo o que precisa do professor fica em cima, antes de qualquer outra coisa. */}
       {/* Atualiza sozinho quando a aula particular (ou a turma do estúdio) começa ou termina. */}
-      <AtualizarNaHora momentos={[aoVivo?.fim, proxima?.inicio, ...turmasHoje.flatMap((t) => [t.inicio, t.fim])]} />
+      <AtualizarNaHora momentos={[aoVivo?.fim, seguintes[0]?.inicio, ...turmasHoje.flatMap((t) => [t.inicio, t.fim])]} />
       {painel && <PainelDaAula d={painel} />}
       {emAndamento && <AulaEmAndamento aula={emAndamento} />}
       {temPendencia && precisaDeVoce}
@@ -307,12 +311,15 @@ async function Conteudo() {
           </>
         ) : (
           <>
-            <p className="font-display text-[20px] font-extrabold">Nenhuma aula nos próximos 7 dias</p>
+            <div>
+              <p className="font-display text-[24px] leading-tight font-extrabold">Sem mais aulas hoje</p>
+              <p className="mt-1 text-[15px] text-on-deep-2">Bom descanso, {personal.nomeCompleto.split(" ")[0]}!</p>
+            </div>
             <Link
-              href="/agenda/aula/nova"
-              className="flex min-h-12 items-center justify-center rounded-[14px] bg-on-deep text-[14.5px] font-bold text-deep"
+              href="/agenda/calendario"
+              className="flex min-h-12 items-center justify-center rounded-[14px] border border-on-deep/30 text-[14.5px] font-bold"
             >
-              Marcar uma aula
+              Ver agenda
             </Link>
           </>
         )}
@@ -322,7 +329,7 @@ async function Conteudo() {
         <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Próximas aulas">
           <div className="flex items-center gap-2 pb-1">
             <h2 className="flex-1 text-[16px] font-semibold">
-              {deHoje.length > 0 ? "Ainda hoje" : "Próximas"}
+              {depois.every((a) => emBrasilia(a.inicio).data === hoje) ? "Ainda hoje" : "Próximas aulas"}
               {aulasHoje > 0 && (
                 <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-[13px] font-bold text-ink-2">
                   {aulasHoje} aula{aulasHoje > 1 ? "s" : ""} hoje
@@ -340,7 +347,7 @@ async function Conteudo() {
                   {/* Hoje: só a hora. Outros dias: o dia em cima e a hora embaixo (não cabem lado a lado). */}
                   <span className="flex w-[64px] shrink-0 flex-col leading-tight tabular-nums">
                     <span className="text-[15px] font-extrabold">{emBrasilia(a.inicio).hora}</span>
-                    {deHoje.length === 0 && <span className="text-[12.5px] font-semibold text-ink-3">{diaCurto(a.inicio)}</span>}
+                    {emBrasilia(a.inicio).data !== hoje && <span className="text-[12.5px] font-semibold text-ink-3">{diaCurto(a.inicio)}</span>}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold">{a.nome}</span>

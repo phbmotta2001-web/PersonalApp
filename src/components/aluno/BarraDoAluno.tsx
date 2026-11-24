@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { Icone, type NomeIcone } from "../Icone";
+import { useTecladoAberto } from "../useTecladoAberto";
 
 // Redesign "Foco no hoje" (22/10/2026): o aluno também tem abas embaixo, juntando
 // todos os personais dele em cada uma.
@@ -28,10 +29,11 @@ function BarraNoCaminho() {
 }
 
 function Barra({ caminho }: { caminho: string }) {
+  const teclado = useTecladoAberto();
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"
+      className={`${teclado ? "hidden" : ""} fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur`}
     >
       <ul className="mx-auto grid max-w-md grid-cols-4">
         {ABAS.map((a) => {

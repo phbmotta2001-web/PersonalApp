@@ -235,7 +235,14 @@ export function horariosLivres(
       diaSemana,
       livres,
       trabalha: doDia.length > 0,
-      bloqueios: bloqueiosDoDia.map((p) => p.motivo.trim()).filter(Boolean),
+      // Sem motivo: o horário ("14:00–15:00") ou "dia inteiro" (decisão 118: bloqueio rápido pela Agenda).
+      bloqueios: bloqueiosDoDia.map(
+        (p) =>
+          p.motivo.trim() ||
+          (p.ini <= inicioDoDia && p.fim >= fimDoDia
+            ? "dia inteiro"
+            : `${emBrasilia(new Date(p.ini).toISOString()).hora}–${emBrasilia(new Date(p.fim).toISOString()).hora}`),
+      ),
     });
   }
   return resultado;

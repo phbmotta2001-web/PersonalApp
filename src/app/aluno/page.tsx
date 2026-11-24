@@ -10,6 +10,8 @@ import { AtualizarNaHora } from "@/components/AtualizarNaHora";
 import { avaliacoesDoVinculo } from "@/data/avaliacoes";
 import { meusRelatorios, treinoCompleto, treinoDaAula, treinoDoVinculo } from "@/data/treino";
 import { nomeDoMes } from "@/lib/relatorio";
+import { regrasPendentes } from "@/data/aluno-aulas";
+import { RegrasDoPersonal } from "@/components/aluno/RegrasDoPersonal";
 import { rotuloNivel } from "@/lib/aluno";
 import { Carregando } from "@/components/Formulario";
 import { Icone } from "@/components/Icone";
@@ -55,7 +57,7 @@ async function Conteudo() {
   const conta = await exigirAluno("/aluno");
   const hoje = agoraEmBrasilia().data;
   const agora = new Date();
-  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados, aoVivo, relatorios] = await Promise.all([
+  const [personais, suspensas, estudiosDoAluno, fila, pedidos, formularios, comunicados, aoVivo, relatorios, regrasNovas] = await Promise.all([
     listarMeusPersonais(),
     matriculasSuspensas(),
     meusEstudiosComoAluno(),
@@ -65,6 +67,7 @@ async function Conteudo() {
     meusComunicados(),
     aulaAgoraDoAluno(),
     meusRelatorios(),
+    regrasPendentes(),
   ]);
   // Decisão 117: relatório do mês que o personal enviou e o aluno ainda não abriu (sem notificação no celular).
   const relatoriosNovos = relatorios.filter((r) => !r.vistoEm);
@@ -187,6 +190,10 @@ async function Conteudo() {
         ))}
 
       {/* Decisão 108: tudo o que precisa do aluno fica em cima, antes de qualquer outra coisa. */}
+      {/* Decisão 118: no primeiro acesso, as regras do personal. */}
+      {regrasNovas.map((r) => (
+        <RegrasDoPersonal key={r.vinculoId} regras={r} nome={personais.find((p) => p.vinculoId === r.vinculoId)?.nome ?? "seu personal"} />
+      ))}
       {relatoriosNovos.map((r) => (
         <Link
           key={"rel" + r.vinculoId + r.mes}
