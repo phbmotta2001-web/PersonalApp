@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { entrar } from "@/data/conta";
 import { destinoSeguro } from "@/lib/destino";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
+import { ReenviarEmail } from "./ReenviarEmail";
 
 export function FormEntrar() {
   const parametros = useSearchParams();
@@ -77,6 +78,8 @@ export function FormEntrar() {
       </Link>
 
       <Aviso>{erro}</Aviso>
+      {/* Decisão 119: e-mail ainda não confirmado: dá para pedir o link de novo. */}
+      {erro?.startsWith("Confirme seu e-mail") && <ReenviarEmail email={email} voltar={voltar} />}
 
       <button type="submit" disabled={entrando || !email || !senha} className={ESTILO_BOTAO_PRINCIPAL}>
         {entrando ? "Entrando…" : "Entrar"}

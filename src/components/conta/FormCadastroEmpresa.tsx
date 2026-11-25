@@ -1,5 +1,6 @@
 "use client";
 
+import { ReenviarEmail } from "@/components/conta/ReenviarEmail";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -72,8 +73,9 @@ export function FormCadastroEmpresa({ termos = false }: { termos?: boolean }) {
           <li>
             Abra o link <b>neste mesmo navegador</b>.
           </li>
-          <li>Não chegou? Procure no spam. A mensagem pode levar alguns minutos.</li>
+          <li>Não chegou? Procure no spam (no Hotmail e no Outlook, na pasta Lixo Eletrônico). A mensagem pode levar alguns minutos.</li>
         </ul>
+        <ReenviarEmail email={enviadoPara} voltar="/estudio" />
         <Link href="/entrar" className="font-semibold text-brand">
           Ir para Entrar
         </Link>

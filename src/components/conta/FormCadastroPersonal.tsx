@@ -1,5 +1,6 @@
 "use client";
 
+import { ReenviarEmail } from "@/components/conta/ReenviarEmail";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -63,8 +64,9 @@ export function FormCadastroPersonal({ termos = false }: { termos?: boolean } = 
         </p>
         <ul className="list-disc space-y-1 pl-5 text-[14px] text-ink-3">
           <li>Abra o link <b>neste mesmo navegador</b>.</li>
-          <li>Não chegou? Procure no spam. A mensagem pode levar alguns minutos.</li>
+          <li>Não chegou? Procure no spam (no Hotmail e no Outlook, na pasta Lixo Eletrônico). A mensagem pode levar alguns minutos.</li>
         </ul>
+        <ReenviarEmail email={enviadoPara} voltar="/agenda" />
         <Link href="/entrar" className="font-semibold text-brand">
           Ir para Entrar
         </Link>

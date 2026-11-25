@@ -1,5 +1,6 @@
 "use client";
 
+import { ReenviarEmail } from "@/components/conta/ReenviarEmail";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrarProfessorDoEstudio } from "@/data/conta";
@@ -34,6 +35,8 @@ export function FormCadastroProfessor({ codigo, termos = false }: { codigo: stri
         <p className="text-[14px] text-ink-2">
           Enviamos um link de confirmação para <b>{enviadoPara}</b>. Abra o link <b>neste mesmo navegador</b> e toque em Entrar na equipe.
         </p>
+        <p className="text-[13.5px] text-ink-3">Não chegou? Procure no spam (no Hotmail e no Outlook, na pasta Lixo Eletrônico). A mensagem pode levar alguns minutos.</p>
+        <ReenviarEmail email={enviadoPara} voltar={`/estudio/convite/${codigo}`} />
       </div>
     );
 

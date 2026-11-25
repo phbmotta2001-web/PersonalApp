@@ -263,6 +263,26 @@ export async function pedirNovaSenha(email: string): Promise<Resposta> {
   return error ? { ok: false, erro: traduzirErro(error.message) } : { ok: true };
 }
 
+/**
+ * Reenvia o e-mail de confirmação do cadastro (o primeiro às vezes não chega, ou o Hotmail segura).
+ * O Supabase só deixa pedir de novo depois de cerca de 1 minuto.
+ */
+export async function reenviarConfirmacao(email: string, voltar?: string): Promise<Resposta> {
+  const endereco = typeof email === "string" ? email.trim() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(endereco)) return { ok: false, erro: "Informe um e-mail válido." };
+  const supabase = await criarClienteSupabase();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: endereco,
+    options: { emailRedirectTo: `${await origemDoSite()}/auth/confirmar?voltar=${encodeURIComponent(destinoSeguro(voltar))}` },
+  });
+  if (!error) return { ok: true };
+  const m = error.message.toLowerCase();
+  if (m.includes("security purposes") || m.includes("rate limit") || m.includes("too many"))
+    return { ok: false, erro: "Espere um minuto e peça de novo." };
+  return { ok: false, erro: traduzirErro(error.message) };
+}
+
 /** Grava a senha nova de quem abriu o link do e-mail. */
 export async function definirNovaSenha(senha: string): Promise<Resposta> {
   if (typeof senha !== "string" || senha.length < 8) return { ok: false, erro: "Use pelo menos 8 caracteres." };
