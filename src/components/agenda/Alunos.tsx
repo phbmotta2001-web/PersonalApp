@@ -62,7 +62,7 @@ export function Alunos({
   origem: string;
   detalhes: Record<string, DetalheDoAluno>;
   /** Alunos das turmas que ele dá em cada estúdio: uma opção com o nome do estúdio nos filtros. */
-  estudios?: { estudio: string; alunos: { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean }[] }[];
+  estudios?: { estudio: string; alunos: { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean; jaUsaOApp: boolean }[] }[];
 }) {
   const router = useRouter();
   // No computador a lista fica ao lado da ficha: destaca o aluno aberto.
@@ -251,7 +251,7 @@ export function Alunos({
           ) : (
             <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5" aria-label={`Alunos do ${doEstudio.estudio}`}>
               {doEstudioVisiveis.map((a) => (
-                <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} convite={a.comApp ? null : { whatsapp: a.whatsapp, estudio: doEstudio.estudio }} />
+                <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} convite={a.comApp ? null : { whatsapp: a.whatsapp, estudio: doEstudio.estudio, jaUsa: a.jaUsaOApp }} />
               ))}
             </ul>
           )

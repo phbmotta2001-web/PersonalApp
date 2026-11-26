@@ -75,6 +75,7 @@ async function Conteudo({
       nome: a.nome,
       whatsapp: a.whatsapp,
       comApp: a.comApp,
+      jaUsaOApp: a.jaUsaOApp,
       total: a.turmas.filter((t) => deTurma.has(t)).length,
       comigo: a.turmas.filter((t) => minhasIds.has(t)).length,
     }))

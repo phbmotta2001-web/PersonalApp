@@ -439,7 +439,7 @@ function Alunos({
                   </span>
                 </button>
                 {/* Decisão 122: sem app, o convite fica ao lado do nome. */}
-                {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
+                {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} jaUsa={a.jaUsaOApp} />}
                 </div>
                 {p && (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

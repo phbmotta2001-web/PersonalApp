@@ -13,7 +13,7 @@ export function MeusAlunosNoEstudio({
   alunos,
   estudio,
 }: {
-  alunos: { id: string; nome: string; comigo: number; total: number; whatsapp: string | null; comApp: boolean }[];
+  alunos: { id: string; nome: string; comigo: number; total: number; whatsapp: string | null; comApp: boolean; jaUsaOApp: boolean }[];
   estudio: string;
 }) {
   const [aberto, setAberto] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export function MeusAlunosNoEstudio({
                   {aberto === a.id ? "▴" : "▾"}
                 </span>
               </button>
-              {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio} />}
+              {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio} jaUsa={a.jaUsaOApp} />}
               </div>
               {aberto === a.id && (
                 <>

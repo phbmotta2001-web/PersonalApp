@@ -148,6 +148,8 @@ export interface AlunoDoEstudio {
   nome: string;
   whatsapp: string | null;
   comApp: boolean;
+  /** Decisão 123: ainda não entrou pelo link, mas o WhatsApp é de quem já tem conta no P-Bell. */
+  jaUsaOApp: boolean;
   turmas: string[];
   /** Exceção à tabela, em centavos. */
   valorMensal: number | null;
@@ -202,7 +204,7 @@ export interface ExtraDoEstudio {
 export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | null> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return null;
-  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }, { data: planos }, { data: experimentais }] = await Promise.all([
+  const [{ data: e }, { data: papel }, { data: equipe }, { data: turmas }, { data: alunos }, { data: matriculas }, { data: membros }, { data: precos }, { data: funcionamento }, { data: extras }, { data: planos }, { data: experimentais }, { data: usamOApp }] = await Promise.all([
     supabase
       .from("estudios")
       .select(
@@ -247,7 +249,9 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       .select("data, professor_id, resultado, estudio_aluno_id, aulas_turma(inicio, professor_id), estudio_alunos(nome, whatsapp, aluno_id, situacao)")
       .eq("estudio_id", estudioId)
       .order("data"),
+    supabase.rpc("alunos_do_estudio_que_usam_o_app", { p_estudio: estudioId }),
   ]);
+  const jaUsam = new Set(((usamOApp ?? []) as unknown as string[]).map(String));
   const valoresDe = (v: { valor_hora_centavos: number | null; valor_aula_centavos: number | null; valor_por_aluno_centavos: number | null; percentual: number | string | null } | undefined): ValoresDePagamento => ({
     valorHora: v?.valor_hora_centavos ?? null,
     valorAula: v?.valor_aula_centavos ?? null,
@@ -313,6 +317,7 @@ export async function lerEstudio(estudioId: string): Promise<EstudioCompleto | n
       nome: a.nome,
       whatsapp: a.whatsapp,
       comApp: a.aluno_id != null,
+      jaUsaOApp: jaUsam.has(a.id),
       turmas: doAluno(a.id),
       valorMensal: a.valor_mensal_centavos,
       diaVencimento: a.dia_vencimento,
@@ -431,14 +436,14 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
 }
 
 /** Alunos das turmas que o personal logado dá, por estúdio (para a aba Alunos). */
-type AlunoDaMinhaTurma = { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean };
+type AlunoDaMinhaTurma = { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean; jaUsaOApp: boolean };
 
 export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos: AlunoDaMinhaTurma[] }[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];
   const { data: turmas } = await supabase
     .from("turmas")
-    .select("id, modalidade, dia_semana, inicio_min, estudios(nome)")
+    .select("id, estudio_id, modalidade, dia_semana, inicio_min, estudios(nome)")
     .eq("professor_id", id)
     .eq("ativa", true);
   if (!turmas?.length) return [];
@@ -449,6 +454,14 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
       "turma_id",
       turmas.map((t) => t.id),
     );
+  // Decisão 123: quem ainda não entrou pelo link, mas já usa o P-Bell.
+  const jaUsam = new Set(
+    (
+      await Promise.all(
+        [...new Set(turmas.map((t) => t.estudio_id as string))].map((e) => supabase.rpc("alunos_do_estudio_que_usam_o_app", { p_estudio: e })),
+      )
+    ).flatMap((r) => ((r.data ?? []) as unknown as string[]).map(String)),
+  );
   const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const rotulo = new Map(
     turmas.map((t) => [
@@ -463,7 +476,7 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
     if (!x || x.situacao !== "ativo") continue;
     const estudio = estudioDa.get(m.turma_id)!;
     const g = grupos.get(estudio) ?? new Map();
-    const atual = g.get(x.id) ?? { id: x.id, nome: x.nome, turmas: [], whatsapp: x.whatsapp, comApp: x.aluno_id != null };
+    const atual = g.get(x.id) ?? { id: x.id, nome: x.nome, turmas: [], whatsapp: x.whatsapp, comApp: x.aluno_id != null, jaUsaOApp: jaUsam.has(x.id) };
     atual.turmas.push(rotulo.get(m.turma_id)!);
     g.set(x.id, atual);
     grupos.set(estudio, g);

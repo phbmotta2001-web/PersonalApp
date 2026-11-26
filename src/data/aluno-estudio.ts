@@ -268,7 +268,7 @@ export async function cadastrarAlunoPelaEquipe(
   nome: string,
   whatsapp: string,
   turmas: string[],
-): Promise<{ ok: true; link: string } | { ok: false; erro: string }> {
+): Promise<{ ok: true; link: string; jaUsa: boolean } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("cadastrar_aluno_pela_equipe", {
     p_estudio: estudioId,
@@ -277,7 +277,11 @@ export async function cadastrarAlunoPelaEquipe(
     p_turmas: turmas,
   });
   if (error || !data) return { ok: false, erro: doBanco(error?.message, "Não foi possível cadastrar o aluno.") };
-  return { ok: true, link: `${await origemDoSite()}/estudio/aluno/${(data as { codigo: string }).codigo}` };
+  const r = data as { codigo: string; aluno: string };
+  // Decisão 123: o WhatsApp é de quem já usa o P-Bell? Então o convite é só para a turma.
+  const { data: usam } = await supabase.rpc("alunos_do_estudio_que_usam_o_app", { p_estudio: estudioId });
+  const jaUsa = ((usam ?? []) as unknown as string[]).map(String).includes(String(r.aluno));
+  return { ok: true, link: `${await origemDoSite()}/estudio/aluno/${r.codigo}`, jaUsa };
 }
 
 // ─── Link de alunos do estúdio (decisão 95) ───────────────────────────────────

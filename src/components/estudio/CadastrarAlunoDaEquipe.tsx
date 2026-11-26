@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { cadastrarAlunoPelaEquipe } from "@/data/aluno-estudio";
+import { mensagemDoConviteDoEstudio } from "../ConvidarParaOPBell";
 import { linkWhatsapp } from "@/lib/convite";
 import { DIAS, minParaHora } from "@/lib/expediente";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_CAIXA } from "../Formulario";
@@ -42,7 +43,7 @@ export function CadastrarAlunoDaEquipe({
     const igual = primeiro && opcoes.find((t) => t.inicioMin === primeiro.inicioMin && t.livres > 0);
     setPorDia({ ...porDia, [d]: (igual ?? opcoes.find((t) => t.livres > 0) ?? opcoes[0])?.id ?? "" });
   };
-  const [feito, setFeito] = useState<{ nome: string; whatsapp: string; link: string } | null>(null);
+  const [feito, setFeito] = useState<{ nome: string; whatsapp: string; link: string; jaUsa: boolean } | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
@@ -64,15 +65,17 @@ export function CadastrarAlunoDaEquipe({
     );
 
   if (feito) {
-    const mensagem = `Olá, ${feito.nome.split(" ")[0]}! O ${estudioNome} usa o P-Bell: veja a agenda com as vagas, avise suas faltas e marque reposições. Entre por este link: ${feito.link}`;
+    const mensagem = mensagemDoConviteDoEstudio(feito.nome, estudioNome, feito.link, feito.jaUsa);
     return (
       <>
       <section className="flex flex-col gap-3 rounded-[20px] border border-estudio/40 bg-surface p-4" aria-label="Aluno cadastrado">
         <p className="font-bold">{feito.nome} está no estúdio.</p>
-        <p className="text-[14px] text-ink-2">Mande o link do app (vale 14 dias). A coordenação foi avisada.</p>
+        <p className="text-[14px] text-ink-2">
+          {feito.jaUsa ? "Já usa o P-Bell: mande o link para entrar na turma" : "Mande o link do app"} (vale 14 dias). A coordenação foi avisada.
+        </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2 font-bold">
           <a href={linkWhatsapp(feito.whatsapp, mensagem)} target="_blank" rel="noreferrer" className="text-brand">
-            Enviar no WhatsApp
+            {feito.jaUsa ? "Convidar para a turma" : "Enviar no WhatsApp"}
           </a>
           <button
             type="button"
@@ -175,7 +178,7 @@ export function CadastrarAlunoDaEquipe({
               setErro(null);
               const r = await cadastrarAlunoPelaEquipe(estudioId, nome, zap, escolhidas.filter((id) => (turmas.find((t) => t.id === id)?.livres ?? 0) > 0));
               if (!r.ok) return setErro(r.erro);
-              setFeito({ nome: nome.trim(), whatsapp: zap, link: r.link });
+              setFeito({ nome: nome.trim(), whatsapp: zap, link: r.link, jaUsa: r.jaUsa });
               router.refresh();
             })
           }

@@ -15,7 +15,7 @@ export function AlunoDoEstudioNaLista({
   nome: string;
   turmas: string;
   /** Sem app (decisão 122): "Convidar para o P-Bell" ao lado do nome. */
-  convite?: { whatsapp: string | null; estudio: string } | null;
+  convite?: { whatsapp: string | null; estudio: string; jaUsa: boolean } | null;
 }) {
   const [aberto, setAberto] = useState(false);
   return (
@@ -33,7 +33,7 @@ export function AlunoDoEstudioNaLista({
           {aberto ? "▴" : "▾"}
         </span>
       </button>
-      {convite && <ConvidarParaOPBellNoEstudio alunoId={id} nome={nome} whatsapp={convite.whatsapp} estudio={convite.estudio} />}
+      {convite && <ConvidarParaOPBellNoEstudio alunoId={id} nome={nome} whatsapp={convite.whatsapp} estudio={convite.estudio} jaUsa={convite.jaUsa} />}
       </div>
       {aberto && (
         <>
