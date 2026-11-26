@@ -73,7 +73,7 @@ export async function ListaDeAlunos() {
 
   return (
     <>
-      <h1 className="px-[18px] pt-5 text-[24px] font-extrabold">Alunos</h1>
+      <h1 className="larga-conteudo px-[18px] pt-5 text-[24px] font-extrabold">Alunos</h1>
       {online > 0 && (
         <Link href="/agenda/online" className="mx-[18px] mt-2 flex items-center gap-2 text-[14px] font-semibold text-info lg:hidden">
           <Icone nome="conversa" className="size-4" /> Acompanhamento online e check-ins ›

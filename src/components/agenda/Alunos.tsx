@@ -104,9 +104,9 @@ export function Alunos({
   }
 
   return (
-    <div className="flex flex-col gap-5 px-[18px] pt-2 pb-6">
+    <div className="larga-conteudo flex flex-col gap-5 px-[18px] pt-2 pb-6">
       {novo && (
-        <section className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
+        <section className="larga-estreito flex flex-col gap-3 rounded-[20px] border-[1.5px] border-brand bg-surface p-4">
           <p className="font-bold">Convite criado para {novo.nome}</p>
           <p className="text-[14px] text-ink-3">
             Envie o link para o aluno. Ele vale por 14 dias e serve só para essa pessoa.
@@ -126,7 +126,7 @@ export function Alunos({
             setTentou(true);
             if (problemas.length === 0) convidar({ nome, whatsapp });
           }}
-          className="flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-4"
+          className="larga-estreito flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-4"
         >
           <h2 className="text-[17px] font-semibold">Convidar aluno</h2>
           <Campo id="cv-nome" rotulo="Nome do aluno" ajuda="Como você chama o aluno. Ele confirma o nome completo no cadastro.">
@@ -171,7 +171,7 @@ export function Alunos({
         </form>
       ) : (
         escolhendo && (
-          <section className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Novo aluno">
+          <section className="larga-estreito flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-4" aria-label="Novo aluno">
             <h2 className="text-[17px] font-semibold">Novo aluno</h2>
             <button
               type="button"
@@ -249,7 +249,7 @@ export function Alunos({
           doEstudioVisiveis.length === 0 ? (
             <p className="text-[15px] text-ink-3">{busca.trim() ? "Nenhum aluno com esse nome." : "Nenhum aluno nas suas turmas ainda."}</p>
           ) : (
-            <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5 lg:group-data-larga/coluna:columns-2 lg:group-data-larga/coluna:gap-x-8 lg:group-data-larga/coluna:px-5 2xl:group-data-larga/coluna:columns-3" aria-label={`Alunos do ${doEstudio.estudio}`}>
+            <ul className="larga-grade larga-estudio divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5" aria-label={`Alunos do ${doEstudio.estudio}`}>
               {doEstudioVisiveis.map((a) => (
                 <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} convite={a.comApp ? null : { whatsapp: a.whatsapp, estudio: doEstudio.estudio, jaUsa: a.jaUsaOApp }} />
               ))}
@@ -260,13 +260,13 @@ export function Alunos({
         ) : visiveis.length === 0 ? (
           <p className="text-[15px] text-ink-3">Nenhum aluno com esse filtro.</p>
         ) : (
-          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5 lg:group-data-larga/coluna:columns-2 lg:group-data-larga/coluna:gap-x-8 lg:group-data-larga/coluna:px-5 2xl:group-data-larga/coluna:columns-3">
+          <ul className="larga-grade divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
             {visiveis.map((a) => {
               const d = detalhes[a.vinculoId];
               // Decisão 122: sem app (e maior de idade), o convite fica ao lado do nome.
               const convidar = a.semConta && !a.menor;
               return (
-                <li key={a.vinculoId} className="flex break-inside-avoid items-center gap-2">
+                <li key={a.vinculoId} className="flex items-center gap-2">
                   <Link
                     href={`/agenda/alunos/${a.vinculoId}`}
                     aria-current={aberto === a.vinculoId ? "page" : undefined}
@@ -307,7 +307,7 @@ export function Alunos({
       {aguardando.length > 0 && (
         <section className="flex flex-col gap-2.5">
           <h2 className="text-[17px] font-semibold">Convites aguardando ({aguardando.length})</h2>
-          <ul className="flex flex-col gap-2.5">
+          <ul className="larga-cartoes flex flex-col gap-2.5">
             {aguardando.map((a) => (
               <li key={a.vinculoId} className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
                 <div className="flex items-baseline justify-between gap-2">
@@ -373,7 +373,7 @@ export function Alunos({
 export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp: string; link: string }) {
   const [copiado, setCopiado] = useState(false);
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap">
       <a
         href={linkWhatsapp(whatsapp, mensagemDoConvite(nome, link))}
         target="_blank"
@@ -393,7 +393,7 @@ export function BotoesDoLink({ nome, whatsapp, link }: { nome: string; whatsapp:
             window.prompt("Copie o link:", link);
           }
         }}
-        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[14px]"}
+        className={ESTILO_BOTAO_SECUNDARIO + " min-h-11 text-[14px] lg:w-auto"}
       >
         {copiado ? "Link copiado!" : "Copiar link"}
       </button>

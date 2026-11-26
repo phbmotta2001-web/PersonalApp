@@ -496,3 +496,52 @@ input[type="checkbox"]:checked {
   border-color: var(--brand);
   color: var(--brand-ink);
 }
+
+/* Alunos no computador sem aluno aberto (lista larga): conteúdo com largura máxima, cada aluno
+   num cartão em grade (no lugar de um quadro só), formulários e convites sem esticar. */
+@media (min-width: 64rem) {
+  [data-larga] .larga-conteudo {
+    width: 100%;
+    max-width: 1100px;
+    margin-inline: auto;
+  }
+  [data-larga] .larga-estreito {
+    width: 100%;
+    max-width: 30rem;
+  }
+  [data-larga] .larga-grade {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 0.625rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  [data-larga] .larga-grade > :not(.aberto) {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    padding-inline: 0.75rem;
+  }
+  [data-larga] .larga-estudio > :not(.aberto) {
+    border-color: color-mix(in srgb, var(--estudio) 30%, transparent);
+    background: color-mix(in srgb, var(--estudio-soft) 50%, var(--surface));
+  }
+  [data-larga] .larga-grade > .aberto {
+    grid-column: 1 / -1;
+    margin-block: 0;
+  }
+  [data-larga] .larga-cartoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+@media (min-width: 96rem) {
+  [data-larga] .larga-grade,
+  [data-larga] .larga-cartoes {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

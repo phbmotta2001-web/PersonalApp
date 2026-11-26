@@ -19,7 +19,7 @@ export function AlunoDoEstudioNaLista({
 }) {
   const [aberto, setAberto] = useState(false);
   return (
-    <li className={`flex break-inside-avoid flex-col gap-2 ${aberto ? "my-1.5 rounded-[16px] border-2 border-estudio bg-surface-2 p-3" : "py-2.5"}`}>
+    <li className={`${aberto ? "aberto " : ""}flex flex-col gap-2 ${aberto ? "my-1.5 rounded-[16px] border-2 border-estudio bg-surface-2 p-3" : "py-2.5"}`}>
       <div className="flex items-center gap-2">
       <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-estudio text-[14px] font-extrabold text-white">
