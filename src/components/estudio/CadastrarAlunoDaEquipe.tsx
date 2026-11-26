@@ -66,6 +66,7 @@ export function CadastrarAlunoDaEquipe({
   if (feito) {
     const mensagem = `Olá, ${feito.nome.split(" ")[0]}! O ${estudioNome} usa o P-Bell: veja a agenda com as vagas, avise suas faltas e marque reposições. Entre por este link: ${feito.link}`;
     return (
+      <>
       <section className="flex flex-col gap-3 rounded-[20px] border border-estudio/40 bg-surface p-4" aria-label="Aluno cadastrado">
         <p className="font-bold">{feito.nome} está no estúdio.</p>
         <p className="text-[14px] text-ink-2">Mande o link do app (vale 14 dias). A coordenação foi avisada.</p>
@@ -88,22 +89,11 @@ export function CadastrarAlunoDaEquipe({
             {copiado ? "Copiado" : "Copiar link"}
           </button>
         </div>
-        <div className="flex gap-4 text-[14.5px] font-bold">
-          <button type="button" onClick={limpar} className="text-estudio">
-            Cadastrar outro
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              limpar();
-              setAberto(false);
-            }}
-            className="text-ink-3"
-          >
-            Fechar
-          </button>
-        </div>
       </section>
+      <button type="button" onClick={limpar} className="rounded-[16px] border border-estudio/40 bg-estudio-soft/50 px-4 py-3 text-left font-bold text-estudio">
+        + Cadastrar aluno
+      </button>
+      </>
     );
   }
 

@@ -126,6 +126,9 @@ async function Conteudo({
         todos={todos === "1"}
       />
 
+      {/* Decisão 120: os alunos do professor e, com um toque, todos os do estúdio (com a ficha). */}
+      <MeusAlunosNoEstudio alunos={meusAlunos} />
+
       {eu && (
         <AusenciasDoEstudio
           estudioId={id}
@@ -135,9 +138,6 @@ async function Conteudo({
           ausencias={ausencias}
         />
       )}
-
-      {/* Decisão 120: os alunos do professor e, com um toque, todos os do estúdio (com a ficha). */}
-      <MeusAlunosNoEstudio alunos={meusAlunos} />
 
       <section className="flex flex-col gap-1 rounded-[20px] border border-line bg-surface px-4 py-3" aria-label="Equipe">
         <h2 className="pb-1 text-[16px] font-semibold">Equipe</h2>
