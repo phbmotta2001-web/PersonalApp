@@ -249,7 +249,7 @@ export function Alunos({
           doEstudioVisiveis.length === 0 ? (
             <p className="text-[15px] text-ink-3">{busca.trim() ? "Nenhum aluno com esse nome." : "Nenhum aluno nas suas turmas ainda."}</p>
           ) : (
-            <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5" aria-label={`Alunos do ${doEstudio.estudio}`}>
+            <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5 lg:group-data-larga/coluna:columns-2 lg:group-data-larga/coluna:gap-x-8 lg:group-data-larga/coluna:px-5 2xl:group-data-larga/coluna:columns-3" aria-label={`Alunos do ${doEstudio.estudio}`}>
               {doEstudioVisiveis.map((a) => (
                 <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} convite={a.comApp ? null : { whatsapp: a.whatsapp, estudio: doEstudio.estudio, jaUsa: a.jaUsaOApp }} />
               ))}
@@ -260,13 +260,13 @@ export function Alunos({
         ) : visiveis.length === 0 ? (
           <p className="text-[15px] text-ink-3">Nenhum aluno com esse filtro.</p>
         ) : (
-          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
+          <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5 lg:group-data-larga/coluna:columns-2 lg:group-data-larga/coluna:gap-x-8 lg:group-data-larga/coluna:px-5 2xl:group-data-larga/coluna:columns-3">
             {visiveis.map((a) => {
               const d = detalhes[a.vinculoId];
               // Decisão 122: sem app (e maior de idade), o convite fica ao lado do nome.
               const convidar = a.semConta && !a.menor;
               return (
-                <li key={a.vinculoId} className="flex items-center gap-2">
+                <li key={a.vinculoId} className="flex break-inside-avoid items-center gap-2">
                   <Link
                     href={`/agenda/alunos/${a.vinculoId}`}
                     aria-current={aberto === a.vinculoId ? "page" : undefined}
@@ -274,8 +274,8 @@ export function Alunos({
                   >
                     <Avatar nome={a.nome} cor={corPorId(a.vinculoId)} tamanho="pequeno" />
                     <span className="min-w-0 flex-1">
-                      <span className={`block truncate text-[16px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
-                      <span className="block truncate text-[14px] text-ink-3">{d?.subtitulo}</span>
+                      <span className={`block text-[16px] leading-snug font-bold break-words ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
+                      <span className="block truncate text-[14px] text-ink-3 lg:whitespace-normal">{d?.subtitulo}</span>
                     </span>
                     {d && !convidar && (
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_ETIQUETA[d.etiqueta.tom]}`}>
