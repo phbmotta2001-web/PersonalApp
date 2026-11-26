@@ -304,7 +304,8 @@ export function Alunos({
         </button>
       )}
 
-      {aguardando.length > 0 && (
+      {/* Convites são do personal: não aparecem com a opção do estúdio escolhida. */}
+      {!doEstudio && aguardando.length > 0 && (
         <section className="flex flex-col gap-2.5">
           <h2 className="text-[17px] font-semibold">Convites aguardando ({aguardando.length})</h2>
           <ul className="larga-cartoes flex flex-col gap-2.5">
@@ -330,7 +331,7 @@ export function Alunos({
         </section>
       )}
 
-      {antigos.length > 0 && (
+      {!doEstudio && antigos.length > 0 && (
         <details className="rounded-[20px] border border-line bg-surface px-4 py-3">
           <summary className="cursor-pointer text-[15px] font-bold">Convites vencidos e ex-alunos ({antigos.length})</summary>
           <ul className="mt-2 divide-y divide-line">

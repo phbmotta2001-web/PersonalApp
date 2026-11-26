@@ -512,14 +512,17 @@ input[type="checkbox"]:checked {
   [data-larga] .larga-grade {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
+    align-items: stretch;
     gap: 0.625rem;
     padding: 0;
     border: 0;
     border-radius: 0;
     background: transparent;
   }
+  /* Todos os cartões do mesmo tamanho (nome em duas linhas não deixa um maior que o outro). */
   [data-larga] .larga-grade > :not(.aberto) {
+    min-height: 5.25rem;
+    justify-content: center;
     border: 1px solid var(--line);
     border-radius: 16px;
     background: var(--surface);
