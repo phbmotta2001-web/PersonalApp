@@ -70,7 +70,7 @@ async function Conteudo() {
         estudios={estudiosDoProfissional}
         aulasHoje={turmasDeHoje}
         agora={agora}
-        emAndamento={emAndamento && <AulaEmAndamento aula={emAndamento} />}
+        emAndamento={emAndamento && <AulaEmAndamento key={emAndamento.id} aula={emAndamento} />}
         experimentais={
           <>
             {paraDecidir.length > 0 && <PedidosDeFrequencia lista={paraDecidir} coordenacao />}
@@ -241,7 +241,7 @@ async function Conteudo() {
       {/* Atualiza sozinho quando a aula particular (ou a turma do estúdio) começa ou termina. */}
       <AtualizarNaHora momentos={[aoVivo?.fim, seguintes[0]?.inicio, ...turmasHoje.flatMap((t) => [t.inicio, t.fim])]} />
       {painel && <PainelDaAula d={painel} />}
-      {emAndamento && <AulaEmAndamento aula={emAndamento} />}
+      {emAndamento && <AulaEmAndamento key={emAndamento.id} aula={emAndamento} />}
       {temPendencia && precisaDeVoce}
       {paraDecidir.length > 0 && <PedidosDeFrequencia lista={paraDecidir} coordenacao />}
       {concluidas.length > 0 && <ExperimentaisConcluidas lista={concluidas} />}

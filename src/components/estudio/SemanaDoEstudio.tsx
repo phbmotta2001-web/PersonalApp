@@ -44,10 +44,12 @@ function emFaixas<T extends { id: string; inicio: string; fim: string }>(itens: 
  */
 export function SemanaDoEstudio({
   estudio,
-  aulas,
+  aulas: todasAsAulas,
   segunda,
   hoje,
   base,
+  meu,
+  todos = false,
 }: {
   estudio: EstudioCompleto;
   aulas: AulaNaAgendaDoEstudio[];
@@ -55,12 +57,21 @@ export function SemanaDoEstudio({
   hoje: string;
   /** Painel do professor (decisão 78): a página dele ("/agenda/estudio/…"); a aula abre a chamada. */
   base?: string;
+  /** Decisão 120: na página do professor, só os horários dele (turnos e aulas), a não ser com "todos". */
+  meu?: string | null;
+  todos?: boolean;
 }) {
+  const soMeus = !!meu && !todos;
+  const aulas = soMeus ? todasAsAulas.filter((a) => a.professorId === meu) : todasAsAulas;
   const cores = coresDaEquipe(estudio.equipe);
   const nomeCurto = new Map(estudio.equipe.map((m) => [m.personalId, m.nome.split(" ")[0]]));
   const segundaDeHoje = somarDias(hoje, -diaDaSemana(hoje)); // domingo desta semana
+  const consulta = (d: string, verTodos = todos) => {
+    const p = [d === segundaDeHoje ? "" : `semana=${d}`, verTodos && meu ? "todos=1" : ""].filter(Boolean).join("&");
+    return p ? `?${p}` : "";
+  };
   const linkSemana = (d: string) =>
-    base ? `${base}${d === segundaDeHoje ? "" : `?semana=${d}`}` : `/estudio/${estudio.id}?aba=agenda${d === segundaDeHoje ? "" : `&semana=${d}`}`;
+    base ? `${base}${consulta(d)}` : `/estudio/${estudio.id}?aba=agenda${d === segundaDeHoje ? "" : `&semana=${d}`}`;
   const linkDia = (d: string) => (base ? linkSemana(segunda) : `/estudio/${estudio.id}?aba=agenda&dia=${d}`);
   const linkAula = (id: string) => (base ? `/agenda/turma/${id}` : `/estudio/aula/${id}`);
   const definido = Object.keys(estudio.config.funcionamento).length > 0;
@@ -132,8 +143,18 @@ export function SemanaDoEstudio({
         </Link>
       </nav>
 
+      {meu && base && (
+        <Link
+          href={`${base}${consulta(segunda, !todos)}`}
+          scroll={false}
+          className="flex min-h-11 items-center justify-center gap-2 rounded-[14px] border border-line bg-surface text-[14.5px] font-bold text-estudio"
+        >
+          {todos ? "Ver só os meus horários" : "Ver todos os horários do estúdio"}
+        </Link>
+      )}
+
       <div className="grid grid-cols-3 gap-2.5">
-        <Numero rotulo="Aulas na semana" valor={String(turmas.length)} />
+        <Numero rotulo={soMeus ? "Minhas aulas" : "Aulas na semana"} valor={String(turmas.length)} />
         <Numero rotulo="Alunos / vagas" valor={vagas ? `${alunos}/${vagas}` : "—"} />
         <Numero rotulo="Sem professor" valor={String(semProfessor)} alerta={semProfessor > 0} />
       </div>
