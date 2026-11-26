@@ -6,6 +6,7 @@ import { Avatar } from "@/components/Avatar";
 import { Carregando, ESTILO_BOTAO_SECUNDARIO } from "@/components/Formulario";
 import { Icone, type NomeIcone } from "@/components/Icone";
 import { lerAntecedencia } from "@/data/aulas";
+import { lerContrato } from "@/data/contrato";
 import { sair } from "@/data/conta";
 import { souDaEquipe } from "@/data/equipe";
 import { meusEstudios } from "@/data/estudio";
@@ -34,7 +35,7 @@ export default function PaginaConta() {
 // Aba "Conta" do personal: dados e configurações (o dinheiro fica na aba Financeiro).
 async function Conteudo() {
   const personal = await exigirPersonal("/agenda/conta");
-  const [antecedencia, expediente, bloqueios, feriados, estudios, equipe, soEstudio] = await Promise.all([
+  const [antecedencia, expediente, bloqueios, feriados, estudios, equipe, soEstudio, contrato] = await Promise.all([
     lerAntecedencia(),
     lerExpediente(),
     listarBloqueios(true),
@@ -42,6 +43,7 @@ async function Conteudo() {
     meusEstudios(),
     souDaEquipe(),
     soNoEstudio(),
+    lerContrato(),
   ]);
 
   return (
@@ -90,6 +92,8 @@ async function Conteudo() {
           texto={`${feriados.trabalha ? "Trabalho" : "Não trabalho"} em feriados${feriados.excecoes.length ? " (com exceções)" : ""}`}
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+        {/* Decisão 126: o aluno assina no app, junto das regras. */}
+        <Linha href="/agenda/contrato" icone="prancheta" titulo="Contrato" texto={contrato ? "O aluno assina no app" : "Sem contrato"} />
         {/* Decisão 105: ParQ e anamnese que o aluno novo preenche no app. */}
         <Linha href="/agenda/formularios" icone="conversa" titulo="ParQ e anamnese" texto="O aluno novo preenche no app antes de treinar" />
       </Grupo>

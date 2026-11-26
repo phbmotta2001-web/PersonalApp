@@ -83,6 +83,11 @@ export interface RegrasPendentes {
   cancelamentoH: number;
   reposicaoH: number;
   pausaDias: number;
+  /** As regras ainda não foram vistas (o aluno pode ter só o contrato novo para assinar). */
+  regras: boolean;
+  /** Decisão 126: o contrato a assinar e a versão dele (vazio: nada a assinar). */
+  contrato: string | null;
+  contratoVersao: string | null;
 }
 
 /** Regras dos personais que o aluno ainda não confirmou (vazio se a migração 75 ainda não rodou). */
@@ -90,16 +95,22 @@ export async function regrasPendentes(): Promise<RegrasPendentes[]> {
   const supabase = await criarClienteSupabase();
   const { data, error } = await supabase.rpc("regras_pendentes");
   if (error || !Array.isArray(data)) return [];
-  return (data as { vinculo_id: string; cancelamento_h: number; reposicao_h: number; pausa_dias: number }[]).map((r) => ({
+  return (
+    data as { vinculo_id: string; cancelamento_h: number; reposicao_h: number; pausa_dias: number; regras?: boolean; contrato?: string | null; contrato_versao?: string | null }[]
+  ).map((r) => ({
     vinculoId: r.vinculo_id,
     cancelamentoH: r.cancelamento_h,
     reposicaoH: r.reposicao_h,
     pausaDias: r.pausa_dias,
+    regras: r.regras ?? true,
+    contrato: r.contrato ?? null,
+    contratoVersao: r.contrato_versao ?? null,
   }));
 }
 
-export async function confirmarRegras(vinculoId: string): Promise<{ ok: true } | { ok: false; erro: string }> {
+export async function confirmarRegras(vinculoId: string, contratoVersao: string | null = null): Promise<{ ok: true } | { ok: false; erro: string }> {
   const supabase = await criarClienteSupabase();
-  const { error } = await supabase.rpc("confirmar_regras", { p_vinculo: vinculoId });
+  const { error } = await supabase.rpc("confirmar_regras", { p_vinculo: vinculoId, p_versao: contratoVersao });
+  if (error?.message.includes("O contrato mudou")) return { ok: false, erro: "O contrato mudou. Leia de novo antes de assinar." };
   return error ? { ok: false, erro: "Não foi possível confirmar. Tente de novo." } : { ok: true };
 }

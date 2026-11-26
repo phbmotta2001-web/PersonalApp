@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { assinaturaDoContrato } from "@/data/contrato";
 import { Suspense } from "react";
 import { ConvidarParaConta } from "@/components/agenda/ConvidarParaConta";
 import { PausasDoAluno } from "@/components/agenda/PausasDoAluno";
@@ -54,7 +55,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
   const { vinculo } = await params;
   await exigirPersonal(`/agenda/alunos/${vinculo}`);
   const hojeBr = agoraEmBrasilia().data;
-  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, evolucao, avaliacoes, formularios, pedidoAvaliacao] = await Promise.all([
+  const [a, matricula, proximas, reposicoes, doMes, cobrancas, suspensas, origem, pausas, regras, treino, evolucao, avaliacoes, formularios, pedidoAvaliacao, contrato] = await Promise.all([
     lerFichaDoAluno(vinculo),
     lerMatricula(vinculo),
     proximaAulaPorAluno(),
@@ -70,6 +71,7 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
     avaliacoesDoVinculo(vinculo),
     formulariosDoVinculo(vinculo),
     pedidoDeAvaliacao(vinculo),
+    assinaturaDoContrato(vinculo),
   ]);
   const fimDoPlanoAtual = matricula ? fimDaMatricula(matricula, hojeBr) : null;
   const suspensaDesde = suspensas[vinculo];
@@ -108,6 +110,14 @@ async function Ficha({ params }: { params: PageProps<"/agenda/alunos/[vinculo]">
             ? `${a.idade} anos${a.semConta.menor ? " (menor)" : ""} · não usa o app · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
             : `${a.idade} anos · ${rotuloGenero(a.genero)} · aluno desde ${new Date(a.aceitoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
         </p>
+        {/* Decisão 126: se o aluno já assinou o contrato atual. */}
+        {!a.semConta && contrato !== "sem" && (
+          <p className={`text-[13.5px] font-semibold ${contrato.assinadoEm ? "text-ok" : "text-gold"}`}>
+            {contrato.assinadoEm
+              ? `Contrato assinado em ${new Date(contrato.assinadoEm).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}`
+              : "Ainda não assinou o contrato (assina ao abrir o app)"}
+          </p>
+        )}
       </div>
 
       {/* Restrições primeiro: é o que o personal precisa ver antes de tudo. */}
