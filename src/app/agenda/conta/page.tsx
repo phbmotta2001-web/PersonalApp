@@ -92,6 +92,11 @@ async function Conteudo() {
           texto={`${feriados.trabalha ? "Trabalho" : "Não trabalho"} em feriados${feriados.excecoes.length ? " (com exceções)" : ""}`}
         />
         <Linha href="/agenda/regras" icone="escudo" titulo="Regras e pausas" texto={`Cancelar até ${textoDeHoras(antecedencia)} antes`} />
+      </Grupo>
+      )}
+
+      {!soEstudio && (
+      <Grupo titulo="Alunos">
         {/* Decisão 126: o aluno assina no app, junto das regras. */}
         <Linha href="/agenda/contrato" icone="prancheta" titulo="Contrato" texto={contrato ? "O aluno assina no app" : "Sem contrato"} />
         {/* Decisão 105: ParQ e anamnese que o aluno novo preenche no app. */}
