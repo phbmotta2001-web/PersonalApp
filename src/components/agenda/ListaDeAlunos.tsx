@@ -3,7 +3,6 @@ import { Alunos, type DetalheDoAluno, type FiltroAluno } from "@/components/agen
 import { Icone } from "@/components/Icone";
 import { listarMeusAlunos } from "@/data/convites";
 import { alunosComAtraso } from "@/data/cobrancas";
-import { AlunoDoEstudioNaLista } from "@/components/estudio/AlunoDoEstudioNaLista";
 import { alunosDasMinhasTurmas } from "@/data/estudio";
 import { exigirPersonal } from "@/data/exigir-personal";
 import { matriculasAtivasPorAluno, matriculasSuspensas } from "@/data/matriculas";
@@ -80,28 +79,8 @@ export async function ListaDeAlunos() {
           <Icone nome="conversa" className="size-4" /> Acompanhamento online e check-ins ›
         </Link>
       )}
-      <Alunos alunos={alunos} origem={origem} detalhes={detalhes} />
-      {/* Alunos das turmas que ele dá no estúdio (decisão 54): em verde-petróleo, sempre abaixo dos particulares.
-          Decisão 82: começam recolhidos; o personal expande quando quiser. */}
-      {doEstudio.map((g) => (
-        <details key={g.estudio} className="group px-[18px] pb-6" aria-label={`Alunos do ${g.estudio}`}>
-          <summary className="flex cursor-pointer list-none items-center gap-2 rounded-[16px] border border-estudio/30 bg-estudio-soft/50 px-3.5 py-3 [&::-webkit-details-marker]:hidden">
-            <span className="size-2.5 rounded-full bg-estudio" aria-hidden="true" />
-            <span className="flex-1 text-[13px] font-extrabold tracking-[0.06em] text-estudio uppercase">
-              {g.estudio} · {g.alunos.length}
-            </span>
-            <span className="text-[13.5px] font-semibold text-estudio">
-              <span className="group-open:hidden">Expandir</span>
-              <span className="hidden group-open:inline">Recolher</span>
-            </span>
-          </summary>
-          <ul className="mt-2 divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5">
-            {g.alunos.map((a) => (
-              <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} />
-            ))}
-          </ul>
-        </details>
-      ))}
+      {/* Alunos das turmas dele em cada estúdio: uma opção com o nome do estúdio nos filtros (decisão 121). */}
+      <Alunos alunos={alunos} origem={origem} detalhes={detalhes} estudios={doEstudio} />
     </>
   );
 }

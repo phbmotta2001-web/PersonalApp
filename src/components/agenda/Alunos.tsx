@@ -15,6 +15,7 @@ import {
 import { frase } from "@/lib/formato";
 import { Avatar, corPorId } from "../Avatar";
 import { Chip } from "../Chip";
+import { AlunoDoEstudioNaLista } from "../estudio/AlunoDoEstudioNaLista";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
 
@@ -54,10 +55,13 @@ export function Alunos({
   alunos,
   origem,
   detalhes,
+  estudios = [],
 }: {
   alunos: AlunoDaLista[];
   origem: string;
   detalhes: Record<string, DetalheDoAluno>;
+  /** Alunos das turmas que ele dá em cada estúdio: uma opção com o nome do estúdio nos filtros. */
+  estudios?: { estudio: string; alunos: { id: string; nome: string; turmas: string[] }[] }[];
 }) {
   const router = useRouter();
   // No computador a lista fica ao lado da ficha: destaca o aluno aberto.
@@ -66,6 +70,7 @@ export function Alunos({
   const [escolhendo, setEscolhendo] = useState(false);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<FiltroAluno | null>(null);
+  const [estudio, setEstudio] = useState<string | null>(null);
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [tentou, setTentou] = useState(false);
@@ -78,6 +83,8 @@ export function Alunos({
   const visiveis = ativos.filter(
     (a) => (!busca.trim() || simples(a.nome).includes(simples(busca.trim()))) && (!filtro || detalhes[a.vinculoId]?.filtros.includes(filtro)),
   );
+  const doEstudio = estudios.find((g) => g.estudio === estudio);
+  const doEstudioVisiveis = (doEstudio?.alunos ?? []).filter((a) => !busca.trim() || simples(a.nome).includes(simples(busca.trim())));
   const aguardando = alunos.filter((a) => a.situacao === "convidado");
   const antigos = alunos.filter((a) => a.situacao === "expirado" || a.situacao === "cancelado" || a.situacao === "encerrado");
   const problemas = problemasDoConvite(nome, whatsapp);
@@ -188,7 +195,7 @@ export function Alunos({
       )}
 
       <section className="flex flex-col gap-2.5" aria-label="Alunos ativos">
-        {ativos.length > 0 && (
+        {(ativos.length > 0 || estudios.length > 0) && (
           <>
             <label className="flex min-h-11 items-center gap-2 rounded-[13px] border border-line bg-surface px-3.5 text-ink-3">
               <Icone nome="busca" className="size-[18px]" />
@@ -201,18 +208,53 @@ export function Alunos({
               />
             </label>
             <div className="-mx-[18px] flex gap-2 overflow-x-auto px-[18px] pb-1" role="group" aria-label="Filtrar alunos">
-              <Chip ativo={filtro === null} onClick={() => setFiltro(null)}>
+              <Chip
+                ativo={filtro === null && !estudio}
+                onClick={() => {
+                  setFiltro(null);
+                  setEstudio(null);
+                }}
+              >
                 Todos {ativos.length}
               </Chip>
               {FILTROS.filter((f) => contagem(f.valor) > 0).map((f) => (
-                <Chip key={f.valor} ativo={filtro === f.valor} onClick={() => setFiltro(filtro === f.valor ? null : f.valor)}>
+                <Chip
+                  key={f.valor}
+                  ativo={filtro === f.valor}
+                  onClick={() => {
+                    setEstudio(null);
+                    setFiltro(filtro === f.valor ? null : f.valor);
+                  }}
+                >
                   {f.rotulo} {contagem(f.valor)}
+                </Chip>
+              ))}
+              {estudios.map((g) => (
+                <Chip
+                  key={g.estudio}
+                  ativo={estudio === g.estudio}
+                  onClick={() => {
+                    setFiltro(null);
+                    setEstudio(estudio === g.estudio ? null : g.estudio);
+                  }}
+                >
+                  {g.estudio} {g.alunos.length}
                 </Chip>
               ))}
             </div>
           </>
         )}
-        {ativos.length === 0 ? (
+        {doEstudio ? (
+          doEstudioVisiveis.length === 0 ? (
+            <p className="text-[15px] text-ink-3">{busca.trim() ? "Nenhum aluno com esse nome." : "Nenhum aluno nas suas turmas ainda."}</p>
+          ) : (
+            <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5" aria-label={`Alunos do ${doEstudio.estudio}`}>
+              {doEstudioVisiveis.map((a) => (
+                <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} />
+              ))}
+            </ul>
+          )
+        ) : ativos.length === 0 ? (
           <p className="text-[15px] text-ink-3">Nenhum aluno ainda. Toque em &quot;Novo aluno&quot; para convidar ou cadastrar.</p>
         ) : visiveis.length === 0 ? (
           <p className="text-[15px] text-ink-3">Nenhum aluno com esse filtro.</p>

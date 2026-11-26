@@ -262,9 +262,17 @@ Lista de espera: ${a.fila.join(", ")}` : ""}`}
                             {a.alunos}/{a.vagas}
                           </span>
                         </span>
-                        <span className={`block truncate text-[11.5px] font-semibold ${c ? "text-ink-2" : "text-bad"}`}>
-                          {a.cancelada ? "Cancelada" : (nomeCurto.get(a.professorId ?? "") ?? "Sem professor")}
-                        </span>
+                        {a.cancelada ? (
+                          <span className="block truncate text-[11.5px] font-semibold">Cancelada</span>
+                        ) : (
+                          // O professor numa etiqueta com a cor dele, para não parecer mais um aluno da lista.
+                          <span
+                            className="my-0.5 inline-block max-w-full truncate rounded-[5px] px-1.5 text-[11px] leading-[16px] font-extrabold text-white"
+                            style={{ background: c?.forte ?? "var(--bad)" }}
+                          >
+                            {nomeCurto.get(a.professorId ?? "") ?? "Sem professor"}
+                          </span>
+                        )}
                         {!a.cancelada && a.fila.length > 0 && (
                           <span className="flex items-center gap-0.5 py-0.5" title={`Lista de espera: ${a.fila.join(", ")}`}>
                             {a.fila.slice(0, 5).map((_, k) => (
