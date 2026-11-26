@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ConvidarParaOPBellNoEstudio } from "../ConvidarParaOPBell";
 import { useState, useTransition } from "react";
 import {
   convidarProfessor,
@@ -422,7 +423,8 @@ function Alunos({
             const fimPlano = estudio.config.tipo === "estudio" ? fimDoPlano(a.planoMeses, a.planoInicio, hoje) : null;
             return (
               <li key={a.id} className={`flex flex-col gap-2 rounded-[18px] border border-l-[5px] border-line bg-surface px-4 py-3 ${pagamentos ? s.borda : ""}`}>
-                <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex items-center gap-3 text-left">
+                <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setAberto(aberto === a.id ? null : a.id)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                   <span className="min-w-0 flex-1">
                     <span className={`block font-semibold ${p?.situacao === "devendo" ? "text-bad" : ""}`}>
                       {a.nome}
@@ -432,11 +434,13 @@ function Alunos({
                       {a.turmas.length ? a.turmas.map((id) => (turmaPorId.get(id) ? rotuloDaTurma(turmaPorId.get(id)!) : "")).join(" · ") : "Sem turma"}
                     </span>
                   </span>
-                  {!a.comApp && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12.5px] font-bold text-ink-2">sem app</span>}
                   <span className="text-ink-3" aria-hidden="true">
                     {aberto === a.id ? "▴" : "▾"}
                   </span>
                 </button>
+                {/* Decisão 122: sem app, o convite fica ao lado do nome. */}
+                {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio.nome} />}
+                </div>
                 {p && (
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <span className={`rounded-full px-2.5 py-0.5 text-[13px] font-bold ${s.selo}`}>

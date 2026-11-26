@@ -15,6 +15,7 @@ import {
 import { frase } from "@/lib/formato";
 import { Avatar, corPorId } from "../Avatar";
 import { Chip } from "../Chip";
+import { ConvidarParaOPBell } from "../ConvidarParaOPBell";
 import { AlunoDoEstudioNaLista } from "../estudio/AlunoDoEstudioNaLista";
 import { Aviso, Campo, ESTILO_BOTAO_PRINCIPAL, ESTILO_BOTAO_SECUNDARIO, ESTILO_CAIXA } from "../Formulario";
 import { Icone } from "../Icone";
@@ -61,7 +62,7 @@ export function Alunos({
   origem: string;
   detalhes: Record<string, DetalheDoAluno>;
   /** Alunos das turmas que ele dá em cada estúdio: uma opção com o nome do estúdio nos filtros. */
-  estudios?: { estudio: string; alunos: { id: string; nome: string; turmas: string[] }[] }[];
+  estudios?: { estudio: string; alunos: { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean }[] }[];
 }) {
   const router = useRouter();
   // No computador a lista fica ao lado da ficha: destaca o aluno aberto.
@@ -250,7 +251,7 @@ export function Alunos({
           ) : (
             <ul className="divide-y divide-line rounded-[20px] border border-estudio/30 bg-estudio-soft/50 px-3.5" aria-label={`Alunos do ${doEstudio.estudio}`}>
               {doEstudioVisiveis.map((a) => (
-                <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} />
+                <AlunoDoEstudioNaLista key={a.id} id={a.id} nome={a.nome} turmas={a.turmas.join(", ")} convite={a.comApp ? null : { whatsapp: a.whatsapp, estudio: doEstudio.estudio }} />
               ))}
             </ul>
           )
@@ -262,24 +263,27 @@ export function Alunos({
           <ul className="divide-y divide-line rounded-[20px] border border-line bg-surface px-3.5">
             {visiveis.map((a) => {
               const d = detalhes[a.vinculoId];
+              // Decisão 122: sem app (e maior de idade), o convite fica ao lado do nome.
+              const convidar = a.semConta && !a.menor;
               return (
-                <li key={a.vinculoId}>
+                <li key={a.vinculoId} className="flex items-center gap-2">
                   <Link
                     href={`/agenda/alunos/${a.vinculoId}`}
                     aria-current={aberto === a.vinculoId ? "page" : undefined}
-                    className={`-mx-2 flex items-center gap-3 rounded-[14px] px-2 py-2.5 lg:hover:bg-surface-2 ${aberto === a.vinculoId ? "lg:bg-brand-soft lg:hover:bg-brand-soft" : ""}`}
+                    className={`-mx-2 flex min-w-0 flex-1 items-center gap-3 rounded-[14px] px-2 py-2.5 lg:hover:bg-surface-2 ${aberto === a.vinculoId ? "lg:bg-brand-soft lg:hover:bg-brand-soft" : ""}`}
                   >
                     <Avatar nome={a.nome} cor={corPorId(a.vinculoId)} tamanho="pequeno" />
                     <span className="min-w-0 flex-1">
                       <span className={`block truncate text-[16px] font-bold ${d?.atrasado ? "text-bad" : ""}`}>{a.nome}</span>
                       <span className="block truncate text-[14px] text-ink-3">{d?.subtitulo}</span>
                     </span>
-                    {d && (
+                    {d && !convidar && (
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[12.5px] font-bold ${COR_ETIQUETA[d.etiqueta.tom]}`}>
                         {d.etiqueta.texto}
                       </span>
                     )}
                   </Link>
+                  {convidar && <ConvidarParaOPBell vinculoId={a.vinculoId} nome={a.nome} whatsapp={a.whatsapp} origem={origem} codigo={a.codigo} />}
                 </li>
               );
             })}

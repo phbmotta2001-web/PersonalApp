@@ -73,6 +73,8 @@ async function Conteudo({
     .map((a) => ({
       id: a.id,
       nome: a.nome,
+      whatsapp: a.whatsapp,
+      comApp: a.comApp,
       total: a.turmas.filter((t) => deTurma.has(t)).length,
       comigo: a.turmas.filter((t) => minhasIds.has(t)).length,
     }))
@@ -127,7 +129,7 @@ async function Conteudo({
       />
 
       {/* Decisão 120: os alunos do professor e, com um toque, todos os do estúdio (com a ficha). */}
-      <MeusAlunosNoEstudio alunos={meusAlunos} />
+      <MeusAlunosNoEstudio alunos={meusAlunos} estudio={estudio.nome} />
 
       {eu && (
         <AusenciasDoEstudio

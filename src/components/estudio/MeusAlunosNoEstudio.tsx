@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ConvidarParaOPBellNoEstudio } from "../ConvidarParaOPBell";
 import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 
 /**
@@ -8,7 +9,13 @@ import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
  * "Seus alunos no estúdio" do professor: em ordem alfabética, com quantas aulas por semana o aluno
  * faz e quantas são com o professor ("3x" se todas; "3/4x" se 3 de 4). Toque no nome abre a ficha.
  */
-export function MeusAlunosNoEstudio({ alunos }: { alunos: { id: string; nome: string; comigo: number; total: number }[] }) {
+export function MeusAlunosNoEstudio({
+  alunos,
+  estudio,
+}: {
+  alunos: { id: string; nome: string; comigo: number; total: number; whatsapp: string | null; comApp: boolean }[];
+  estudio: string;
+}) {
   const [aberto, setAberto] = useState<string | null>(null);
   const meus = alunos.filter((a) => a.comigo > 0);
   const [verTodos, setVerTodos] = useState(meus.length === 0);
@@ -47,11 +54,12 @@ export function MeusAlunosNoEstudio({ alunos }: { alunos: { id: string; nome: st
               key={a.id}
               className={`flex flex-col gap-2 rounded-[16px] ${aberto === a.id ? "my-1.5 border-2 border-estudio bg-surface-2 p-3" : "border-b border-line px-1 py-2 last:border-b-0"}`}
             >
+              <div className="flex items-center gap-2">
               <button
                 type="button"
                 aria-expanded={aberto === a.id}
                 onClick={() => setAberto(aberto === a.id ? null : a.id)}
-                className="flex min-h-9 items-center gap-3 text-left"
+                className="flex min-h-9 min-w-0 flex-1 items-center gap-3 text-left"
               >
                 <span className={`min-w-0 flex-1 truncate font-semibold ${aberto === a.id ? "text-[17px] font-extrabold text-estudio" : "text-[15.5px]"}`}>{a.nome}</span>
                 <span className="text-[14px] font-bold text-estudio tabular-nums">
@@ -61,6 +69,8 @@ export function MeusAlunosNoEstudio({ alunos }: { alunos: { id: string; nome: st
                   {aberto === a.id ? "▴" : "▾"}
                 </span>
               </button>
+              {!a.comApp && <ConvidarParaOPBellNoEstudio alunoId={a.id} nome={a.nome} whatsapp={a.whatsapp} estudio={estudio} />}
+              </div>
               {aberto === a.id && (
                 <>
                   <FichaDoAlunoEstudio alunoId={a.id} />

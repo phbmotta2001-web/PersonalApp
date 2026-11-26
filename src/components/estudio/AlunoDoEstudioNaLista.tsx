@@ -1,14 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { ConvidarParaOPBellNoEstudio } from "../ConvidarParaOPBell";
 import { FichaDoAlunoEstudio } from "./FichaDoAlunoEstudio";
 
 /** Aluno do estúdio na lista do professor: toque no nome para abrir a ficha (decisão 73). */
-export function AlunoDoEstudioNaLista({ id, nome, turmas }: { id: string; nome: string; turmas: string }) {
+export function AlunoDoEstudioNaLista({
+  id,
+  nome,
+  turmas,
+  convite = null,
+}: {
+  id: string;
+  nome: string;
+  turmas: string;
+  /** Sem app (decisão 122): "Convidar para o P-Bell" ao lado do nome. */
+  convite?: { whatsapp: string | null; estudio: string } | null;
+}) {
   const [aberto, setAberto] = useState(false);
   return (
     <li className={`flex flex-col gap-2 ${aberto ? "my-1.5 rounded-[16px] border-2 border-estudio bg-surface-2 p-3" : "py-2.5"}`}>
-      <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)} className="flex items-center gap-3 text-left">
+      <div className="flex items-center gap-2">
+      <button type="button" aria-expanded={aberto} onClick={() => setAberto(!aberto)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <span className="grid size-9 shrink-0 place-items-center rounded-full bg-estudio text-[14px] font-extrabold text-white">
           {nome.trim()[0]?.toUpperCase()}
         </span>
@@ -20,6 +33,8 @@ export function AlunoDoEstudioNaLista({ id, nome, turmas }: { id: string; nome: 
           {aberto ? "▴" : "▾"}
         </span>
       </button>
+      {convite && <ConvidarParaOPBellNoEstudio alunoId={id} nome={nome} whatsapp={convite.whatsapp} estudio={convite.estudio} />}
+      </div>
       {aberto && (
         <>
           <FichaDoAlunoEstudio alunoId={id} />

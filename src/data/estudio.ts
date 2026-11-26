@@ -388,7 +388,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
     .maybeSingle();
   if (!a) return null;
   const [{ data: matriculas }, { data: presencas }, { data: treinos }] = await Promise.all([
-    supabase.from("turma_alunos").select("estudio_alunos(id, nome, situacao)").eq("turma_id", a.turma_id),
+    supabase.from("turma_alunos").select("estudio_alunos(id, nome, situacao, whatsapp, aluno_id)").eq("turma_id", a.turma_id),
     supabase.from("presencas").select("estudio_aluno_id, situacao, origem, estudio_alunos(id, nome)").eq("aula_turma_id", a.id),
     // Decisão 106: o treino do dia de cada aluno. Sem a migração 68, fica sem treino.
     supabase.rpc("treinos_da_aula_estudio", { p_aula: a.id }),
@@ -400,7 +400,7 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
   const marcas = new Map((presencas ?? []).map((p) => [p.estudio_aluno_id, p.situacao as AlunoNaChamada["situacao"]]));
   const alunos = new Map<string, AlunoNaChamada>();
   for (const m of matriculas ?? []) {
-    const x = m.estudio_alunos as unknown as { id: string; nome: string; situacao: string } | null;
+    const x = m.estudio_alunos as unknown as { id: string; nome: string; situacao: string; whatsapp: string | null; aluno_id: string | null } | null;
     if (x && x.situacao === "ativo") alunos.set(x.id, { id: x.id, nome: x.nome, situacao: marcas.get(x.id) ?? null, trocou: trocaram.has(x.id) });
   }
   // Quem já tem marca na aula (ex.: reposição) entra na lista mesmo sem estar na turma.
@@ -431,7 +431,9 @@ export async function lerAulaParaChamada(aulaId: string): Promise<AulaParaChamad
 }
 
 /** Alunos das turmas que o personal logado dá, por estúdio (para a aba Alunos). */
-export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos: { id: string; nome: string; turmas: string[] }[] }[]> {
+type AlunoDaMinhaTurma = { id: string; nome: string; turmas: string[]; whatsapp: string | null; comApp: boolean };
+
+export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos: AlunoDaMinhaTurma[] }[]> {
   const { supabase, id } = await usuarioAtual();
   if (!id) return [];
   const { data: turmas } = await supabase
@@ -455,13 +457,13 @@ export async function alunosDasMinhasTurmas(): Promise<{ estudio: string; alunos
     ]),
   );
   const estudioDa = new Map(turmas.map((t) => [t.id, (t.estudios as unknown as { nome: string })?.nome ?? "Estúdio"]));
-  const grupos = new Map<string, Map<string, { id: string; nome: string; turmas: string[] }>>();
+  const grupos = new Map<string, Map<string, AlunoDaMinhaTurma>>();
   for (const m of matriculas ?? []) {
-    const x = m.estudio_alunos as unknown as { id: string; nome: string; situacao: string } | null;
+    const x = m.estudio_alunos as unknown as { id: string; nome: string; situacao: string; whatsapp: string | null; aluno_id: string | null } | null;
     if (!x || x.situacao !== "ativo") continue;
     const estudio = estudioDa.get(m.turma_id)!;
     const g = grupos.get(estudio) ?? new Map();
-    const atual = g.get(x.id) ?? { id: x.id, nome: x.nome, turmas: [] };
+    const atual = g.get(x.id) ?? { id: x.id, nome: x.nome, turmas: [], whatsapp: x.whatsapp, comApp: x.aluno_id != null };
     atual.turmas.push(rotulo.get(m.turma_id)!);
     g.set(x.id, atual);
     grupos.set(estudio, g);
