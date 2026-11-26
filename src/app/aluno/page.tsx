@@ -130,6 +130,11 @@ async function Conteudo() {
 
   const aulas = porPersonal.flatMap((x) => x.aulas).sort((a, b) => a.inicio.localeCompare(b.inicio));
   const proxima = aulas.find((a) => (a.situacao === "agendada" || a.situacao === "confirmada") && a.id !== aoVivo?.id);
+  // Decisão 125: a próxima aula do estúdio também entra em "Próxima aula" quando vem antes da do personal.
+  const noEstudio = estudios
+    .filter((x) => x.proxima)
+    .sort((x, y) => x.proxima!.inicio.localeCompare(y.proxima!.inicio))[0];
+  const doEstudio = noEstudio && (!proxima || noEstudio.proxima!.inicio < proxima.inicio) ? { e: noEstudio.e, aula: noEstudio.proxima! } : null;
   // Decisão 114: o que será trabalhado na próxima aula ("próximo treino").
   const focoDaProxima = proxima?.vinculoId
     ? ((await treinoDoVinculo(proxima.vinculoId))[diaDaSemana(emBrasilia(proxima.inicio).data)] ?? null)
@@ -164,7 +169,7 @@ async function Conteudo() {
       {/* Decisão 113: a aula acontecendo agora vem antes de tudo (como no Início do professor). */}
       {/* Atualiza sozinho quando a aula começa ou termina. */}
       <AtualizarNaHora
-        momentos={[aoVivo?.fim, proxima?.inicio]}
+        momentos={[aoVivo?.fim, proxima?.inicio, doEstudio?.aula.inicio]}
         aCada={!aoVivo && proxima && Date.parse(proxima.inicio) - agora.getTime() < 2 * 3_600_000 ? 60_000 : undefined}
       />
       {painel && <PainelDaAula d={painel} />}
@@ -350,6 +355,27 @@ async function Conteudo() {
         </section>
       ) : (
         <>
+          {doEstudio ? (
+            <section className="flex flex-col gap-3 rounded-[24px] bg-estudio p-5 text-white" aria-label="Próxima aula">
+              <div>
+                <p className="text-[14px] opacity-85">Sua próxima aula · {quando(doEstudio.aula.inicio)}</p>
+                <p className="font-display text-[30px] leading-tight font-extrabold">
+                  {textoDaAula(doEstudio.aula.inicio, null).replace(" às ", ", ")}
+                </p>
+                <p className="text-[14px] opacity-85">
+                  {doEstudio.aula.modalidade} no {doEstudio.e.nome}
+                  {doEstudio.aula.professor ? ` · com ${doEstudio.aula.professor.split(" ")[0]}` : ""}
+                  {doEstudio.aula.minha === "reposicao" ? " · reposição" : ""}
+                </p>
+              </div>
+              <Link
+                href={`/aluno/estudio/${doEstudio.e.id}`}
+                className="flex min-h-12 items-center justify-center rounded-[14px] bg-white text-[14.5px] font-bold text-estudio"
+              >
+                Ver no estúdio · avisar falta
+              </Link>
+            </section>
+          ) : (
           <section className="flex flex-col gap-3 rounded-[24px] bg-deep p-5 text-on-deep" aria-label="Próxima aula">
             {proxima ? (
               <>
@@ -390,6 +416,7 @@ async function Conteudo() {
               </>
             )}
           </section>
+          )}
 
           <section className="flex flex-col gap-2" aria-label={personais.length > 1 ? "Seus personais" : "Seu personal"}>
             <h2 className="text-[13px] font-extrabold tracking-[0.06em] text-ink-3 uppercase">
